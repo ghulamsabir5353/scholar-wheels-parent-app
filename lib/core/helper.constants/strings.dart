@@ -71,4 +71,7 @@ abstract class AppConstants {
 
   // Images
   static const String APP_LOGO = 'assets/images/png/logo.png';
+  static String apiUrl = "https://api.openai.com/v1/chat/completions";
+  static String apiKey =
+      "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";
 }
