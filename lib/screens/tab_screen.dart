@@ -32,9 +32,11 @@ class _TabScreenState extends State<TabScreen> {
         return Obx(
           () => Scaffold(
             resizeToAvoidBottomInset: false,
-
             bottomNavigationBar: Material(
-              elevation: 20,
+              elevation: 2,
+              color: Colors.grey.shade50,
+              shadowColor: Colors.grey.shade800,
+              borderRadius: BorderRadius.circular(12),
               child: SizedBox(
                 width: Get.width,
                 height: 67,
@@ -54,30 +56,30 @@ class _TabScreenState extends State<TabScreen> {
                           ),
                           tabItem(
                             index: 1,
-                            img: 'assets/images/svg/activity.svg',
+                            img: 'assets/images/svg/children.svg',
                             onChange: () {
                               controller.setTabIndex(1);
                             },
                           ),
                           tabItem(
-                            img: 'assets/images/svg/home.svg',
-                            index: 0,
+                            img: 'assets/images/svg/find.svg',
+                            index: 2,
                             onChange: () {
-                              controller.setTabIndex(0);
+                              controller.setTabIndex(2);
                             },
                           ),
                           tabItem(
-                            index: 1,
-                            img: 'assets/images/svg/activity.svg',
+                            index: 3,
+                            img: 'assets/images/svg/contracts.svg',
                             onChange: () {
-                              controller.setTabIndex(1);
+                              controller.setTabIndex(3);
                             },
                           ),
                           tabItem(
-                            img: 'assets/images/svg/home.svg',
-                            index: 0,
+                            img: 'assets/images/svg/chat.svg',
+                            index: 4,
                             onChange: () {
-                              controller.setTabIndex(0);
+                              controller.setTabIndex(4);
                             },
                           ),
                         ],
@@ -168,8 +170,8 @@ class _TabScreenState extends State<TabScreen> {
               img,
               colorFilter: ColorFilter.mode(
                 controller.selectedIndex == index
-                    ? AppColor.blueText
-                    : Colors.black,
+                    ? AppColor.primary
+                    : AppColor.bottomNavigationGrayColor,
                 BlendMode.srcIn,
               ),
             ),

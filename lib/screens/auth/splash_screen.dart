@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/screens/app.dart';
 
@@ -16,7 +17,11 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     2.delay(() {
-      Get.offAll(() => const AppScreen(), transition: Transition.downToUp);
+      Get.offAll(
+        () => const AppScreen(),
+        transition: Transition.rightToLeft,
+        duration: Duration(milliseconds: 800),
+      );
     });
 
     super.initState();
@@ -25,15 +30,19 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColor.appColorWhite,
+      backgroundColor: AppColor.secondary,
       body: Center(
         child: Padding(
-          padding: const EdgeInsets.all(52.0),
-          child: Text("Hello"),
-          // child: Image.asset(
-          //   'assets/images/png/logo.png',
-          //   scale: 3,
-          // ),
+          padding: EdgeInsets.all(52.w),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: 1.0), // 👈 start small → full size
+            duration: const Duration(seconds: 1),
+            curve: Curves.easeOutBack, // 👈 smooth bounce effect
+            builder: (context, scale, child) {
+              return Transform.scale(scale: scale, child: child);
+            },
+            child: BaseHelper.getLogo(width: 320, height: 320),
+          ),
         ),
       ),
     );

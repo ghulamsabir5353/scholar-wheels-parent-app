@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
@@ -22,19 +24,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 52),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 52.w),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               children: [
+                BaseHelper.getLogo(width: 160, height: 90),
                 Column(
                   children: [
                     Text(
                       'Complete Your Profile',
                       style: poppinFonts(
                         fontWeight: FontWeight.w600,
-                        fontSize: 24,
+                        fontSize: 26,
                       ),
                     ),
                     Text(
@@ -141,7 +144,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     return null;
                   },
                 ),
-                SpaceHelper(h: 12),
+                SpaceHelper(h: 16.h),
                 CustomButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {

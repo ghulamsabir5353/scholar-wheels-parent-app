@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/route_manager.dart';
+import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
@@ -22,12 +24,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 52),
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 52.w),
         child: SingleChildScrollView(
           child: Form(
             key: _formKey,
             child: Column(
               children: [
+                BaseHelper.getLogo(width: 160, height: 100),
                 Column(
                   children: [
                     Text(
@@ -90,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         "If You didn't have a account then",
                         style: poppinFonts(
                           color: AppColor.textLightBlackColor4A4A4A,
-                          fontSize: 14,
+                          fontSize: 12,
                         ),
                       ),
                       GestureDetector(

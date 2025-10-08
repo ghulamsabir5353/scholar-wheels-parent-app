@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import 'package:permission_handler/permission_handler.dart';
 import 'package:scholarwheels/controllers/auth_controller.dart';
+import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
@@ -49,35 +52,57 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
             focusNode.unfocus();
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 32),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Column(
-                  children: [
-                    Text(
-                      'Easy Child Management',
-                      style: poppinFonts(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                      ),
-                    ),
-                    Text(
-                      'Add your children and manage their school rides with just a few taps',
-                      textAlign: TextAlign.center,
-                      style: poppinFonts(
-                        fontWeight: FontWeight.normal,
-                        fontSize: 14,
-                        color: AppColor.lightGreenColorText,
-                      ),
-                    ),
-                  ],
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      BaseHelper.getLogo(),
+                      SvgPicture.asset('assets/images/svg/get_started.svg'),
+                    ],
+                  ),
                 ),
-                CustomButton(
-                  onPressed: () {
-                    Get.to(() => LoginScreen());
-                  },
-                  title: "Next",
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      Column(
+                        children: [
+                          Text(
+                            'Easy Child Management',
+                            style: poppinFonts(
+                              fontWeight: FontWeight.w500,
+                              fontSize: 18,
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 16.w,
+                              vertical: 6.w,
+                            ),
+                            child: Text(
+                              'Add your children and manage their school rides with just a few taps',
+                              textAlign: TextAlign.center,
+                              style: poppinFonts(
+                                fontWeight: FontWeight.normal,
+                                fontSize: 14,
+                                color: AppColor.lightGreenColorText,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      CustomButton(
+                        onPressed: () {
+                          Get.to(() => LoginScreen());
+                        },
+                        title: "Next",
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

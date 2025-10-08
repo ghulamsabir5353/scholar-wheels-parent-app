@@ -1,3 +1,5 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/in_it.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
@@ -16,4 +18,12 @@ abstract class BaseHelper {
   }
 
   static void signOut() {}
+
+  static getLogo({double? width, double? height}) {
+    return Image.asset(
+      'assets/images/png/logo.png',
+      width: (width ?? 160).w,
+      height: (height ?? 160).w,
+    );
+  }
 }

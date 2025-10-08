@@ -7,7 +7,7 @@ GestureDetector backButton({required VoidCallback onTap}) {
     child: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 10),
       child: SvgPicture.asset(
-        'assets/images/svg/back_btn.svg',
+        'assets/images/svg/back_button.svg',
         width: 32,
         height: 32,
       ),

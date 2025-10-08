@@ -56,7 +56,7 @@ class _AppScreenState extends State<AppScreen> with WidgetsBindingObserver {
 
   Widget _handleCurrentScreen() {
     return Obx(() {
-      if (BaseHelper.isLogin.value) {
+      if (!BaseHelper.isLogin.value) {
         return const TabScreen();
       } else {
         return const GetStartedScreen();
