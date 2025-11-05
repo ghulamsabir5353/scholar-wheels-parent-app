@@ -60,8 +60,12 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
-                      BaseHelper.getLogo(),
-                      SvgPicture.asset('assets/images/svg/get_started.svg'),
+                      Expanded(child: BaseHelper.getLogo()),
+                      Expanded(
+                        child: SvgPicture.asset(
+                          'assets/images/svg/get_started.svg',
+                        ),
+                      ),
                     ],
                   ),
                 ),

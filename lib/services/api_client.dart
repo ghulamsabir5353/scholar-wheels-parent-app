@@ -212,6 +212,43 @@ class ApiClient {
     }
   }
 
+  /// Sends a PATCH request to the specified [uri] with the provided [body].
+  ///
+  /// [headers] allows custom headers to be provided.
+  /// [customAppBaseUrl] allows overriding the base URL if needed.
+  /// Returns a [Response] object containing the server's response.
+  Future<Response> patchData(
+    String uri,
+    dynamic body, {
+    Map<String, String>? headers,
+  }) async {
+    try {
+      if (kDebugMode) {
+        log('PATCH request URL: $uri');
+        log('PATCH request Body: $body');
+      }
+
+      final response = await _dio.patch(
+        uri,
+        data: body,
+        options: Options(
+          headers:
+              headers ??
+              HeaderManager.getMainHeaders(BaseHelper.accessToken.value),
+        ),
+      );
+
+      return ResponseHandler.handleResponse(response);
+    } on DioException catch (error) {
+      throw handleDioError(error); // 🔹 Reuse function
+    } catch (error) {
+      throw ApiException(
+        message: 'Unexpected error occurred.',
+        details: error.toString(),
+      );
+    }
+  }
+
   /// Sends a DELETE request to the specified [uri].
   ///
   /// [headers] allows custom headers to be provided.

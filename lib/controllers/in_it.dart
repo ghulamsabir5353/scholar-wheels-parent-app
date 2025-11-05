@@ -18,11 +18,14 @@ Future<void> init() async {
   configLoading();
   Get.put<ApiClient>(ApiClient());
   Get.put<ApiService>(ApiService(Get.find<ApiClient>()));
+
   await GetStorage.init();
   Get.put(AppLifecycle());
   box = GetStorage();
-  Get.put(AuthController());
   BaseHelper.init();
+  Get.put(AuthController());
+  // ChildController and other app controllers will be initialized via TabScreenBinding
+  // when user logs in and navigates to TabScreen
 }
 
 void configLoading() {

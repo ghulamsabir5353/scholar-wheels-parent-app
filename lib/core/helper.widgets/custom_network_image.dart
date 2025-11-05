@@ -7,6 +7,7 @@ class CustomNetworkImageWidget extends StatelessWidget {
   final double? width, height, borderRadius;
   final BoxFit? fit;
   final bool showShimmer;
+  final Widget? errorWidget;
   const CustomNetworkImageWidget({
     super.key,
     required this.imageUrl,
@@ -15,6 +16,7 @@ class CustomNetworkImageWidget extends StatelessWidget {
     this.fit,
     this.showShimmer = true,
     this.borderRadius,
+    this.errorWidget,
   });
 
   @override
@@ -34,7 +36,7 @@ class CustomNetworkImageWidget extends StatelessWidget {
         ),
         placeholder: (context, url) => SpaceHelper(),
         errorWidget: (context, url, error) =>
-            const Center(child: Icon(Icons.error)),
+            errorWidget ?? const Center(child: Icon(Icons.error)),
       ),
     );
   }

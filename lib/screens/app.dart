@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import 'package:permission_handler/permission_handler.dart';
+import 'package:scholarwheels/bindings/tab_screen_binding.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/screens/auth/get_started_screen.dart';
 import 'package:scholarwheels/screens/tab_screen.dart';
@@ -14,6 +15,8 @@ class AppScreen extends StatefulWidget {
 }
 
 class _AppScreenState extends State<AppScreen> with WidgetsBindingObserver {
+  bool _bindingInitialized = false;
+
   @override
   void initState() {
     super.initState();
@@ -56,9 +59,17 @@ class _AppScreenState extends State<AppScreen> with WidgetsBindingObserver {
 
   Widget _handleCurrentScreen() {
     return Obx(() {
-      if (!BaseHelper.isLogin.value) {
+      if (BaseHelper.isLogin.value) {
+        // Initialize binding only once when user logs in
+        if (!_bindingInitialized) {
+          final binding = TabScreenBinding();
+          binding.dependencies();
+          _bindingInitialized = true;
+        }
         return const TabScreen();
       } else {
+        // Reset binding flag when user logs out
+        _bindingInitialized = false;
         return const GetStartedScreen();
       }
     });

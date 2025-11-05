@@ -26,6 +26,7 @@ abstract class AppColor {
   static const bgGray979797 = Color(0xff979797);
   static const bgGrayD9D8D8 = Color(0xffD9D8D8);
   static const redColor = Color(0xffFF0000);
+  static const redColor2 = Color(0xffC01F15);
   static LinearGradient cardLinearGradient = const LinearGradient(
     colors: [Color(0xff537959), Color(0xff00C327)],
     begin: Alignment.centerLeft,

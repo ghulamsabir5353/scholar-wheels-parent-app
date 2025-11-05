@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
+import 'package:scholarwheels/controllers/auth_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
@@ -9,7 +11,7 @@ import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import '../../core/helper.constants/textStyle.dart';
 
 class ProfileScreen extends StatefulWidget {
-  static const route = '/signup';
+  static const route = '/profile';
   const ProfileScreen({super.key});
 
   @override
@@ -18,8 +20,14 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final _formKey = GlobalKey<FormState>();
-  bool passwordVisible = true;
-  bool reEnterPasswordVisible = true;
+  final AuthController authController = Get.find<AuthController>();
+
+  void _handleCompleteProfile() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      await authController.completeProfile();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -41,7 +49,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                     ),
                     Text(
-                      'Let’s set up your account for a personalized experience.',
+                      'Let\'s set up your account for a personalized experience.',
                       textAlign: TextAlign.center,
                       style: poppinFonts(
                         fontWeight: FontWeight.normal,
@@ -56,11 +64,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Expanded(
                       child: CustomTextField(
+                        controller: authController.firstNameController,
                         label: 'First Name',
-                        hintText: 'Enter Name',
+                        hintText: 'Enter First Name',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Field is required';
+                            return 'First name is required';
                           }
                           return null;
                         },
@@ -69,11 +78,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SpaceHelper(w: 12),
                     Expanded(
                       child: CustomTextField(
-                        label: 'Last Name',
-                        hintText: 'Enter Name',
+                        controller: authController.surNameController,
+                        label: 'Surname',
+                        hintText: 'Enter Surname',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Field is required';
+                            return 'Surname is required';
                           }
                           return null;
                         },
@@ -82,22 +92,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 CustomTextField(
+                  controller: authController.emailController,
                   label: 'Email',
                   hintText: 'Enter your email',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Field is required';
+                      return 'Email is required';
                     }
                     return null;
                   },
                 ),
-
                 CustomTextField(
+                  controller: authController.phoneController,
                   label: 'Phone Number',
                   hintText: 'Enter your phone',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Field is required';
+                      return 'Phone is required';
                     }
                     return null;
                   },
@@ -106,11 +117,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   children: [
                     Expanded(
                       child: CustomTextField(
+                        controller: authController.cityController,
                         label: 'City',
                         hintText: 'Enter City',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Field is required';
+                            return 'City is required';
                           }
                           return null;
                         },
@@ -119,11 +131,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     SpaceHelper(w: 12),
                     Expanded(
                       child: CustomTextField(
+                        controller: authController.zipCodeController,
                         label: 'Zip Code',
                         hintText: 'Enter Code',
                         validator: (value) {
                           if (value == null || value.isEmpty) {
-                            return 'Field is required';
+                            return 'Zip code is required';
                           }
                           return null;
                         },
@@ -132,6 +145,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   ],
                 ),
                 CustomTextField(
+                  controller: authController.addressController,
                   label: 'Address',
                   hintText: 'Enter your address',
                   height: 120,
@@ -139,19 +153,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   keyboardType: TextInputType.multiline,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Field is required';
+                      return 'Address is required';
                     }
                     return null;
                   },
                 ),
                 SpaceHelper(h: 16.h),
-                CustomButton(
-                  onPressed: () {
-                    if (_formKey.currentState?.validate() ?? false) {
-                      _formKey.currentState?.save();
-                    }
-                  },
-                  title: 'Continue',
+                Obx(
+                  () => CustomButton(
+                    isLoading: authController.isLoading.value,
+                    onPressed: authController.isLoading.value
+                        ? null
+                        : _handleCompleteProfile,
+                    title: 'Complete Profile',
+                  ),
                 ),
               ],
             ),

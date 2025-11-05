@@ -1,0 +1,931 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/svg.dart';
+import 'package:get/get.dart';
+import 'package:intl/intl.dart';
+import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/font_sized.dart';
+import 'package:scholarwheels/core/helper.constants/textStyle.dart';
+import 'package:scholarwheels/core/helper.widgets/back_button.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
+import 'package:scholarwheels/models/booking_model.dart';
+
+class BookingDetailScreen extends StatelessWidget {
+  static const String route = '/booking-request-detail-screen';
+  const BookingDetailScreen({super.key});
+
+  String _getRequestId(BookingModel? booking) {
+    if (booking?.bookingId != null) return booking!.bookingId!;
+    if (booking?.id != null) return booking!.id!;
+    return 'N/A';
+  }
+
+  String _getRequestDate(BookingModel? booking) {
+    if (booking?.createdAt != null) {
+      return DateFormat('d MMM, yyyy').format(booking!.createdAt!);
+    }
+    return 'N/A';
+  }
+
+  String _getRequestDuration(BookingModel? booking) {
+    if (booking?.contractDuration != null) {
+      return booking!.contractDuration!;
+    }
+    if (booking?.startDate != null && booking?.endDate != null) {
+      final difference = booking!.endDate!.difference(booking.startDate!);
+      final months = (difference.inDays / 30).round();
+      return '$months Months';
+    }
+    return 'N/A';
+  }
+
+  String _getRequestDurationDates(BookingModel? booking) {
+    if (booking?.startDate != null && booking?.endDate != null) {
+      final startDate = DateFormat('d MMM, yyyy').format(booking!.startDate!);
+      final endDate = DateFormat('d MMM, yyyy').format(booking.endDate!);
+      return '$startDate - $endDate';
+    }
+    return 'N/A';
+  }
+
+  String _getStatus(BookingModel? booking) {
+    final status = booking?.approveStatus ?? booking?.status ?? 'Pending';
+    return status;
+  }
+
+  Color _getStatusColor(BookingModel? booking) {
+    final status = _getStatus(booking).toLowerCase();
+    if (status == 'accepted' || status == 'approved') {
+      return Colors.white;
+    } else if (status == 'rejected' || status == 'declined') {
+      return Colors.white;
+    }
+    return Colors.white;
+  }
+
+  Color _getStatusBgColor(BookingModel? booking) {
+    final status = _getStatus(booking).toLowerCase();
+    if (status == 'accepted' || status == 'approved') {
+      return AppColor.primary;
+    } else if (status == 'rejected' || status == 'declined') {
+      return Colors.red;
+    }
+    return Colors.amber.shade700;
+  }
+
+  String _getTransportOwnerBusinessName(BookingModel? booking) {
+    if (booking?.transportOwner?.businessName != null &&
+        booking!.transportOwner!.businessName!.isNotEmpty) {
+      return booking.transportOwner!.businessName!;
+    }
+    return 'N/A';
+  }
+
+  String _getTransportOwnerName(BookingModel? booking) {
+    if (booking?.transportOwner == null) return 'N/A';
+    final firstName = booking!.transportOwner!.firstName ?? '';
+    final surName = booking.transportOwner!.surName ?? '';
+    if (firstName.isNotEmpty && surName.isNotEmpty) {
+      return '$firstName $surName';
+    } else if (firstName.isNotEmpty) {
+      return firstName;
+    } else if (surName.isNotEmpty) {
+      return surName;
+    }
+    return 'N/A';
+  }
+
+  String _getTransportOwnerEmail(BookingModel? booking) {
+    if (booking?.transportOwner?.user?.email != null) {
+      return booking!.transportOwner!.user!.email!;
+    }
+    return 'N/A';
+  }
+
+  String _getTransportOwnerPhone(BookingModel? booking) {
+    if (booking?.transportOwner?.user?.phone != null) {
+      return booking!.transportOwner!.user!.phone!;
+    }
+    return 'N/A';
+  }
+
+  String _getVehicleName(BookingModel? booking) {
+    // This might need to come from route or vehicle data
+    if (booking?.route?.routeName != null) {
+      return booking!.route!.routeName!;
+    }
+    return 'Toyota Hiace'; // Fallback or from API
+  }
+
+  String _getVehicleColor(BookingModel? booking) {
+    // This might need to come from vehicle data if available
+    return 'White'; // Fallback or from API
+  }
+
+  String _getPickupTime(BookingModel? booking) {
+    if (booking?.pickUpTime != null) {
+      return booking!.pickUpTime!;
+    }
+    return '07:30 AM';
+  }
+
+  String _getDropOffTime(BookingModel? booking) {
+    if (booking?.knockOffTime != null) {
+      return booking!.knockOffTime!;
+    }
+    return '01:45 PM';
+  }
+
+  String _getPickupAddress(BookingModel? booking) {
+    if (booking?.children != null && booking!.children!.isNotEmpty) {
+      return booking.children!.first.pickUpAddress ??
+          booking.route?.suburb ??
+          'N/A';
+    }
+    return booking?.route?.suburb ?? 'N/A';
+  }
+
+  String _getSchoolName(BookingModel? booking) {
+    if (booking?.children != null && booking!.children!.isNotEmpty) {
+      return booking.children!.first.dropOffAddress ??
+          booking.children!.first.school ??
+          booking.route?.dropOffPoint ??
+          'N/A';
+    }
+    return booking?.route?.dropOffPoint ?? 'N/A';
+  }
+
+  String _getDistance(BookingModel? booking) {
+    if (booking?.route?.estimatedDistance != null) {
+      return '${booking!.route!.estimatedDistance} km';
+    }
+    return '12.5 km';
+  }
+
+  String _getInitials(String? name) {
+    if (name == null || name.isEmpty) return 'A';
+    final parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    }
+    return name[0].toUpperCase();
+  }
+
+  double _getAverageRating(BookingModel? booking) {
+    if (booking?.transportOwner?.averageRating != null) {
+      return booking!.transportOwner!.averageRating!.toDouble();
+    }
+    return 4.9; // Default
+  }
+
+  int _getTotalRatings(BookingModel? booking) {
+    if (booking?.transportOwner?.totalRatings != null) {
+      return booking!.transportOwner!.totalRatings!;
+    }
+    return 5353; // Default
+  }
+
+  bool _isVerified(BookingModel? booking) {
+    return booking?.transportOwner?.isVerified ?? false;
+  }
+
+  bool _isAccepted(BookingModel? booking) {
+    final status = _getStatus(booking).toLowerCase();
+    return status == 'accepted' || status == 'approved';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final booking = Get.arguments as BookingModel?;
+
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: AppColor.white,
+        surfaceTintColor: AppColor.white,
+        elevation: 1,
+        shadowColor: Colors.grey,
+        centerTitle: false,
+        leading: backButton(
+          onTap: () {
+            Get.back();
+          },
+        ),
+        title: Text(
+          _getRequestId(booking),
+          style: poppinFonts(
+            fontSize: lg,
+            color: AppColor.headingFontColor,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Request Detail Section
+              if (booking != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Request Detail',
+                      style: poppinFonts(
+                        fontSize: base,
+                        color: AppColor.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SpaceHelper(h: 12.h),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                      ),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Stack(
+                          children: [
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                _buildDetailRow(
+                                  'Request Date:',
+                                  _getRequestDate(booking),
+                                ),
+                                SpaceHelper(h: 12.h),
+                                _buildDetailRow(
+                                  'Request Duration:',
+                                  _getRequestDuration(booking),
+                                ),
+                                SpaceHelper(h: 12.h),
+                                _buildDetailRow(
+                                  'Request Duration Dates:',
+                                  _getRequestDurationDates(booking),
+                                ),
+                              ],
+                            ),
+                            Positioned(
+                              top: 0,
+                              right: 0,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: _getStatusBgColor(booking),
+                                  borderRadius: BorderRadius.circular(20.r),
+                                ),
+                                child: Text(
+                                  _getStatus(booking).capitalizeFirst ??
+                                      _getStatus(booking),
+                                  style: poppinFonts(
+                                    color: _getStatusColor(booking),
+                                    fontSize: xs,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SpaceHelper(h: 20.h),
+                  ],
+                ),
+
+              // Transport Info Section
+              if (booking?.transportOwner != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Transport Info',
+                      style: poppinFonts(
+                        fontSize: base,
+                        color: AppColor.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SpaceHelper(h: 12.h),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                      ),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Business Name and Rating
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: AppColor.primary,
+                                  radius: 20.r,
+                                  child: Text(
+                                    _getInitials(
+                                      _getTransportOwnerBusinessName(booking),
+                                    ),
+                                    style: poppinFonts(
+                                      color: AppColor.white,
+                                      fontSize: base,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                                SpaceHelper(w: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: Text(
+                                              _getTransportOwnerBusinessName(
+                                                booking,
+                                              ),
+                                              style: poppinFonts(
+                                                color: AppColor.black,
+                                                fontSize: base,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ),
+                                          if (_isVerified(booking))
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: 8.w,
+                                                vertical: 4.h,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: AppColor.primary,
+                                                borderRadius:
+                                                    BorderRadius.circular(12.r),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  Icon(
+                                                    Icons.check_circle,
+                                                    size: 12.w,
+                                                    color: AppColor.white,
+                                                  ),
+                                                  SpaceHelper(w: 4.w),
+                                                  Text(
+                                                    'Verified',
+                                                    style: poppinFonts(
+                                                      color: AppColor.white,
+                                                      fontSize: xs,
+                                                      fontWeight:
+                                                          FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                      SpaceHelper(h: 4.h),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            '${_getAverageRating(booking)}',
+                                            style: poppinFonts(
+                                              color: AppColor.black,
+                                              fontSize: sm,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                          SpaceHelper(w: 4.w),
+                                          Icon(
+                                            Icons.star,
+                                            size: 14.w,
+                                            color: AppColor.primary,
+                                          ),
+                                          SpaceHelper(w: 4.w),
+                                          Text(
+                                            '(${_getTotalRatings(booking)} reviews)',
+                                            style: poppinFonts(
+                                              color: AppColor
+                                                  .textLightBlackColor4A4A4A,
+                                              fontSize: xs,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SpaceHelper(h: 12.h),
+                            _buildDetailRow(
+                              'Transport Owner :',
+                              _getTransportOwnerName(booking),
+                            ),
+                            SpaceHelper(h: 12.h),
+                            // Vehicle Info in light green container
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: Color(0xffECF4E9),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                mainAxisSize: MainAxisSize.max,
+                                children: [
+                                  Expanded(
+                                    child: _buildDetailRow(
+                                      'Vehicle :',
+                                      _getVehicleName(booking),
+                                      fontSize: xs,
+                                    ),
+                                  ),
+
+                                  Expanded(
+                                    child: _buildDetailRow(
+                                      'Vehicle Color :',
+                                      _getVehicleColor(booking),
+                                      fontSize: xs,
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_isAccepted(booking)) ...[
+                              SpaceHelper(h: 12.h),
+                              CustomButton(
+                                height: 36.h,
+                                width: 80.w,
+                                onPressed: () {
+                                  // Navigate to chat
+                                },
+                                title: "Chat",
+                                style: poppinFonts(
+                                  fontSize: sm,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.white,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                    ),
+                    SpaceHelper(h: 20.h),
+                  ],
+                ),
+
+              // Route Details Section
+              if (booking?.route != null ||
+                  booking?.pickUpTime != null ||
+                  booking?.knockOffTime != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Route Details',
+                      style: poppinFonts(
+                        fontSize: base,
+                        color: AppColor.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SpaceHelper(h: 12.h),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                      ),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _buildDetailRow(
+                              'Pickup Time :',
+                              _getPickupTime(booking),
+                            ),
+                            SpaceHelper(h: 12.h),
+                            _buildDetailRow(
+                              'Drop Off Time :',
+                              _getDropOffTime(booking),
+                            ),
+                            SpaceHelper(h: 12.h),
+                            // Pickup and School Info
+                            Container(
+                              width: double.infinity,
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: Color(0xffECF4E9),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  // Icons Column with Dotted Line
+                                  Column(
+                                    children: [
+                                      SvgPicture.asset(
+                                        'assets/images/svg/pickup.svg',
+                                        width: 20.w,
+                                        height: 20.w,
+                                        colorFilter: ColorFilter.mode(
+                                          AppColor.textLightBlackColor4A4A4A,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                      SizedBox(
+                                        height: 24.h,
+                                        child: CustomPaint(
+                                          painter: DottedLinePainter(),
+                                        ),
+                                      ),
+                                      SvgPicture.asset(
+                                        'assets/images/svg/school.svg',
+                                        width: 20.w,
+                                        height: 20.w,
+                                        colorFilter: ColorFilter.mode(
+                                          AppColor.textLightBlackColor4A4A4A,
+                                          BlendMode.srcIn,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  SpaceHelper(w: 12.w),
+                                  // Text Details Column
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          'Pickup point',
+                                          style: poppinFonts(
+                                            color: AppColor
+                                                .textLightBlackColor4A4A4A,
+                                            fontSize: xs,
+                                          ),
+                                        ),
+                                        SpaceHelper(h: 2.h),
+                                        Text(
+                                          _getPickupAddress(booking),
+                                          style: poppinFonts(
+                                            color: AppColor.black,
+                                            fontSize: sm,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                        SpaceHelper(h: 12.h),
+                                        Text(
+                                          'School',
+                                          style: poppinFonts(
+                                            color: AppColor
+                                                .textLightBlackColor4A4A4A,
+                                            fontSize: xs,
+                                          ),
+                                        ),
+                                        SpaceHelper(h: 2.h),
+                                        Text(
+                                          _getSchoolName(booking),
+                                          style: poppinFonts(
+                                            color: AppColor.black,
+                                            fontSize: sm,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            SpaceHelper(h: 12.h),
+                            _buildDetailRow(
+                              'Distance :',
+                              _getDistance(booking),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SpaceHelper(h: 20.h),
+                  ],
+                ),
+
+              // Route Map Section
+              if (booking != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Route Map',
+                      style: poppinFonts(
+                        fontSize: base,
+                        color: AppColor.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SpaceHelper(h: 12.h),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                      ),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: double.infinity,
+
+                              decoration: BoxDecoration(
+                                color: Color(0xffECF4E9),
+                                border: Border.all(color: AppColor.secondary),
+                                borderRadius: BorderRadius.circular(8.r),
+                              ),
+                              child: Image.asset('assets/images/png/map.png'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SpaceHelper(h: 20.h),
+                  ],
+                ),
+
+              // Children Detail Section
+              if (booking?.children != null && booking!.children!.isNotEmpty)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Children Detail',
+                      style: poppinFonts(
+                        fontSize: base,
+                        color: AppColor.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SpaceHelper(h: 12.h),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                      ),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...booking.children!.map((child) {
+                              return Padding(
+                                padding: EdgeInsets.only(bottom: 12.h),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    CircleAvatar(
+                                      backgroundColor: AppColor.primary,
+                                      radius: 20.r,
+                                      child: Text(
+                                        (child.name?.isNotEmpty == true
+                                            ? child.name![0].toUpperCase()
+                                            : 'C'),
+                                        style: poppinFonts(
+                                          color: AppColor.white,
+                                          fontSize: base,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                    SpaceHelper(w: 12.w),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            child.name ?? 'N/A',
+                                            style: poppinFonts(
+                                              color: AppColor.black,
+                                              fontSize: base,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          SpaceHelper(h: 4.h),
+                                          Text(
+                                            'Age ${child.age ?? 'N/A'}${child.schoolDescription != null ? ' • ${child.schoolDescription}' : ''}',
+                                            style: poppinFonts(
+                                              fontSize: sm,
+                                              color: AppColor
+                                                  .textLightBlackColor4A4A4A,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }).toList(),
+                          ],
+                        ),
+                      ),
+                    ),
+                    SpaceHelper(h: 20.h),
+                  ],
+                ),
+
+              // Transport Owner Detail Section
+              if (booking?.transportOwner != null)
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Transport Owner Detail',
+                      style: poppinFonts(
+                        fontSize: base,
+                        color: AppColor.black,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SpaceHelper(h: 12.h),
+                    Card(
+                      elevation: 1,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12.r),
+                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                      ),
+                      color: Colors.white,
+                      child: Padding(
+                        padding: EdgeInsets.all(16.w),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            CircleAvatar(
+                              backgroundColor: AppColor.primary,
+                              radius: 20.r,
+                              child: Text(
+                                _getInitials(_getTransportOwnerName(booking)),
+                                style: poppinFonts(
+                                  color: AppColor.white,
+                                  fontSize: base,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            SpaceHelper(w: 12.w),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    _getTransportOwnerName(booking),
+                                    style: poppinFonts(
+                                      color: AppColor.black,
+                                      fontSize: base,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  SpaceHelper(h: 4.h),
+                                  Text(
+                                    _getTransportOwnerEmail(booking),
+                                    style: poppinFonts(
+                                      color: AppColor.textLightBlackColor4A4A4A,
+                                      fontSize: sm,
+                                    ),
+                                  ),
+                                  SpaceHelper(h: 4.h),
+                                  Text(
+                                    _getTransportOwnerPhone(booking),
+                                    style: poppinFonts(
+                                      color: AppColor.textLightBlackColor4A4A4A,
+                                      fontSize: sm,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (_isAccepted(booking))
+                              CustomButton(
+                                height: 36.h,
+                                width: 80.w,
+                                onPressed: () {
+                                  // Navigate to chat
+                                },
+                                title: "Chat",
+                                style: poppinFonts(
+                                  fontSize: sm,
+                                  fontWeight: FontWeight.w500,
+                                  color: AppColor.white,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              SpaceHelper(h: 40.h),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    double? fontSize,
+    MainAxisAlignment? mainAxisAlignment,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: mainAxisAlignment ?? MainAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: poppinFonts(
+            fontSize: fontSize ?? sm,
+            color: AppColor.black,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+        SpaceHelper(w: 8.w),
+        Expanded(
+          child: Text(
+            value,
+            style: poppinFonts(
+              fontSize: fontSize ?? sm,
+              color: AppColor.black,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Custom painter for dotted vertical line
+class DottedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColor.textLightBlackColor4A4A4A
+      ..strokeWidth = 1.5;
+
+    const dashHeight = 4.0;
+    const dashSpace = 3.0;
+    double startY = 0;
+
+    while (startY < size.height) {
+      canvas.drawLine(
+        Offset(size.width / 2, startY),
+        Offset(size.width / 2, startY + dashHeight),
+        paint,
+      );
+      startY += dashHeight + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}

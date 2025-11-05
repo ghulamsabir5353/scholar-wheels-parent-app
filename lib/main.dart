@@ -1,9 +1,11 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:scholarwheels/controllers/in_it.dart';
 import 'package:scholarwheels/controllers/network_controller.dart';
@@ -14,6 +16,19 @@ import 'package:scholarwheels/screens/auth/splash_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Configure System UI for Android navigation bar
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      systemNavigationBarColor: Colors.transparent,
+      systemNavigationBarIconBrightness: Brightness.dark,
+      statusBarColor: Colors.transparent,
+    ),
+  );
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
+  // Pre-cache Google Fonts to avoid network issues in release mode
+  await _preCacheFonts();
+
   await init();
 
   runApp(
@@ -22,6 +37,17 @@ void main() async {
       child: const MyApp(),
     ),
   );
+}
+
+/// Pre-cache Google Fonts to prevent network errors in release mode
+Future<void> _preCacheFonts() async {
+  try {
+    await GoogleFonts.pendingFonts([GoogleFonts.plusJakartaSans()]);
+    log('Google Fonts cached successfully');
+  } catch (e) {
+    log('Error caching Google Fonts: $e');
+    // Continue with the app even if font caching fails
+  }
 }
 
 class MyApp extends StatefulWidget {
@@ -50,8 +76,14 @@ class _MyAppState extends State<MyApp> {
 
           themeMode: ThemeMode.light,
           theme: ThemeData(
-            fontFamily: 'Poppins',
+            textTheme: GoogleFonts.plusJakartaSansTextTheme(),
             scaffoldBackgroundColor: AppColor.appColorWhite,
+            colorScheme: ColorScheme.light(
+              primary: AppColor.primary,
+            ),
+            progressIndicatorTheme: ProgressIndicatorThemeData(
+              color: AppColor.primary,
+            ),
           ),
           fallbackLocale: const Locale('en', 'US'),
           defaultTransition: Transition.topLevel,

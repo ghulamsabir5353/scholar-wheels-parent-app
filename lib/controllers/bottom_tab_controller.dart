@@ -8,6 +8,7 @@ import 'package:scholarwheels/screens/home/home_screen.dart';
 
 class BottomTabController extends GetxController {
   final RxInt _selectedIndex = 0.obs;
+  GlobalKey<ScaffoldState> rootScaffoldKey = GlobalKey<ScaffoldState>();
 
   final _pages = <Widget>[
     HomeScreen(),

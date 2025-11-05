@@ -3,10 +3,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/in_it.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
+import 'package:scholarwheels/models/user_model.dart';
+import 'package:scholarwheels/screens/auth/login_screen.dart';
 
 abstract class BaseHelper {
   static RxBool isLogin = false.obs;
   static RxString accessToken = "".obs;
+  static Rx<UserDetail> currentUser = UserDetail().obs;
   static void init() {
     if (!isLogin.value) {
       isLogin(box.read(AppConstants.IS_LOGIN) ?? false);
@@ -14,10 +17,22 @@ abstract class BaseHelper {
 
     if (isLogin.value) {
       accessToken(box.read(AppConstants.ACCESS_TOKEN) ?? '');
+      currentUser(UserDetail.fromJson(box.read(AppConstants.USER_DETAIL)));
     }
   }
 
-  static void signOut() {}
+  static void signOut() {
+    // Clear global state
+    isLogin.value = false;
+    accessToken.value = "";
+    currentUser.value = UserDetail();
+
+    // Clear local storage
+    box.remove(AppConstants.IS_LOGIN);
+    box.remove(AppConstants.ACCESS_TOKEN);
+    box.remove(AppConstants.USER_DETAIL);
+    Get.offAllNamed(LoginScreen.route);
+  }
 
   static getLogo({double? width, double? height}) {
     return Image.asset(

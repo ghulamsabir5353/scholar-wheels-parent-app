@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:scholarwheels/controllers/route_controller.dart';
+import 'package:scholarwheels/core/helper.widgets/back_button.dart';
+import 'package:scholarwheels/models/route_model.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/screens/find_transport/find_transport_filter_screen.dart';
 import 'package:scholarwheels/screens/find_transport/widgets/transport_card.dart';
+import 'package:scholarwheels/services/api_state.dart';
+import 'package:scholarwheels/models/popular_route_model.dart';
 
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/textStyle.dart';
@@ -20,6 +26,19 @@ class FindTransportScreen extends StatefulWidget {
 
 class _FindTransportScreenState extends State<FindTransportScreen> {
   bool showMainSection = true;
+  late RouteController routeController;
+
+  // Filter state
+  Map<String, dynamic>? activeFilters;
+  List<RouteModel> filteredRoutes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // Get or create RouteController
+    routeController = Get.put(RouteController());
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +48,15 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
-
+        leading: showMainSection
+            ? null
+            : backButton(
+                onTap: () {
+                  setState(() {
+                    showMainSection = true;
+                  });
+                },
+              ),
         title: Text(
           'Find Transport',
           style: poppinFonts(
@@ -40,8 +67,19 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
         ),
         actions: [
           InkWell(
-            onTap: () {
-              Get.toNamed(FindTransportFilterScreen.route);
+            onTap: () async {
+              // Pass current filters to filter screen to restore them
+              final result = await Get.toNamed(
+                FindTransportFilterScreen.route,
+                arguments: activeFilters,
+              );
+              if (result != null && result is Map<String, dynamic>) {
+                // Data already fetched in filter screen
+                setState(() {
+                  activeFilters = result;
+                  showMainSection = false;
+                });
+              }
             },
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 12.w),
@@ -51,148 +89,697 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
         ],
       ),
       body: showMainSection
-          ? Padding(
-              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-              child: Column(
-                children: [
-                  Card(
-                    elevation: 1,
-                    color: Colors.white,
-                    child: Padding(
-                      padding: EdgeInsets.all(14.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                'Emma Johnsons - Michael Rodriguez',
-                                style: poppinFonts(
-                                  color: AppColor.black,
-                                  fontSize: base,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ],
+          ? SingleChildScrollView(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+                // add column in card
+                child: Card(
+                  color: AppColor.white,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Header Section
+                        Text(
+                          'Search Transport',
+                          style: poppinFonts(
+                            fontSize: base,
+                            color: AppColor.headingFontColor,
+                            fontWeight: FontWeight.w500,
                           ),
-                          Row(
-                            children: [
-                              Text(
-                                'Schedule Time:  ',
-                                style: poppinFonts(
-                                  fontSize: sm,
-                                  color: AppColor.black,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              Text(
-                                '7:30 AM → 8:00 AM',
-                                style: poppinFonts(
-                                  fontSize: xs,
-                                  color: AppColor.textLightBlackColor4A4A4A,
-                                ),
-                              ),
-                            ],
+                        ),
+                        SpaceHelper(h: 2.h),
+                        Text(
+                          'Find available rides near you',
+                          style: poppinFonts(
+                            fontSize: sm,
+                            color: AppColor.textLightBlackColor4A4A4A,
                           ),
-                          SpaceHelper(h: 7.w),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 8.w,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Color(0xffECF4E9),
-                              border: Border.all(color: AppColor.secondary),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Row(
-                                      children: [
-                                        SvgPicture.asset(
-                                          'assets/images/svg/location.svg',
-                                        ),
-                                        SpaceHelper(w: 4.w),
-                                        Text(
-                                          'Toyota Hiace',
-                                          style: poppinFonts(
-                                            color: AppColor.black,
-                                            fontWeight: FontWeight.w500,
-                                            fontSize: sm,
+                        ),
+                        SpaceHelper(h: 20.h),
+                        // Popular Routes Section
+                        Container(
+                          padding: EdgeInsets.all(16.w),
+                          decoration: BoxDecoration(
+                            color: AppColor.lightSecondary,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Popular Routes Title with icon
+                              Row(
+                                children: [
+                                  SvgPicture.asset(
+                                    'assets/images/svg/location.svg',
+                                    width: 16.w,
+                                    height: 16.w,
+                                  ),
+                                  SpaceHelper(w: 6.w),
+                                  Text(
+                                    'Popular Routes',
+                                    style: poppinFonts(
+                                      fontSize: sm,
+                                      color: AppColor.black,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SpaceHelper(h: 12.h),
+                              // Popular routes content
+                              Obx(() {
+                                final popState =
+                                    routeController.popularRoutesState.value;
+                                if (popState is LoadingState) {
+                                  return Center(
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 12.h,
+                                      ),
+                                      child: const CircularProgressIndicator(),
+                                    ),
+                                  );
+                                }
+                                if (popState is ExceptionState) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 8.h,
+                                    ),
+                                    child: Text(
+                                      'Failed to load popular routes',
+                                      style: poppinFonts(
+                                        fontSize: sm,
+                                        color: Colors.red,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                if (popState is EmptyState) {
+                                  return Padding(
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 8.h,
+                                    ),
+                                    child: Text(
+                                      'No popular routes yet',
+                                      style: poppinFonts(
+                                        fontSize: sm,
+                                        color:
+                                            AppColor.textLightBlackColor4A4A4A,
+                                      ),
+                                    ),
+                                  );
+                                }
+                                if (popState
+                                    is DataState<List<PopularRouteModel>>) {
+                                  final list = popState.data;
+                                  return Column(
+                                    children: [
+                                      ...list.asMap().entries.map((entry) {
+                                        final idx = entry.key;
+                                        final item = entry.value;
+                                        return InkWell(
+                                          onTap: () async {
+                                            // Show results view and fetch routes for this transport owner
+                                            setState(() {
+                                              showMainSection = false;
+                                              activeFilters =
+                                                  null; // clear chips
+                                            });
+                                            await routeController.getRoutes(
+                                              query: {
+                                                'transportOwnerId':
+                                                    item.transportOwnerId,
+                                              },
+                                            );
+                                          },
+                                          child: _buildRouteEntry(
+                                            pickupAddress: item.suburb ?? '',
+                                            schoolName: item.dropOffPoint ?? '',
+                                            isLast: idx == list.length - 1,
                                           ),
-                                        ),
-                                      ],
-                                    ),
-
-                                    SpaceHelper(h: 6.w),
-                                    Text(
-                                      '• Home → Lincoln Elementary',
-                                      style: poppinFonts(
-                                        color: AppColor.black,
-                                        fontSize: xs,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 3.w),
-                                    Text(
-                                      '• Home → Lincoln Elementary',
-                                      style: poppinFonts(
-                                        color: AppColor.black,
-                                        fontSize: xs,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ],
+                                        );
+                                      }).toList(),
+                                    ],
+                                  );
+                                }
+                                return const SizedBox.shrink();
+                              }),
+                            ],
+                          ),
+                        ),
+                        SpaceHelper(h: 24.h),
+                        // Find Your Route Button
+                        Obx(
+                          () => CustomButton(
+                            onPressed: routeController.isLoading.value
+                                ? null
+                                : () async {
+                                    // Navigate to filter screen first
+                                    final result = await Get.toNamed(
+                                      FindTransportFilterScreen.route,
+                                      arguments: activeFilters,
+                                    );
+                                    if (result != null &&
+                                        result is Map<String, dynamic>) {
+                                      // Data already fetched in filter screen
+                                      setState(() {
+                                        activeFilters = result;
+                                        showMainSection = false;
+                                      });
+                                    }
+                                  },
+                            title: "Find Your Route",
+                            width: double.infinity,
+                            height: 36.h,
+                            radius: 12.r,
+                            isLoading: routeController.isLoading.value,
+                            style: poppinFonts(
+                              fontSize: base,
+                              color: AppColor.white,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                          SpaceHelper(h: 12.w),
-                          InkWell(
-                            onTap: () {
-                              setState(() {
-                                showMainSection = false;
-                              });
-                            },
-                            child: Container(
-                              width: double.infinity,
-                              height: 36.h,
-                              decoration: BoxDecoration(
-                                color: AppColor.primary,
-                                borderRadius: BorderRadius.circular(8),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            )
+          : Obx(() {
+              final state = routeController.routesState.value;
+
+              if (state is LoadingState) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (state is EmptyState) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        (state as EmptyState).message,
+                        style: poppinFonts(
+                          fontSize: base,
+                          color: AppColor.textLightBlackColor4A4A4A,
+                        ),
+                      ),
+                      SpaceHelper(h: 12.h),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Clear all filters and fetch all routes
+                          setState(() {
+                            activeFilters = null;
+                            filteredRoutes = [];
+                          });
+                          routeController.getRoutes();
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state is ExceptionState) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        'Failed to load routes',
+                        style: poppinFonts(fontSize: base, color: Colors.red),
+                      ),
+                      SpaceHelper(h: 12.h),
+                      ElevatedButton(
+                        onPressed: () {
+                          // Clear all filters and fetch all routes
+                          setState(() {
+                            activeFilters = null;
+                            filteredRoutes = [];
+                          });
+                          routeController.getRoutes();
+                        },
+                        child: const Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state is DataState<List<RouteModel>>) {
+                final routes = state.data;
+                final displayRoutes = routes;
+
+                return Column(
+                  children: [
+                    // Filter Chips Section with Search Icon
+                    Container(
+                      color: AppColor.white,
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 12.h,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: AppColor.appColorWhite,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: AppColor.textFieldBorderColor,
+                            width: 1,
+                          ),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 12.h,
+                        ),
+                        child: Row(
+                          children: [
+                            // Search Icon
+                            Padding(
+                              padding: EdgeInsets.all(1.w),
+                              child: SvgPicture.asset(
+                                'assets/images/svg/search.svg',
+                                width: 20.w,
+                                height: 20.w,
+                                colorFilter: ColorFilter.mode(
+                                  AppColor.textLightBlackColor4A4A4A,
+                                  BlendMode.srcIn,
+                                ),
                               ),
-                              child: Center(
-                                child: Text(
-                                  "Find Your Route",
-                                  style: poppinFonts(
-                                    fontWeight: FontWeight.w500,
-                                    fontSize: base,
-                                    color: AppColor.white,
+                            ),
+                            SpaceHelper(w: 12.w),
+                            // Filter chips or search prompt
+                            if (activeFilters != null)
+                              Expanded(
+                                child: SingleChildScrollView(
+                                  scrollDirection: Axis.horizontal,
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: _buildFilterChips(),
+                                  ),
+                                ),
+                              )
+                            else
+                              Expanded(
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: InkWell(
+                                    onTap: () async {
+                                      final result = await Get.toNamed(
+                                        FindTransportFilterScreen.route,
+                                        arguments: activeFilters,
+                                      );
+                                      if (result != null &&
+                                          result is Map<String, dynamic>) {
+                                        setState(() {
+                                          activeFilters = result;
+                                          showMainSection = false;
+                                        });
+                                        // Data is fetched in filter screen
+                                      }
+                                    },
+                                    child: Padding(
+                                      padding: EdgeInsets.symmetric(
+                                        vertical: 4.h,
+                                      ),
+                                      child: Text(
+                                        'Search routes',
+                                        style: poppinFonts(
+                                          fontSize: sm,
+                                          color: AppColor.bgGray979797,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
-              ),
-            )
-          : SingleChildScrollView(
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-                child: Column(
-                  children: List.generate(10, (index) {
-                    return TransportCard();
-                  }),
-                ),
-              ),
-            ),
+
+                    // Results count
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12.w,
+                        vertical: 8.h,
+                      ),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          '${displayRoutes.length} results found',
+                          style: poppinFonts(
+                            fontSize: sm,
+                            color: AppColor.black,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    // Routes List
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 8.h,
+                          ),
+                          child: Column(
+                            children: [
+                              ...displayRoutes.map((route) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 12.h),
+                                  child: TransportCard(route: route),
+                                );
+                              }).toList(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }
+
+              return const SizedBox.shrink();
+            }),
     );
   }
+
+  /// Build API query map from filter selections
+  Map<String, dynamic> _buildQueryFromFilters(Map<String, dynamic> selected) {
+    final Map<String, dynamic> query = {};
+
+    final vehicleType = (selected['vehicleType'] ?? '').toString();
+    if (vehicleType.isNotEmpty && vehicleType != 'Any') {
+      query['vehicleType'] = vehicleType.toLowerCase();
+    }
+
+    final capacity = (selected['capacity'] ?? '').toString();
+    if (capacity.isNotEmpty && capacity != 'Any') {
+      query['capacity'] = capacity.toLowerCase();
+    }
+
+    final pickup = (selected['pickupLocation'] ?? '').toString();
+    if (pickup.isNotEmpty) {
+      query['suburb'] = pickup.toLowerCase();
+    }
+
+    final dropOff = (selected['dropOffLocation'] ?? '').toString();
+    if (dropOff.isNotEmpty) {
+      query['dropOffPoint'] = dropOff.toLowerCase();
+    }
+
+    return query;
+  }
+
+  /// Build filter chips for display in search bar
+  List<Widget> _buildFilterChips() {
+    final List<Widget> chips = [];
+
+    if (activeFilters == null) return chips;
+
+    // Pickup Location chip
+    if (activeFilters!['pickupLocation'] != null &&
+        activeFilters!['pickupLocation'].toString().isNotEmpty) {
+      chips.add(
+        _buildFilterChip(activeFilters!['pickupLocation'], 'pickupLocation'),
+      );
+    }
+
+    // Drop-off Location chip
+    if (activeFilters!['dropOffLocation'] != null &&
+        activeFilters!['dropOffLocation'].toString().isNotEmpty) {
+      chips.add(
+        _buildFilterChip(activeFilters!['dropOffLocation'], 'dropOffLocation'),
+      );
+    }
+
+    // Vehicle Type chip
+    if (activeFilters!['vehicleType'] != null &&
+        activeFilters!['vehicleType'] != 'Any' &&
+        activeFilters!['vehicleType'].toString().isNotEmpty) {
+      chips.add(_buildFilterChip(activeFilters!['vehicleType'], 'vehicleType'));
+    }
+
+    // Capacity chip
+    if (activeFilters!['capacity'] != null &&
+        activeFilters!['capacity'] != 'Any' &&
+        activeFilters!['capacity'].toString().isNotEmpty) {
+      chips.add(
+        _buildFilterChip('${activeFilters!['capacity']} seats', 'capacity'),
+      );
+    }
+
+    return chips;
+  }
+
+  /// Build individual filter chip widget with close button
+  Widget _buildFilterChip(String label, String filterKey) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+      decoration: BoxDecoration(
+        color: AppColor.lightSecondary,
+        borderRadius: BorderRadius.circular(20.r),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: poppinFonts(
+              fontSize: xs,
+              color: AppColor.primary,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          SpaceHelper(w: 4.w),
+          InkWell(
+            onTap: () {
+              // Remove this filter
+              setState(() {
+                if (filterKey == 'capacity') {
+                  activeFilters!['capacity'] = null;
+                } else {
+                  activeFilters![filterKey] = null;
+                }
+                // Remove null values
+                activeFilters!.removeWhere(
+                  (key, value) =>
+                      value == null || value == '' || value == 'Any',
+                );
+                // Check if all filters are empty, then clear activeFilters
+                if (activeFilters!.isEmpty ||
+                    activeFilters!.values.every(
+                      (v) => v == null || v == '' || v == 'Any',
+                    )) {
+                  activeFilters = null;
+                  filteredRoutes = [];
+                  // All filters cleared: fetch full routes list again
+                  routeController.getRoutes();
+                } else {
+                  // Re-fetch with updated filters
+                  final query = _buildQueryFromFilters(activeFilters!);
+                  routeController.getRoutes(query: query);
+                }
+              });
+            },
+            child: Icon(Icons.close, size: 16.sp, color: AppColor.primary),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRouteEntry({
+    required String pickupAddress,
+    required String schoolName,
+    required bool isLast,
+  }) {
+    return Container(
+      color: AppColor.white,
+      margin: EdgeInsets.only(bottom: isLast ? 0 : 12.w),
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left side with icons and dotted line
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              // Pickup icon
+              Container(
+                width: 30.w,
+                height: 32.w,
+                decoration: BoxDecoration(
+                  color: AppColor.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.gray.withOpacity(0.8),
+                      blurRadius: 1.5.r,
+                      offset: Offset(0, 1.5.r),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    'assets/images/svg/pickup.svg',
+                    width: 18.w,
+                    height: 18.w,
+                    colorFilter: ColorFilter.mode(
+                      AppColor.textLightBlackColor4A4A4A,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+              // Dotted vertical line connecting pickup to school
+              SizedBox(
+                height: 24.h,
+                child: CustomPaint(painter: DottedLinePainter()),
+              ),
+              // School icon
+              Container(
+                width: 32.w,
+                height: 32.w,
+                decoration: BoxDecoration(
+                  color: AppColor.white,
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColor.gray.withOpacity(0.8),
+                      blurRadius: 1.5.r,
+                      offset: Offset(0, 1.5.r),
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    'assets/images/svg/school.svg',
+                    width: 18.w,
+                    height: 18.w,
+                    colorFilter: ColorFilter.mode(
+                      AppColor.textLightBlackColor4A4A4A,
+                      BlendMode.srcIn,
+                    ),
+                  ),
+                ),
+              ),
+
+              // Dotted vertical line between routes (only if not last)
+            ],
+          ),
+          SpaceHelper(w: 6.w),
+          // Right side with labels and addresses
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Pickup point
+                Text(
+                  'Pickup:',
+                  style: poppinFonts(
+                    color: AppColor.textLightBlackColor4A4A4A,
+                    fontSize: xs,
+                  ),
+                ),
+                SpaceHelper(h: 2.h),
+                Text(
+                  pickupAddress,
+                  style: poppinFonts(
+                    color: AppColor.black,
+                    fontSize: sm,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  height: 22.h,
+                  child: CustomPaint(painter: HorizontalDottedLinePainter()),
+                ),
+                // School
+                Text(
+                  'School:',
+                  style: poppinFonts(
+                    color: AppColor.textLightBlackColor4A4A4A,
+                    fontSize: xs,
+                  ),
+                ),
+                SpaceHelper(h: 3.h),
+                Text(
+                  schoolName,
+                  style: poppinFonts(
+                    color: AppColor.black,
+                    fontSize: sm,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Custom painter for dotted vertical line
+class DottedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColor.textLightBlackColor4A4A4A
+      ..strokeWidth = 1.5;
+
+    const dashHeight = 4.0;
+    const dashSpace = 3.0;
+    double startY = 0;
+
+    while (startY < size.height) {
+      canvas.drawLine(
+        Offset(size.width / 2, startY),
+        Offset(size.width / 2, startY + dashHeight),
+        paint,
+      );
+      startY += dashHeight + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
+}
+
+/// Custom painter for dotted horizontal line
+class HorizontalDottedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColor.black
+      ..strokeWidth = 1;
+
+    const dashWidth = 4.0;
+    const dashSpace = 3.0;
+    double startX = 0;
+
+    while (startX < size.width) {
+      canvas.drawLine(
+        Offset(startX, size.height / 2),
+        Offset(startX + dashWidth, size.height / 2),
+        paint,
+      );
+      startX += dashWidth + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

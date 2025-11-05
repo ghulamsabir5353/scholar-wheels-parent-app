@@ -15,8 +15,11 @@ class ApiService {
   /// Fetches data from the specified [uri] using a GET request.
   ///
   /// Returns a [Response] object containing the server's response.
-  Future<Response> fetchData(String uri,
-      {Map<String, dynamic>? query, Map<String, dynamic>? body}) {
+  Future<Response> fetchData(
+    String uri, {
+    Map<String, dynamic>? query,
+    Map<String, dynamic>? body,
+  }) {
     return _apiClient.getData(uri, query: query, body: body);
   }
 
@@ -31,8 +34,13 @@ class ApiService {
     File? file,
     String? fileKey,
   }) {
-    return _apiClient.postData(uri, data,
-        isFromData: isFromData, file: file, fileKey: fileKey);
+    return _apiClient.postData(
+      uri,
+      data,
+      isFromData: isFromData,
+      file: file,
+      fileKey: fileKey,
+    );
   }
 
   /// Updates data at the specified [uri] using a PUT request.
@@ -41,6 +49,14 @@ class ApiService {
   /// Returns a [Response] object containing the server's response.
   Future<Response> updateData(String uri, Map<String, dynamic> data) {
     return _apiClient.putData(uri, data);
+  }
+
+  /// Patches data at the specified [uri] using a PATCH request.
+  ///
+  /// [data] is the payload to be sent in the request body.
+  /// Returns a [Response] object containing the server's response.
+  Future<Response> patchData(String uri, Map<String, dynamic> data) {
+    return _apiClient.patchData(uri, data);
   }
 
   /// Deletes data from the specified [uri] using a DELETE request.
@@ -58,7 +74,11 @@ class ApiService {
   ///
   /// Returns a [Response] object containing the server's response.
   Future<Response> uploadFile(
-      String uri, Map<String, String> data, File file, String fileKey) {
+    String uri,
+    Map<String, String> data,
+    File file,
+    String fileKey,
+  ) {
     // Create FormData for the file upload
     final formData = FormData.fromMap({
       ...data,
@@ -69,6 +89,16 @@ class ApiService {
     });
 
     // Send the POST request with FormData
+    return _apiClient.postFormData(uri, formData);
+  }
+
+  /// Uploads FormData to the specified [uri] using a POST request.
+  ///
+  /// [uri] is the endpoint URI.
+  /// [formData] is the FormData containing files and other fields.
+  ///
+  /// Returns a [Response] object containing the server's response.
+  Future<Response> uploadFormData(String uri, FormData formData) {
     return _apiClient.postFormData(uri, formData);
   }
 }

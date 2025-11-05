@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
-
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/models/contract_model.dart';
 
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/textStyle.dart';
@@ -15,8 +16,84 @@ class BookingDetailScreen extends StatelessWidget {
   static const String route = '/booking-detail-screen';
   const BookingDetailScreen({super.key});
 
+  String _getContractId(ContractModel? contract) {
+    if (contract?.contractId != null) return contract!.contractId!;
+    if (contract?.id != null) return contract!.id!;
+    return 'N/A';
+  }
+
+  String _getTransportOwnerName(ContractModel? contract) {
+    if (contract?.transportOwner == null) return 'N/A';
+    final firstName = contract!.transportOwner!.firstName ?? '';
+    final surName = contract.transportOwner!.surName ?? '';
+    if (firstName.isNotEmpty && surName.isNotEmpty) {
+      return '$firstName $surName';
+    } else if (firstName.isNotEmpty) {
+      return firstName;
+    } else if (surName.isNotEmpty) {
+      return surName;
+    } else if (contract.transportOwner!.businessName != null &&
+        contract.transportOwner!.businessName!.isNotEmpty) {
+      return contract.transportOwner!.businessName!;
+    }
+    return 'N/A';
+  }
+
+  String _getDriverName(ContractModel? contract) {
+    // Driver name not directly available, show assigned status
+    if (contract?.route?.assignedDriver != null) {
+      return 'Driver Assigned';
+    }
+    return 'N/A';
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return 'N/A';
+    return DateFormat('dd MMM yyyy').format(date);
+  }
+
+  String _formatTime(String? time) {
+    if (time == null || time.isEmpty) return 'N/A';
+    // Format time if it's in 24h format
+    try {
+      final parts = time.split(':');
+      if (parts.length >= 2) {
+        final hour = int.parse(parts[0]);
+        final minute = parts[1];
+        final period = hour >= 12 ? 'PM' : 'AM';
+        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
+        return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
+      }
+    } catch (e) {
+      // If parsing fails, return as is
+    }
+    return time;
+  }
+
+  String _getDateRange(ContractModel? contract) {
+    if (contract?.startDate != null && contract?.endDate != null) {
+      final startFormat = DateFormat('MMM yyyy').format(contract!.startDate!);
+      final endFormat = DateFormat('MMM yyyy').format(contract.endDate!);
+      return '$startFormat - $endFormat';
+    } else if (contract?.startDate != null) {
+      return DateFormat('MMM yyyy').format(contract!.startDate!);
+    }
+    return 'N/A';
+  }
+
+  String _getFee(ContractModel? contract) {
+    if (contract?.monthlyPayment != null) {
+      return '${contract!.monthlyPayment}\$';
+    } else if (contract?.totalPayment != null) {
+      return '${contract!.totalPayment}\$';
+    }
+    return '0.00\$';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final contract = Get.arguments as ContractModel?;
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: AppColor.white,
@@ -30,11 +107,11 @@ class BookingDetailScreen extends StatelessWidget {
           },
         ),
         title: Text(
-          'TP123456',
+          '${contract?.contractId ?? 'N/A'}',
           style: poppinFonts(
-            fontSize: lg,
+            fontSize: xl,
             color: AppColor.headingFontColor,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -43,134 +120,437 @@ class BookingDetailScreen extends StatelessWidget {
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
+              // Contract Detail Section
+              Text(
+                'Contract Detail',
+                style: poppinFonts(
+                  fontSize: base,
+                  color: AppColor.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SpaceHelper(h: 12.h),
               Card(
                 elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
+                ),
                 color: Colors.white,
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Trip Overview',
-                            style: poppinFonts(
-                              color: AppColor.black,
-                              fontSize: base,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          Text(
-                            'Date: ',
+                            _getDateRange(contract),
                             style: poppinFonts(
                               fontSize: sm,
-                              color: AppColor.black,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            ' March 15, 2024',
-                            style: poppinFonts(
-                              fontSize: xs,
                               color: AppColor.textLightBlackColor4A4A4A,
                             ),
                           ),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 6.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.lightSecondary,
+                              borderRadius: BorderRadius.circular(20.r),
+                            ),
+                            child: Text(
+                              contract?.status?.capitalizeFirst ?? 'Active',
+                              style: poppinFonts(
+                                color: AppColor.primary,
+                                fontSize: xs,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
                         ],
                       ),
-                      SpaceHelper(h: 7.w),
+                      SpaceHelper(h: 12.h),
                       Container(
                         width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 8.w,
-                        ),
+                        padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
                           color: Color(0xffECF4E9),
-                          border: Border.all(color: AppColor.secondary),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              'Vehicle →  Blue Toyota Hiace - ABC 123',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: xs,
-                              ),
+                            _buildDetailRow(
+                              'Created On:',
+                              contract?.createdAt != null
+                                  ? _formatDate(contract!.createdAt)
+                                  : 'N/A',
+                              fontSize: sm,
                             ),
-                            SpaceHelper(h: 3.w),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  'Driver → John Smith',
-                                  style: poppinFonts(
-                                    color: AppColor.textLightBlackColor4A4A4A,
-                                    fontSize: xs,
-                                  ),
-                                ),
-                                Text(
-                                  'Distance → 12.5 km',
-                                  style: poppinFonts(
-                                    color: AppColor.textLightBlackColor4A4A4A,
-                                    fontSize: xs,
-                                  ),
-                                ),
-                              ],
+                            SpaceHelper(h: 8.h),
+                            _buildDetailRow(
+                              'Renewal Date:',
+                              _getContractId(contract),
+                              fontSize: sm,
                             ),
-                            SpaceHelper(h: 3.w),
-                            Text(
-                              'Start: 7:30 AM   →   End: 8:15 AM',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: xs,
-                              ),
+                            SpaceHelper(h: 8.h),
+                            _buildDetailRow(
+                              'Fee:',
+                              _getFee(contract),
+                              fontSize: sm,
                             ),
-                            SpaceHelper(h: 3.w),
                           ],
                         ),
                       ),
-                      SpaceHelper(h: 12.w),
                     ],
                   ),
                 ),
               ),
+              SpaceHelper(h: 20.h),
 
-              SpaceHelper(h: 7.w),
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.w),
-                decoration: BoxDecoration(
-                  color: Color(0xffECF4E9),
-                  border: Border.all(color: AppColor.secondary),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Route Map',
-                      style: poppinFonts(
-                        fontSize: base,
-                        color: AppColor.black,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SpaceHelper(h: 12.w),
-                    Image.asset('assets/images/png/map.png'),
-                    SpaceHelper(h: 12.w),
-                    CustomButton(onPressed: () {}, title: "Live Tracking"),
-                  ],
+              // Driver & Vehicle Info Section
+              Text(
+                'Driver & Vehicle Info',
+                style: poppinFonts(
+                  fontSize: base,
+                  color: AppColor.black,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 7.w),
+              SpaceHelper(h: 12.h),
+              Card(
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        _getDriverName(contract),
+                        style: poppinFonts(
+                          fontSize: sm,
+                          color: AppColor.textLightBlackColor4A4A4A,
+                        ),
+                      ),
+                      SpaceHelper(h: 12.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: Color(0xffECF4E9),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Expanded(
+                                  child: _buildDetailRow(
+                                    'Vehicle:',
+                                    contract?.route?.routeName ?? 'N/A',
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildDetailRow(
+                                    'Number Plate:',
+                                    'N/A', // Not available in Route model
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SpaceHelper(h: 8.h),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: _buildDetailRow(
+                                    'Vehicle Color:',
+                                    'N/A', // Not available in model
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildDetailRow(
+                                    'Distance:',
+                                    contract?.route?.estimatedDistance != null
+                                        ? '${contract!.route!.estimatedDistance} km'
+                                        : 'N/A',
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SpaceHelper(h: 8.h),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Expanded(
+                                  child: _buildDetailRow(
+                                    'Stops:',
+                                    contract?.children?.length.toString() ??
+                                        '0',
+                                  ),
+                                ),
+                                Expanded(
+                                  child: _buildDetailRow(
+                                    'Student:',
+                                    contract?.children?.length.toString() ??
+                                        '0',
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SpaceHelper(h: 20.h),
+
+              // Route Details Section
+              Text(
+                'Route Details',
+                style: poppinFonts(
+                  fontSize: base,
+                  color: AppColor.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SpaceHelper(h: 12.h),
+              Card(
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Pickup Time: ',
+                            style: poppinFonts(
+                              fontSize: sm,
+                              color: AppColor.textLightBlackColor4A4A4A,
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              _formatTime(contract?.pickUpTime),
+                              style: poppinFonts(
+                                fontSize: sm,
+                                color: AppColor.black,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SpaceHelper(h: 4.h),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Drop Off Time: ',
+                            style: poppinFonts(
+                              fontSize: sm,
+                              color: AppColor.textLightBlackColor4A4A4A,
+                            ),
+                          ),
+                          Flexible(
+                            child: Text(
+                              _formatTime(contract?.knockOffTime),
+                              style: poppinFonts(
+                                fontSize: sm,
+                                color: AppColor.black,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SpaceHelper(h: 12.h),
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: Color(0xffECF4E9),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Pickup
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.max,
+                              children: [
+                                Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SvgPicture.asset(
+                                      'assets/images/svg/pickup.svg',
+                                      width: 20.w,
+                                      height: 20.w,
+                                      colorFilter: ColorFilter.mode(
+                                        AppColor.textLightBlackColor4A4A4A,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                    SizedBox(
+                                      height: 24.h,
+                                      child: CustomPaint(
+                                        painter: DottedLinePainter(),
+                                      ),
+                                    ),
+                                    SvgPicture.asset(
+                                      'assets/images/svg/school.svg',
+                                      width: 20.w,
+                                      height: 20.w,
+                                      colorFilter: ColorFilter.mode(
+                                        AppColor.textLightBlackColor4A4A4A,
+                                        BlendMode.srcIn,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SpaceHelper(w: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        'Pickup:',
+                                        style: poppinFonts(
+                                          color: AppColor.black,
+                                          fontSize: sm,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SpaceHelper(h: 2.h),
+                                      Text(
+                                        contract?.route?.suburb ??
+                                            (contract?.children?.isNotEmpty ==
+                                                    true
+                                                ? contract!
+                                                      .children![0]
+                                                      .pickUpAddress
+                                                : 'N/A') ??
+                                            'N/A',
+                                        style: poppinFonts(
+                                          color: AppColor
+                                              .textLightBlackColor4A4A4A,
+                                          fontSize: sm,
+                                        ),
+                                      ),
+                                      SpaceHelper(h: 16.h),
+                                      Text(
+                                        'School:',
+                                        style: poppinFonts(
+                                          color: AppColor.black,
+                                          fontSize: sm,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      SpaceHelper(h: 2.h),
+                                      Text(
+                                        contract?.route?.dropOffPoint ??
+                                            (contract?.children?.isNotEmpty ==
+                                                    true
+                                                ? (contract!
+                                                          .children![0]
+                                                          .dropOffAddress ??
+                                                      contract
+                                                          .children![0]
+                                                          .school)
+                                                : 'N/A') ??
+                                            'N/A',
+                                        style: poppinFonts(
+                                          color: AppColor
+                                              .textLightBlackColor4A4A4A,
+                                          fontSize: sm,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SpaceHelper(h: 20.h),
+
+              // Route Map Section
+              Text(
+                'Route Map',
+                style: poppinFonts(
+                  fontSize: base,
+                  color: AppColor.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SpaceHelper(h: 12.h),
+              Card(
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(16.w),
+                        decoration: BoxDecoration(
+                          color: Color(0xffECF4E9),
+                          border: Border.all(color: AppColor.secondary),
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: Image.asset('assets/images/png/map.png'),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SpaceHelper(h: 20.h),
+
+              // Children Detail Section
               Text(
                 'Children Detail',
                 style: poppinFonts(
@@ -179,255 +559,82 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.w),
+              SpaceHelper(h: 12.h),
               Card(
                 elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
+                ),
                 color: Colors.white,
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: AppColor.darkPrimary,
-                            radius: 20,
-                            child: Text(
-                              "A",
-                              style: poppinFonts(
-                                color: AppColor.appColorWhite,
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          SpaceHelper(w: 6.w),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    'Emma Johnsons',
-                                    style: poppinFonts(
-                                      color: AppColor.black,
-                                      fontSize: base,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    'Age 8 • 3rd Grade',
-                                    style: poppinFonts(
-                                      fontSize: xs,
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      SpaceHelper(h: 6.w),
-                      Row(
-                        children: [
-                          SvgPicture.asset('assets/images/svg/pickup-icon.svg'),
-
-                          SpaceHelper(w: 6.w),
-                          Text(
-                            'Pickup: ',
-                            style: poppinFonts(
-                              color: AppColor.black,
-                              fontSize: sm,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '123 Maple Street',
-                            style: poppinFonts(
-                              color: AppColor.textLightBlackColor4A4A4A,
-                              fontSize: sm,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SpaceHelper(h: 5.w),
-                      Row(
-                        children: [
-                          SvgPicture.asset('assets/images/svg/pickup-icon.svg'),
-
-                          SpaceHelper(w: 6.w),
-                          Text(
-                            'Pickup: ',
-                            style: poppinFonts(
-                              color: AppColor.black,
-                              fontSize: sm,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            '123 Maple Street',
-                            style: poppinFonts(
-                              color: AppColor.textLightBlackColor4A4A4A,
-                              fontSize: sm,
-                            ),
-                          ),
-                        ],
-                      ),
-                      SpaceHelper(h: 12.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 8.w,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xffECF4E9),
-                          border: Border.all(color: AppColor.secondary),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Stack(
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      if (contract?.children != null &&
+                          contract!.children!.isNotEmpty)
+                        ...contract.children!.map((child) {
+                          return Padding(
+                            padding: EdgeInsets.only(bottom: 12.h),
+                            child: Row(
                               children: [
-                                Text(
-                                  'Transport Assigned',
-                                  style: poppinFonts(
-                                    color: AppColor.primary,
-                                    fontSize: sm,
-                                    fontWeight: FontWeight.w500,
+                                CircleAvatar(
+                                  backgroundColor: AppColor.darkPrimary,
+                                  radius: 20.r,
+                                  child: Text(
+                                    (child.name?.isNotEmpty == true
+                                        ? child.name![0].toUpperCase()
+                                        : 'C'),
+                                    style: poppinFonts(
+                                      color: AppColor.appColorWhite,
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-
-                                SpaceHelper(h: 3.w),
-                                Row(
+                                SpaceHelper(w: 12.w),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Driver: ',
+                                      child.name ?? 'N/A',
                                       style: poppinFonts(
                                         color: AppColor.black,
-                                        fontSize: sm,
+                                        fontSize: base,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
                                     Text(
-                                      'Michael Rodriguez',
+                                      'Age ${child.age ?? 'N/A'}${child.schoolDescription != null ? ' • ${child.schoolDescription}' : ''}',
                                       style: poppinFonts(
+                                        fontSize: xs,
                                         color:
                                             AppColor.textLightBlackColor4A4A4A,
-                                        fontSize: xs,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SpaceHelper(h: 3.w),
-                                Row(
-                                  children: [
-                                    Text(
-                                      'Vehicle: ',
-                                      style: poppinFonts(
-                                        color: AppColor.black,
-                                        fontSize: sm,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    Text(
-                                      'Blue Toyota Hiace - ABC 123',
-                                      style: poppinFonts(
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                        fontSize: xs,
                                       ),
                                     ),
                                   ],
                                 ),
                               ],
                             ),
-                            Align(
-                              alignment: Alignment.topRight,
-                              child: SvgPicture.asset(
-                                'assets/images/svg/delete.svg',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SpaceHelper(h: 12.w),
-                    ],
-                  ),
-                ),
-              ),
-              SpaceHelper(h: 12.w),
-
-              Text(
-                'Parent Detail',
-                style: poppinFonts(
-                  fontSize: base,
-                  color: AppColor.black,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SpaceHelper(h: 12.w),
-              Card(
-                elevation: 1,
-                color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 12.w,
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: AppColor.darkPrimary,
-                        radius: 24,
-                        child: Text(
-                          "A",
+                          );
+                        }).toList()
+                      else
+                        Text(
+                          'No children assigned',
                           style: poppinFonts(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                            fontSize: sm,
+                            color: AppColor.textLightBlackColor4A4A4A,
                           ),
                         ),
-                      ),
-                      SpaceHelper(w: 6.w),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Michael Chen",
-                            style: poppinFonts(
-                              fontSize: base,
-                              color: AppColor.black,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            "michael.chen@email.com",
-                            style: poppinFonts(
-                              fontSize: sm,
-                              color: AppColor.textLightBlackColor4A4A4A,
-                            ),
-                          ),
-                          Text(
-                            "+1 (555) 123-4567",
-                            style: poppinFonts(
-                              fontSize: sm,
-                              color: AppColor.textLightBlackColor4A4A4A,
-                            ),
-                          ),
-                        ],
-                      ),
                     ],
                   ),
                 ),
               ),
-              SpaceHelper(h: 12.w),
+              SpaceHelper(h: 20.h),
 
+              // Transport Owner Detail Section
               Text(
                 'Transport Owner Detail',
                 style: poppinFonts(
@@ -436,128 +643,178 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.w),
+              SpaceHelper(h: 12.h),
               Card(
                 elevation: 1,
-                color: Colors.white,
-                child: Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 12.w,
-                    vertical: 12.w,
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(
-                        backgroundColor: AppColor.darkPrimary,
-                        radius: 24,
-                        child: Text(
-                          "A",
-                          style: poppinFonts(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      SpaceHelper(w: 6.w),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Michael Chen",
-                            style: poppinFonts(
-                              fontSize: base,
-                              color: AppColor.black,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            "michael.chen@email.com",
-                            style: poppinFonts(
-                              fontSize: sm,
-                              color: AppColor.textLightBlackColor4A4A4A,
-                            ),
-                          ),
-                          Text(
-                            "+1 (555) 123-4567",
-                            style: poppinFonts(
-                              fontSize: sm,
-                              color: AppColor.textLightBlackColor4A4A4A,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
                 ),
-              ),
-              SpaceHelper(h: 12.w),
-              Card(
-                elevation: 1,
                 color: Colors.white,
                 child: Padding(
-                  padding: EdgeInsets.all(14.w),
+                  padding: EdgeInsets.all(16.w),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Trip Overview',
+                          Expanded(
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundColor: AppColor.darkPrimary,
+                                  radius: 24.r,
+                                  child: Text(
+                                    _getTransportOwnerName(
+                                              contract,
+                                            ).isNotEmpty &&
+                                            _getTransportOwnerName(contract) !=
+                                                'N/A'
+                                        ? _getTransportOwnerName(
+                                            contract,
+                                          )[0].toUpperCase()
+                                        : 'T',
+                                    style: poppinFonts(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                SpaceHelper(w: 12.w),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Text(
+                                        _getTransportOwnerName(contract),
+                                        style: poppinFonts(
+                                          fontSize: base,
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                      Text(
+                                        contract?.transportOwner?.user?.email ??
+                                            'N/A',
+                                        style: poppinFonts(
+                                          fontSize: sm,
+                                          color: AppColor
+                                              .textLightBlackColor4A4A4A,
+                                        ),
+                                      ),
+                                      Text(
+                                        contract?.transportOwner?.user?.phone ??
+                                            'N/A',
+                                        style: poppinFonts(
+                                          fontSize: sm,
+                                          color: AppColor
+                                              .textLightBlackColor4A4A4A,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          SpaceHelper(w: 8.w),
+                          CustomButton(
+                            height: 32.h,
+                            width: 60.w,
+                            onPressed: () {
+                              // Navigate to chat
+                            },
+                            title: "Chat",
                             style: poppinFonts(
-                              color: AppColor.black,
-                              fontSize: base,
+                              fontSize: sm,
                               fontWeight: FontWeight.w500,
+                              color: AppColor.white,
                             ),
                           ),
                         ],
                       ),
-
-                      SpaceHelper(h: 7.w),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 8.w,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Color(0xffECF4E9),
-                          border: Border.all(color: AppColor.secondary),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SpaceHelper(h: 3.w),
-                            Text(
-                              'Start: 7:30 AM   →   End: 8:15 AM',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: xs,
-                              ),
-                            ),
-                            SpaceHelper(h: 3.w),
-                            Text(
-                              'Duration →  4 months',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: xs,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SpaceHelper(h: 12.w),
                     ],
                   ),
                 ),
               ),
+              SpaceHelper(h: 20.h),
 
-              CustomButton(onPressed: () {}, title: "Download Contract pdf"),
-              Container(height: 200),
+              // Download Contract Button
+              CustomButton(
+                height: 32.h,
+
+                onPressed: () {
+                  // Download contract PDF
+                },
+                title: "Download Contract pdf",
+                style: poppinFonts(
+                  fontSize: base,
+                  fontWeight: FontWeight.w500,
+                  color: AppColor.white,
+                ),
+              ),
+              SpaceHelper(h: 40.h),
             ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildDetailRow(String label, String value, {double? fontSize}) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: poppinFonts(
+            fontSize: fontSize ?? xs,
+            color: AppColor.black,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        SpaceHelper(w: 8.w),
+        Expanded(
+          child: Text(
+            value,
+            style: poppinFonts(
+              fontSize: fontSize ?? xs,
+              color: AppColor.textLightBlackColor4A4A4A,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Custom painter for dotted vertical line
+class DottedLinePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColor.textLightBlackColor4A4A4A
+      ..strokeWidth = 1.5;
+
+    const dashHeight = 4.0;
+    const dashSpace = 3.0;
+    double startY = 0;
+
+    while (startY < size.height) {
+      canvas.drawLine(
+        Offset(size.width / 2, startY),
+        Offset(size.width / 2, startY + dashHeight),
+        paint,
+      );
+      startY += dashHeight + dashSpace;
+    }
+  }
+
+  @override
+  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }
