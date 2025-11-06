@@ -49,8 +49,8 @@ class ImageUploadController extends GetxController {
             final List<dynamic> dataList = response.data;
             imageUrls = dataList
                 .map((item) {
-                  if (item is Map && item['fileUrl'] != null) {
-                    return item['fileUrl'].toString();
+                  if (item is Map && item['key'] != null) {
+                    return item['key'].toString();
                   }
                   return '';
                 })
@@ -62,8 +62,8 @@ class ImageUploadController extends GetxController {
             final List<dynamic> filesList = response.data['files'];
             imageUrls = filesList
                 .map((item) {
-                  if (item is Map && item['fileUrl'] != null) {
-                    return item['fileUrl'].toString();
+                  if (item is Map && item['key'] != null) {
+                    return item['key'].toString();
                   }
                   return '';
                 })
@@ -75,16 +75,16 @@ class ImageUploadController extends GetxController {
             final List<dynamic> dataList = response.data['data'];
             imageUrls = dataList
                 .map((item) {
-                  if (item is Map && item['fileUrl'] != null) {
-                    return item['fileUrl'].toString();
+                  if (item is Map && item['key'] != null) {
+                    return item['key'].toString();
                   }
                   return '';
                 })
                 .where((url) => url.isNotEmpty)
                 .toList();
-          } else if (response.data is Map && response.data['fileUrl'] != null) {
+          } else if (response.data is Map && response.data['key'] != null) {
             // Single file response as map
-            imageUrls = [response.data['fileUrl'].toString()];
+            imageUrls = [response.data['key'].toString()];
           }
         }
 

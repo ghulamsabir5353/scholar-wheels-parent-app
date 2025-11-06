@@ -43,8 +43,8 @@ class TransportCard extends StatelessWidget {
 
   /// Get route display text
   String _getRouteDisplay() {
-    final suburb = route?.suburb ?? 'N/A';
-    final dropOff = route?.dropOffPoint ?? 'N/A';
+    final suburb = route?.suburb?.description ?? '';
+    final dropOff = route?.dropOffPoint?.description ?? '';
     return '$suburb → $dropOff';
   }
 
@@ -253,12 +253,14 @@ class TransportCard extends StatelessWidget {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
-                      Text(
-                        _getRouteDisplay(),
-                        style: poppinFonts(
-                          fontSize: sm,
-                          color: AppColor.black,
-                          fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Text(
+                          _getRouteDisplay(),
+                          style: poppinFonts(
+                            fontSize: sm,
+                            color: AppColor.black,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],

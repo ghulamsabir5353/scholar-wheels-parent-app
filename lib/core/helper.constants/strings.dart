@@ -6,8 +6,9 @@ abstract class AppConstants {
   static const String liveBaseUrl = 'https://api.scholarwheels.co.za/';
   static const String liveBaseUrlIp = 'https://api.scholarwheels.co.za';
   static const String imageBaseUrl = 'https://api.scholarwheels.co.za/';
+  // https://api.scholarwheels.co.za//uploads/1762370173123-image_picker_70DFF75F-4AD0-4B0B-BDCD-CCE23339DFE2-87753-00003256817C544B.jpg
 
-  // for socket connection
+  // for socket connections
   static const String baseUrlIp = liveBaseUrlIp;
   // for api
   static const String baseUrl = liveBaseUrl;

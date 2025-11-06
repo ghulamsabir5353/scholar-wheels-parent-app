@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
@@ -115,6 +116,12 @@ class CustomTextField extends StatelessWidget {
                       signed: true,
                     )
                   : keyboardType,
+              inputFormatters:
+                  (isNumericKeyboard ||
+                      keyboardType == TextInputType.phone ||
+                      keyboardType == TextInputType.number)
+                  ? [FilteringTextInputFormatter.digitsOnly]
+                  : null,
               style: TextStyle(
                 color: cursorColor ?? Colors.black,
                 fontSize: 16,

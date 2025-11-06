@@ -15,6 +15,7 @@ abstract class AppColor {
   static const textLightBlackColor4A4A4A = Color(0xff4A4A4A);
   static const bottomNavigationGrayColor = Color(0xff888888);
   static const black = Color(0xff080C09);
+
   static const white = Colors.white;
   static const Color headingFontColor = Color(0xff2E2F30);
   ///////
@@ -40,6 +41,7 @@ abstract class AppColor {
 
   static const lightPurple = Color(0xffEAEFFF);
   static var bgColor = Colors.grey.shade50;
+  static var cardBgColor = Color(0xffECF4E9);
   static const LinearGradient linearGradient = LinearGradient(
     colors: [blueText, Color(0xffBAD4FF)],
     begin: Alignment.centerLeft,

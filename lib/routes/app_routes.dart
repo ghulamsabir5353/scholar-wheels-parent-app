@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:scholarwheels/bindings/tab_screen_binding.dart';
+import 'package:scholarwheels/screens/auth/get_started_screen.dart';
 import 'package:scholarwheels/screens/auth/login_screen.dart';
 import 'package:scholarwheels/screens/auth/profile_picture_screen.dart';
 import 'package:scholarwheels/screens/auth/profile_screen.dart';
@@ -28,7 +29,7 @@ import 'package:scholarwheels/screens/tab_screen.dart';
 import 'package:scholarwheels/core/helper.middlewares/auth_middleware.dart';
 
 import '../screens/childrens/edit_child_screen.dart';
-import '../screens/contracts/booking_detail_screen.dart' as contract;
+import '../screens/contracts/contract_detail_screen.dart' as contract;
 import '../screens/bookings/request_history_screen.dart';
 import '../screens/bookings/booking_detail_screen.dart';
 import '../screens/settings/setting_screen.dart';
@@ -44,6 +45,12 @@ class AppRoutes {
       name: TabScreen.route,
       page: () => const TabScreen(),
       binding: TabScreenBinding(),
+      middlewares: [AuthMiddleware()],
+    ),
+    GetPage(
+      name: GetStartedScreen.route,
+      page: () => const GetStartedScreen(),
+      middlewares: [GuestMiddleware()],
     ),
     GetPage(
       name: LoginScreen.route,

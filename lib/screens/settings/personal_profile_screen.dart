@@ -157,6 +157,8 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                     controller: authController.phoneController,
                     label: "Phone",
                     hintText: "Enter Phone",
+                    isNumericKeyboard: true,
+                    keyboardType: TextInputType.phone,
                     validator: (value) {
                       if (value == null || value.isEmpty) {
                         return 'Phone is required';

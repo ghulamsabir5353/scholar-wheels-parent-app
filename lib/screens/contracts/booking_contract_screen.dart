@@ -20,11 +20,31 @@ class BookingContractScreen extends StatefulWidget {
 
 class _BookingContractScreenState extends State<BookingContractScreen> {
   late ContractController contractController;
+  String selectedFilter = 'All';
 
   @override
   void initState() {
     super.initState();
     contractController = Get.find<ContractController>();
+  }
+
+  List<ContractModel> _getFilteredContracts(List<ContractModel> contracts) {
+    if (selectedFilter == 'All') {
+      return contracts;
+    }
+    return contracts.where((contract) {
+      final status = (contract.status ?? '').toLowerCase();
+      switch (selectedFilter) {
+        case 'Active':
+          return status == 'active';
+        case 'Completed':
+          return status == 'completed';
+        case 'Cancelled':
+          return status == 'cancelled';
+        default:
+          return true;
+      }
+    }).toList();
   }
 
   @override
@@ -102,41 +122,103 @@ class _BookingContractScreenState extends State<BookingContractScreen> {
 
         if (state is DataState<List<ContractModel>>) {
           final contracts = state.data;
+          final filteredContracts = _getFilteredContracts(contracts);
 
-          if (contracts.isEmpty) {
-            return Center(
-              child: Text(
-                'No contracts available',
-                style: poppinFonts(
-                  fontSize: base,
-                  color: AppColor.textLightBlackColor4A4A4A,
-                ),
-              ),
-            );
-          }
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              await contractController.getContracts();
-            },
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-                child: Column(
+          return Column(
+            children: [
+              // Filter Tabs
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.h),
+                child: Row(
                   children: [
-                    ...contracts.map((contract) {
-                      return BookingContractCard(contract: contract);
-                    }).toList(),
+                    _buildFilterTab('All'),
+                    SpaceHelper(w: 8.w),
+                    _buildFilterTab('Active'),
+                    SpaceHelper(w: 8.w),
+                    _buildFilterTab('Completed'),
+                    SpaceHelper(w: 8.w),
+                    _buildFilterTab('Cancelled'),
                   ],
                 ),
               ),
-            ),
+              // Contracts List
+              Expanded(
+                child: filteredContracts.isEmpty
+                    ? Center(
+                        child: Text(
+                          'No contracts available',
+                          style: poppinFonts(
+                            fontSize: base,
+                            color: AppColor.textLightBlackColor4A4A4A,
+                          ),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          await contractController.getContracts();
+                        },
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          child: Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 12.w,
+                              vertical: 12.w,
+                            ),
+                            child: Column(
+                              children: [
+                                ...filteredContracts.map((contract) {
+                                  return BookingContractCard(
+                                    contract: contract,
+                                  );
+                                }).toList(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+              ),
+            ],
           );
         }
 
         return const SizedBox.shrink();
       }),
+    );
+  }
+
+  Widget _buildFilterTab(String label) {
+    final isSelected = selectedFilter == label;
+    return Expanded(
+      child: InkWell(
+        onTap: () {
+          setState(() {
+            selectedFilter = label;
+          });
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(vertical: 8.h),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColor.primary : Colors.white,
+            borderRadius: BorderRadius.circular(8.r),
+            border: Border.all(
+              color: isSelected
+                  ? AppColor.primary
+                  : AppColor.textFieldBorderColor,
+              width: 1,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: poppinFonts(
+                fontSize: sm,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : AppColor.black,
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

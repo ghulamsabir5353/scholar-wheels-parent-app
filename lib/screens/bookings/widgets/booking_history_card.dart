@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
+import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/models/booking_model.dart';
 import 'package:scholarwheels/screens/bookings/booking_detail_screen.dart';
 
@@ -292,89 +293,9 @@ class BookingHistoryCard extends StatelessWidget {
                       ),
                       SpaceHelper(h: 12.h),
                       // White Container with Pickup and School Info
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(12.w),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Icons Column with Dotted Line
-                            Column(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/images/svg/pickup.svg',
-                                  width: 20.w,
-                                  height: 20.w,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColor.textLightBlackColor4A4A4A,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 24.h,
-                                  child: CustomPaint(
-                                    painter: DottedLinePainter(),
-                                  ),
-                                ),
-                                SvgPicture.asset(
-                                  'assets/images/svg/school.svg',
-                                  width: 20.w,
-                                  height: 20.w,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColor.textLightBlackColor4A4A4A,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SpaceHelper(w: 12.w),
-                            // Text Details Column
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Pickup point',
-                                    style: poppinFonts(
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                      fontSize: xs,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 2.h),
-                                  Text(
-                                    _getPickupAddress(),
-                                    style: poppinFonts(
-                                      color: AppColor.black,
-                                      fontSize: sm,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 12.h),
-                                  Text(
-                                    'School',
-                                    style: poppinFonts(
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                      fontSize: xs,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 2.h),
-                                  Text(
-                                    _getSchoolName(),
-                                    style: poppinFonts(
-                                      color: AppColor.black,
-                                      fontSize: sm,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      RouteEntryWidget(
+                        pickupAddress: _getPickupAddress(),
+                        schoolName: _getSchoolName(),
                       ),
                     ],
                   ),

@@ -248,6 +248,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                   controller: childController.primaryContactNumberController,
                   label: "Primary Contact Number",
                   hintText: "Enter Primary Contact Number",
+                  isNumericKeyboard: true,
                   keyboardType: TextInputType.phone,
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -261,6 +262,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                   controller: childController.secondaryContactNumberController,
                   label: "Secondary Contact Number",
                   hintText: "Enter Secondary Contact Number",
+                  isNumericKeyboard: true,
                   keyboardType: TextInputType.phone,
                 ),
 

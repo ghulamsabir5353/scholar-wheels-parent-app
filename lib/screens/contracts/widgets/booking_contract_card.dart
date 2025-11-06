@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/models/contract_model.dart';
-import 'package:scholarwheels/screens/contracts/booking_detail_screen.dart';
+import 'package:scholarwheels/screens/contracts/contract_detail_screen.dart';
 import '../../../core/helper.widgets/space_helper.dart';
 
 class BookingContractCard extends StatelessWidget {
@@ -49,24 +49,31 @@ class BookingContractCard extends StatelessWidget {
     return 'Vehicle';
   }
 
-  String _getDateRange() {
-    if (contract.startDate != null && contract.endDate != null) {
-      final startFormat = DateFormat('MMM yyyy').format(contract.startDate!);
-      final endFormat = DateFormat('MMM yyyy').format(contract.endDate!);
-      return '$startFormat - $endFormat';
-    } else if (contract.startDate != null) {
-      return DateFormat('MMM yyyy').format(contract.startDate!);
+  String _getContractId() {
+    return contract.contractId ?? 'N/A';
+  }
+
+  String _getContractStartDate() {
+    if (contract.startDate != null) {
+      return DateFormat('d MMM, yyyy').format(contract.startDate!);
     }
     return 'N/A';
   }
 
-  String _getFee() {
-    if (contract.monthlyPayment != null) {
-      return '${contract.monthlyPayment}\$';
-    } else if (contract.totalPayment != null) {
-      return '${contract.totalPayment}\$';
+  String _getContractDuration() {
+    if (contract.contractDuration != null &&
+        contract.contractDuration!.isNotEmpty) {
+      return contract.contractDuration!;
     }
-    return '0.00\$';
+    return 'N/A';
+  }
+
+  String _getMonthlyPay() {
+    if (contract.monthlyPayment != null) {
+      final amount = contract.monthlyPayment.toString();
+      return 'R$amount';
+    }
+    return 'R0.00';
   }
 
   @override
@@ -84,7 +91,60 @@ class BookingContractCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header Section - Transport Owner Name and Driver
+              // Contract# and Start Date Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Contract#',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        SpaceHelper(h: 2.h),
+                        Text(
+                          _getContractId(),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: base,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Contract Start Date',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        SpaceHelper(h: 2.h),
+                        Text(
+                          _getContractStartDate(),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: base,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              SpaceHelper(h: 16.h),
+              // Transport Owner Name and Driver Row
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -96,7 +156,7 @@ class BookingContractCard extends StatelessWidget {
                           'Transport Owner Name',
                           style: poppinFonts(
                             color: AppColor.textLightBlackColor4A4A4A,
-                            fontSize: xs,
+                            fontSize: sm,
                           ),
                         ),
                         SpaceHelper(h: 2.h),
@@ -119,7 +179,7 @@ class BookingContractCard extends StatelessWidget {
                           'Driver',
                           style: poppinFonts(
                             color: AppColor.textLightBlackColor4A4A4A,
-                            fontSize: xs,
+                            fontSize: sm,
                           ),
                         ),
                         SpaceHelper(h: 2.h),
@@ -139,144 +199,75 @@ class BookingContractCard extends StatelessWidget {
               SpaceHelper(h: 16.h),
               // Main Green Content Area
               Container(
-                padding: EdgeInsets.all(16.w),
+                padding: EdgeInsets.all(12.w),
                 decoration: BoxDecoration(
-                  color: Color(0xffECF4E9),
+                  color: AppColor.cardBgColor,
                   borderRadius: BorderRadius.circular(12.r),
+                  border: Border.all(color: AppColor.secondary),
                 ),
                 child: Stack(
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Vehicle and Date Row
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _getVehicleName(),
-                                  style: poppinFonts(
-                                    color: AppColor.black,
-                                    fontSize: base,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                SpaceHelper(h: 4.h),
-                                Text(
-                                  _getDateRange(),
-                                  style: poppinFonts(
-                                    color: AppColor.textLightBlackColor4A4A4A,
-                                    fontSize: xs,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                        SpaceHelper(h: 16.h),
-                        // Route Details with Icons and Dotted Line
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Icons Column with Dotted Line
-                            Column(
-                              children: [
-                                SvgPicture.asset(
-                                  'assets/images/svg/pickup.svg',
-                                  width: 20.w,
-                                  height: 20.w,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColor.textLightBlackColor4A4A4A,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                                SizedBox(
-                                  height: 24.h,
-                                  child: CustomPaint(
-                                    painter: DottedLinePainter(),
-                                  ),
-                                ),
-                                SvgPicture.asset(
-                                  'assets/images/svg/school.svg',
-                                  width: 20.w,
-                                  height: 20.w,
-                                  colorFilter: ColorFilter.mode(
-                                    AppColor.textLightBlackColor4A4A4A,
-                                    BlendMode.srcIn,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            SpaceHelper(w: 12.w),
-                            // Text Details Column
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Pickup:',
-                                    style: poppinFonts(
-                                      color: AppColor.black,
-                                      fontSize: sm,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 2.h),
-                                  Text(
-                                    contract.route?.suburb ?? 'N/A',
-                                    style: poppinFonts(
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                      fontSize: sm,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 16.h),
-                                  Text(
-                                    'School:',
-                                    style: poppinFonts(
-                                      color: AppColor.black,
-                                      fontSize: sm,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 2.h),
-                                  Text(
-                                    contract.route?.dropOffPoint ?? 'N/A',
-                                    style: poppinFonts(
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                      fontSize: sm,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                        SpaceHelper(h: 16.h),
-                        // Fee Information
-                        RichText(
-                          text: TextSpan(
-                            children: [
-                              TextSpan(
-                                text: 'Fee: ',
-                                style: poppinFonts(
-                                  color: AppColor.black,
-                                  fontSize: sm,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              TextSpan(
-                                text: _getFee(),
-                                style: poppinFonts(
-                                  color: AppColor.textLightBlackColor4A4A4A,
-                                  fontSize: sm,
-                                ),
-                              ),
-                            ],
+                        // Vehicle Name (top left)
+                        Text(
+                          _getVehicleName(),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: base,
+                            fontWeight: FontWeight.w500,
                           ),
+                        ),
+                        SpaceHelper(h: 12.h),
+                        // Contract Duration
+                        Row(
+                          children: [
+                            Text(
+                              'Contract Duration:',
+                              style: poppinFonts(
+                                color: AppColor.textLightBlackColor4A4A4A,
+                                fontSize: sm,
+                              ),
+                            ),
+                            SpaceHelper(w: 2.2),
+                            Text(
+                              _getContractDuration(),
+                              style: poppinFonts(
+                                color: AppColor.black,
+                                fontSize: sm,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SpaceHelper(h: 12.h),
+                        // Route Details with Icons and Dotted Line
+                        RouteEntryWidget(
+                          pickupAddress: contract.route?.suburb ?? 'N/A',
+                          schoolName: contract.route?.dropOffPoint ?? 'N/A',
+                        ),
+                        SpaceHelper(h: 12.h),
+                        // Monthly Pay
+                        Row(
+                          children: [
+                            Text(
+                              'Monthly Pay: ',
+                              style: poppinFonts(
+                                color: AppColor.textLightBlackColor4A4A4A,
+                                fontSize: sm,
+                              ),
+                            ),
+                            SpaceHelper(w: 2.w),
+                            Text(
+                              _getMonthlyPay(),
+                              style: poppinFonts(
+                                color: AppColor.black,
+                                fontSize: sm,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -294,10 +285,10 @@ class BookingContractCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Text(
-                          contract.status ?? 'N/A',
+                          contract.status?.capitalizeFirst ?? 'N/A',
                           style: poppinFonts(
                             color: AppColor.primary,
-                            fontSize: xs,
+                            fontSize: sm,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -345,20 +336,7 @@ class BookingContractCard extends StatelessWidget {
                       onPressed: () {},
                       title: "Chat",
                       style: poppinFonts(
-                        fontSize: base,
-                        fontWeight: FontWeight.w500,
-                        color: AppColor.white,
-                      ),
-                    ),
-                  ),
-                  SpaceHelper(w: 12.w),
-                  Expanded(
-                    child: CustomButton(
-                      height: 32.h,
-                      onPressed: () {},
-                      title: "Download",
-                      style: poppinFonts(
-                        fontSize: base,
+                        fontSize: sm,
                         fontWeight: FontWeight.w500,
                         color: AppColor.white,
                       ),
@@ -372,30 +350,4 @@ class BookingContractCard extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Custom painter for dotted vertical line
-class DottedLinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColor.textLightBlackColor4A4A4A
-      ..strokeWidth = 1.5;
-
-    const dashHeight = 4.0;
-    const dashSpace = 3.0;
-    double startY = 0;
-
-    while (startY < size.height) {
-      canvas.drawLine(
-        Offset(size.width / 2, startY),
-        Offset(size.width / 2, startY + dashHeight),
-        paint,
-      );
-      startY += dashHeight + dashSpace;
-    }
-  }
-
-  @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
 }

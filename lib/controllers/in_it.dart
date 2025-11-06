@@ -6,6 +6,7 @@ import 'package:get_storage/get_storage.dart';
 import 'package:scholarwheels/controllers/app_lifecycel_controller.dart';
 import 'package:scholarwheels/controllers/auth_controller.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
+import 'package:scholarwheels/controllers/image_upload_controller.dart';
 
 import 'package:scholarwheels/core/helper.widgets/custom_loader_animation.dart';
 
@@ -24,6 +25,7 @@ Future<void> init() async {
   box = GetStorage();
   BaseHelper.init();
   Get.put(AuthController());
+  Get.put<ImageUploadController>(ImageUploadController(), permanent: true);
   // ChildController and other app controllers will be initialized via TabScreenBinding
   // when user logs in and navigates to TabScreen
 }

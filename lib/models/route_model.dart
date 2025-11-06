@@ -1,10 +1,21 @@
+// To parse this JSON data, do
+//
+//     final routeModel = routeModelFromJson(jsonString);
+
+import 'dart:convert';
+
+RouteModel routeModelFromJson(String str) =>
+    RouteModel.fromJson(json.decode(str));
+
+String routeModelToJson(RouteModel data) => json.encode(data.toJson());
+
 class RouteModel {
   String? id;
   String? routeId;
   String? transportOwnerId;
   String? routeName;
-  String? suburb;
-  String? dropOffPoint;
+  DropOffPoint? suburb;
+  DropOffPoint? dropOffPoint;
   String? assignedVehicle;
   String? assignedDriver;
   String? status;
@@ -42,8 +53,8 @@ class RouteModel {
     String? routeId,
     String? transportOwnerId,
     String? routeName,
-    String? suburb,
-    String? dropOffPoint,
+    DropOffPoint? suburb,
+    DropOffPoint? dropOffPoint,
     String? assignedVehicle,
     String? assignedDriver,
     String? status,
@@ -80,8 +91,12 @@ class RouteModel {
     routeId: json["routeId"],
     transportOwnerId: json["transportOwnerId"],
     routeName: json["routeName"],
-    suburb: json["suburb"],
-    dropOffPoint: json["dropOffPoint"],
+    suburb: json["suburb"] == null
+        ? null
+        : DropOffPoint.fromJson(json["suburb"]),
+    dropOffPoint: json["dropOffPoint"] == null
+        ? null
+        : DropOffPoint.fromJson(json["dropOffPoint"]),
     assignedVehicle: json["assignedVehicle"],
     assignedDriver: json["assignedDriver"],
     status: json["status"],
@@ -106,8 +121,8 @@ class RouteModel {
     "routeId": routeId,
     "transportOwnerId": transportOwnerId,
     "routeName": routeName,
-    "suburb": suburb,
-    "dropOffPoint": dropOffPoint,
+    "suburb": suburb?.toJson(),
+    "dropOffPoint": dropOffPoint?.toJson(),
     "assignedVehicle": assignedVehicle,
     "assignedDriver": assignedDriver,
     "status": status,
@@ -423,6 +438,65 @@ class DriverUser {
   };
 }
 
+class DropOffPoint {
+  String? placeId;
+  String? description;
+  Coordinates? coordinates;
+
+  DropOffPoint({this.placeId, this.description, this.coordinates});
+
+  DropOffPoint copyWith({
+    String? placeId,
+    String? description,
+    Coordinates? coordinates,
+  }) => DropOffPoint(
+    placeId: placeId ?? this.placeId,
+    description: description ?? this.description,
+    coordinates: coordinates ?? this.coordinates,
+  );
+
+  factory DropOffPoint.fromJson(Map<String, dynamic> json) => DropOffPoint(
+    placeId: json["placeId"],
+    description: json["description"],
+    coordinates: json["coordinates"] == null
+        ? null
+        : Coordinates.fromJson(json["coordinates"]),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "placeId": placeId,
+    "description": description,
+    "coordinates": coordinates?.toJson(),
+  };
+}
+
+class Coordinates {
+  String? type;
+  List<double>? coordinates;
+
+  Coordinates({this.type, this.coordinates});
+
+  Coordinates copyWith({String? type, List<double>? coordinates}) =>
+      Coordinates(
+        type: type ?? this.type,
+        coordinates: coordinates ?? this.coordinates,
+      );
+
+  factory Coordinates.fromJson(Map<String, dynamic> json) => Coordinates(
+    type: json["type"],
+    coordinates: json["coordinates"] == null
+        ? []
+        : List<double>.from(json["coordinates"]!.map((x) => x?.toDouble())),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "type": type,
+    "coordinates": coordinates == null
+        ? []
+        : List<dynamic>.from(coordinates!.map((x) => x)),
+  };
+}
+
 class TransportOwner {
   String? id;
   String? userId;
@@ -433,7 +507,7 @@ class TransportOwner {
   String? businessAddress;
   String? postalCode;
   String? city;
-  List<dynamic>? businessDocuments;
+  List<LicenseDocument>? businessDocuments;
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
@@ -480,7 +554,7 @@ class TransportOwner {
     String? businessAddress,
     String? postalCode,
     String? city,
-    List<dynamic>? businessDocuments,
+    List<LicenseDocument>? businessDocuments,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
@@ -528,7 +602,9 @@ class TransportOwner {
     city: json["city"],
     businessDocuments: json["businessDocuments"] == null
         ? []
-        : List<dynamic>.from(json["businessDocuments"]!.map((x) => x)),
+        : List<LicenseDocument>.from(
+            json["businessDocuments"]!.map((x) => LicenseDocument.fromJson(x)),
+          ),
     createdAt: json["createdAt"] == null
         ? null
         : DateTime.parse(json["createdAt"]),
@@ -560,7 +636,7 @@ class TransportOwner {
     "city": city,
     "businessDocuments": businessDocuments == null
         ? []
-        : List<dynamic>.from(businessDocuments!.map((x) => x)),
+        : List<dynamic>.from(businessDocuments!.map((x) => x.toJson())),
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
@@ -690,7 +766,7 @@ class Vehicle {
   String? model;
   String? manufacturingYear;
   DateTime? registrationExpiry;
-  List<LicenseDocument>? documents;
+  List<dynamic>? documents;
   String? status;
   List<LicenseDocument>? pictures;
   String? assignedTo;
@@ -702,6 +778,8 @@ class Vehicle {
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
+  String? insurenceNumber;
+  String? insurer;
 
   Vehicle({
     this.id,
@@ -724,6 +802,8 @@ class Vehicle {
     this.createdAt,
     this.updatedAt,
     this.v,
+    this.insurenceNumber,
+    this.insurer,
   });
 
   Vehicle copyWith({
@@ -735,7 +815,7 @@ class Vehicle {
     String? model,
     String? manufacturingYear,
     DateTime? registrationExpiry,
-    List<LicenseDocument>? documents,
+    List<dynamic>? documents,
     String? status,
     List<LicenseDocument>? pictures,
     String? assignedTo,
@@ -747,6 +827,8 @@ class Vehicle {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
+    String? insurenceNumber,
+    String? insurer,
   }) => Vehicle(
     id: id ?? this.id,
     transportOwnerId: transportOwnerId ?? this.transportOwnerId,
@@ -768,6 +850,8 @@ class Vehicle {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     v: v ?? this.v,
+    insurenceNumber: insurenceNumber ?? this.insurenceNumber,
+    insurer: insurer ?? this.insurer,
   );
 
   factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
@@ -783,9 +867,7 @@ class Vehicle {
         : DateTime.parse(json["registrationExpiry"]),
     documents: json["documents"] == null
         ? []
-        : List<LicenseDocument>.from(
-            json["documents"]!.map((x) => LicenseDocument.fromJson(x)),
-          ),
+        : List<dynamic>.from(json["documents"]!.map((x) => x)),
     status: json["status"],
     pictures: json["pictures"] == null
         ? []
@@ -805,6 +887,8 @@ class Vehicle {
         ? null
         : DateTime.parse(json["updatedAt"]),
     v: json["__v"],
+    insurenceNumber: json["insurenceNumber"],
+    insurer: json["insurer"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -818,7 +902,7 @@ class Vehicle {
     "registrationExpiry": registrationExpiry?.toIso8601String(),
     "documents": documents == null
         ? []
-        : List<dynamic>.from(documents!.map((x) => x.toJson())),
+        : List<dynamic>.from(documents!.map((x) => x)),
     "status": status,
     "pictures": pictures == null
         ? []
@@ -832,5 +916,7 @@ class Vehicle {
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
+    "insurenceNumber": insurenceNumber,
+    "insurer": insurer,
   };
 }

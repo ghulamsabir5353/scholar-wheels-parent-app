@@ -92,8 +92,8 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
 
   String _getRouteDisplay() {
     if (routeModel != null) {
-      final suburb = routeModel?.suburb ?? '';
-      final dropOff = routeModel?.dropOffPoint ?? '';
+      final suburb = routeModel?.suburb?.description ?? '';
+      final dropOff = routeModel?.dropOffPoint?.description ?? '';
       if (suburb.isNotEmpty && dropOff.isNotEmpty) {
         return '$suburb → $dropOff';
       }
@@ -362,6 +362,7 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                             ),
                             Text(
                               _getRouteDisplay(),
+
                               style: poppinFonts(
                                 color: AppColor.black,
                                 fontSize: sm,

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/models/contract_model.dart';
 
 import '../../core/helper.constants/color.dart';
@@ -13,13 +13,21 @@ import '../../core/helper.constants/textStyle.dart';
 import '../../core/helper.widgets/space_helper.dart';
 
 class BookingDetailScreen extends StatelessWidget {
-  static const String route = '/booking-detail-screen';
+  static const String route = '/contract-detail-screen';
   const BookingDetailScreen({super.key});
 
   String _getContractId(ContractModel? contract) {
     if (contract?.contractId != null) return contract!.contractId!;
     if (contract?.id != null) return contract!.id!;
     return 'N/A';
+  }
+
+  String _getBusinessName(ContractModel? contract) {
+    if (contract?.transportOwner?.businessName != null &&
+        contract!.transportOwner!.businessName!.isNotEmpty) {
+      return contract.transportOwner!.businessName!;
+    }
+    return _getTransportOwnerName(contract);
   }
 
   String _getTransportOwnerName(ContractModel? contract) {
@@ -37,6 +45,45 @@ class BookingDetailScreen extends StatelessWidget {
       return contract.transportOwner!.businessName!;
     }
     return 'N/A';
+  }
+
+  String _getFullName(ContractModel? contract) {
+    if (contract?.transportOwner == null) return 'N/A';
+    final firstName = contract!.transportOwner!.firstName ?? '';
+    final surName = contract.transportOwner!.surName ?? '';
+    if (firstName.isNotEmpty && surName.isNotEmpty) {
+      return '$firstName $surName';
+    } else if (firstName.isNotEmpty) {
+      return firstName;
+    } else if (surName.isNotEmpty) {
+      return surName;
+    }
+    return 'N/A';
+  }
+
+  String _getAverageRating(ContractModel? contract) {
+    if (contract?.transportOwner?.averageRating != null) {
+      return contract!.transportOwner!.averageRating.toString();
+    }
+    return '0.0';
+  }
+
+  String _getTotalRatings(ContractModel? contract) {
+    if (contract?.transportOwner?.totalRatings != null) {
+      return contract!.transportOwner!.totalRatings.toString();
+    }
+    return '0';
+  }
+
+  bool _isVerified(ContractModel? contract) {
+    return contract?.transportOwner?.isVerified ?? false;
+  }
+
+  String _getInitial(String name) {
+    if (name.isNotEmpty && name != 'N/A') {
+      return name[0].toUpperCase();
+    }
+    return 'T';
   }
 
   String _getDriverName(ContractModel? contract) {
@@ -101,17 +148,18 @@ class BookingDetailScreen extends StatelessWidget {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+
         leading: backButton(
           onTap: () {
             Get.back();
           },
         ),
         title: Text(
-          '${contract?.contractId ?? 'N/A'}',
+          contract?.contractId ?? 'N/A',
           style: poppinFonts(
-            fontSize: xl,
+            fontSize: lg,
             color: AppColor.headingFontColor,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ),
@@ -131,7 +179,7 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.h),
+              SpaceHelper(h: 8.h),
               Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(
@@ -168,7 +216,7 @@ class BookingDetailScreen extends StatelessWidget {
                               contract?.status?.capitalizeFirst ?? 'Active',
                               style: poppinFonts(
                                 color: AppColor.primary,
-                                fontSize: xs,
+                                fontSize: sm,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -181,6 +229,7 @@ class BookingDetailScreen extends StatelessWidget {
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
                           color: Color(0xffECF4E9),
+                          border: Border.all(color: AppColor.secondary),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Column(
@@ -213,8 +262,151 @@ class BookingDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SpaceHelper(h: 20.h),
 
+              SpaceHelper(h: 8.h),
+              Text(
+                'Transport Owner Detail',
+                style: poppinFonts(
+                  fontSize: base,
+                  color: AppColor.black,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SpaceHelper(h: 8.h),
+              Card(
+                elevation: 1,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.textFieldBorderColor),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Header Section with Avatar, Business Name, Rating, and Verified Badge
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Avatar
+                          CircleAvatar(
+                            backgroundColor: AppColor.darkPrimary,
+                            radius: 24.r,
+                            child: Text(
+                              _getInitial(_getBusinessName(contract)),
+                              style: poppinFonts(
+                                color: Colors.white,
+                                fontSize: base,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          SpaceHelper(w: 12.w),
+                          // Business Name and Rating
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Business Name
+                                Text(
+                                  _getBusinessName(contract),
+                                  style: poppinFonts(
+                                    fontSize: base,
+                                    color: AppColor.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                SpaceHelper(h: 4.h),
+                                // Rating with Star Icon
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.star,
+                                      size: 16.sp,
+                                      color: AppColor.darkSecondary,
+                                    ),
+                                    SpaceHelper(w: 4.w),
+                                    Text(
+                                      '${_getAverageRating(contract)} (${_getTotalRatings(contract)} reviews)',
+                                      style: poppinFonts(
+                                        fontSize: sm,
+                                        color: AppColor.black,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Verified Badge
+                          if (_isVerified(contract))
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 8.w,
+                                vertical: 4.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColor.lightSecondary,
+                                borderRadius: BorderRadius.circular(20.r),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.check_circle,
+                                    size: 14.sp,
+                                    color: AppColor.primary,
+                                  ),
+                                  SpaceHelper(w: 4.w),
+                                  Text(
+                                    'Verified',
+                                    style: poppinFonts(
+                                      fontSize: xs,
+                                      color: AppColor.primary,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
+                      SpaceHelper(h: 16.h),
+                      // Contact Information Section
+                      _buildContactRow('Full Name:', _getFullName(contract)),
+                      SpaceHelper(h: 8.h),
+                      _buildContactRow(
+                        'Email:',
+                        contract?.transportOwner?.user?.email ?? 'N/A',
+                      ),
+                      SpaceHelper(h: 8.h),
+                      _buildContactRow(
+                        'Phone:',
+                        contract?.transportOwner?.user?.phone ?? 'N/A',
+                      ),
+                      SpaceHelper(h: 16.h),
+                      // Chat Button
+                      CustomButton(
+                        height: 32.h,
+                        onPressed: () {
+                          // Navigate to chat
+                        },
+                        title: "Chat",
+                        style: poppinFonts(
+                          fontSize: sm,
+                          fontWeight: FontWeight.w500,
+                          color: AppColor.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              SpaceHelper(h: 8.h),
               // Driver & Vehicle Info Section
               Text(
                 'Driver & Vehicle Info',
@@ -224,7 +416,7 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.h),
+              SpaceHelper(h: 8.h),
               Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(
@@ -251,6 +443,7 @@ class BookingDetailScreen extends StatelessWidget {
                         padding: EdgeInsets.all(16.w),
                         decoration: BoxDecoration(
                           color: Color(0xffECF4E9),
+                          border: Border.all(color: AppColor.secondary),
                           borderRadius: BorderRadius.circular(8.r),
                         ),
                         child: Column(
@@ -322,7 +515,7 @@ class BookingDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SpaceHelper(h: 20.h),
+              SpaceHelper(h: 8.h),
 
               // Route Details Section
               Text(
@@ -333,7 +526,7 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.h),
+              SpaceHelper(h: 8.h),
               Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(
@@ -393,123 +586,15 @@ class BookingDetailScreen extends StatelessWidget {
                         ],
                       ),
                       SpaceHelper(h: 12.h),
-                      Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.all(16.w),
-                        decoration: BoxDecoration(
-                          color: Color(0xffECF4E9),
-                          borderRadius: BorderRadius.circular(8.r),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Pickup
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.max,
-                              children: [
-                                Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    SvgPicture.asset(
-                                      'assets/images/svg/pickup.svg',
-                                      width: 20.w,
-                                      height: 20.w,
-                                      colorFilter: ColorFilter.mode(
-                                        AppColor.textLightBlackColor4A4A4A,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                    SizedBox(
-                                      height: 24.h,
-                                      child: CustomPaint(
-                                        painter: DottedLinePainter(),
-                                      ),
-                                    ),
-                                    SvgPicture.asset(
-                                      'assets/images/svg/school.svg',
-                                      width: 20.w,
-                                      height: 20.w,
-                                      colorFilter: ColorFilter.mode(
-                                        AppColor.textLightBlackColor4A4A4A,
-                                        BlendMode.srcIn,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                SpaceHelper(w: 12.w),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Text(
-                                        'Pickup:',
-                                        style: poppinFonts(
-                                          color: AppColor.black,
-                                          fontSize: sm,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      SpaceHelper(h: 2.h),
-                                      Text(
-                                        contract?.route?.suburb ??
-                                            (contract?.children?.isNotEmpty ==
-                                                    true
-                                                ? contract!
-                                                      .children![0]
-                                                      .pickUpAddress
-                                                : 'N/A') ??
-                                            'N/A',
-                                        style: poppinFonts(
-                                          color: AppColor
-                                              .textLightBlackColor4A4A4A,
-                                          fontSize: sm,
-                                        ),
-                                      ),
-                                      SpaceHelper(h: 16.h),
-                                      Text(
-                                        'School:',
-                                        style: poppinFonts(
-                                          color: AppColor.black,
-                                          fontSize: sm,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                      SpaceHelper(h: 2.h),
-                                      Text(
-                                        contract?.route?.dropOffPoint ??
-                                            (contract?.children?.isNotEmpty ==
-                                                    true
-                                                ? (contract!
-                                                          .children![0]
-                                                          .dropOffAddress ??
-                                                      contract
-                                                          .children![0]
-                                                          .school)
-                                                : 'N/A') ??
-                                            'N/A',
-                                        style: poppinFonts(
-                                          color: AppColor
-                                              .textLightBlackColor4A4A4A,
-                                          fontSize: sm,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                      RouteEntryWidget(
+                        pickupAddress: contract?.route?.suburb ?? 'N/A',
+                        schoolName: contract?.route?.dropOffPoint ?? 'N/A',
                       ),
                     ],
                   ),
                 ),
               ),
-              SpaceHelper(h: 20.h),
+              SpaceHelper(h: 8.h),
 
               // Route Map Section
               Text(
@@ -559,7 +644,7 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.h),
+              SpaceHelper(h: 8.h),
               Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(
@@ -609,7 +694,7 @@ class BookingDetailScreen extends StatelessWidget {
                                     Text(
                                       'Age ${child.age ?? 'N/A'}${child.schoolDescription != null ? ' • ${child.schoolDescription}' : ''}',
                                       style: poppinFonts(
-                                        fontSize: xs,
+                                        fontSize: sm,
                                         color:
                                             AppColor.textLightBlackColor4A4A4A,
                                       ),
@@ -632,7 +717,7 @@ class BookingDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SpaceHelper(h: 20.h),
+              SpaceHelper(h: 8.h),
 
               // Transport Owner Detail Section
               Text(
@@ -643,7 +728,7 @@ class BookingDetailScreen extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.h),
+              SpaceHelper(h: 8.h),
               Card(
                 elevation: 1,
                 shape: RoundedRectangleBorder(
@@ -742,11 +827,12 @@ class BookingDetailScreen extends StatelessWidget {
                   ),
                 ),
               ),
-              SpaceHelper(h: 20.h),
+
+              SpaceHelper(h: 8.h),
 
               // Download Contract Button
               CustomButton(
-                height: 32.h,
+                height: 36.h,
 
                 onPressed: () {
                   // Download contract PDF
@@ -758,11 +844,43 @@ class BookingDetailScreen extends StatelessWidget {
                   color: AppColor.white,
                 ),
               ),
-              SpaceHelper(h: 40.h),
+              SpaceHelper(h: 8.h),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildContactRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: poppinFonts(
+              fontSize: sm,
+              color: AppColor.textLightBlackColor4A4A4A,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Row(
+            children: [
+              Text(
+                value,
+                textAlign: TextAlign.right,
+                style: poppinFonts(
+                  fontSize: sm,
+                  fontWeight: FontWeight.w500,
+                  color: AppColor.black,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -773,7 +891,7 @@ class BookingDetailScreen extends StatelessWidget {
         Text(
           label,
           style: poppinFonts(
-            fontSize: fontSize ?? xs,
+            fontSize: fontSize ?? sm,
             color: AppColor.black,
             fontWeight: FontWeight.w500,
           ),
@@ -783,7 +901,7 @@ class BookingDetailScreen extends StatelessWidget {
           child: Text(
             value,
             style: poppinFonts(
-              fontSize: fontSize ?? xs,
+              fontSize: fontSize ?? sm,
               color: AppColor.textLightBlackColor4A4A4A,
             ),
           ),

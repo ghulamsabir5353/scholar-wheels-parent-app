@@ -3,7 +3,8 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
-import 'package:scholarwheels/screens/app.dart';
+import 'package:scholarwheels/screens/auth/get_started_screen.dart';
+import 'package:scholarwheels/screens/tab_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   static const route = '/splash';
@@ -17,11 +18,12 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     2.delay(() {
-      Get.offAll(
-        () => const AppScreen(),
-        transition: Transition.rightToLeft,
-        duration: Duration(milliseconds: 800),
-      );
+      // Navigate based on login state using GetX routing
+      if (BaseHelper.isLogin.value) {
+        Get.offAllNamed(TabScreen.route);
+      } else {
+        Get.offAllNamed(GetStartedScreen.route);
+      }
     });
 
     super.initState();

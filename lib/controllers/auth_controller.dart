@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/controllers/in_it.dart';
 import 'package:scholarwheels/models/user_model.dart';
-import 'package:scholarwheels/screens/auth/login_screen.dart';
 import 'package:scholarwheels/screens/auth/profile_picture_screen.dart';
 import 'package:scholarwheels/screens/tab_screen.dart';
 import 'package:scholarwheels/services/api_services.dart';
@@ -119,10 +118,10 @@ class AuthController extends GetxController {
             response.data['message'] ?? 'Account created successfully!',
             color: Colors.green,
           );
-          
+
           // Clear signup fields
           clearAllFields();
-          
+
           Get.offAllNamed(
             ProfilePictureScreen.route,
           ); // Navigate to profile picture screen
@@ -184,18 +183,15 @@ class AuthController extends GetxController {
         }
 
         customToaster(
-          response.data['message'] ??
-              'Profile completed successfully! Please login to continue.',
+          response.data['message'] ?? 'Profile completed successfully!',
           color: Colors.green,
         );
 
         // Clear all profile fields
         clearAllFields();
 
-        // Log out the user and redirect to login screen
-        // This ensures roleData is properly set before accessing dashboard
-        BaseHelper.signOut();
-        Get.offAllNamed(LoginScreen.route);
+        // Navigate to home screen - middleware will now allow access since roleData is set
+        Get.offAllNamed(TabScreen.route);
       } else {
         customToaster(
           response.data['message'] ?? 'Profile completion failed',

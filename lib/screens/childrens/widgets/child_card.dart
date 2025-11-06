@@ -7,6 +7,7 @@ import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/models/child_model.dart';
 import 'package:scholarwheels/screens/childrens/edit_child_screen.dart';
 
@@ -22,7 +23,7 @@ class ChildCard extends StatelessWidget {
     if (child.name != null && child.name!.isNotEmpty) {
       return child.name![0].toUpperCase();
     }
-    return 'C';
+    return 'A';
   }
 
   /// Get status - default to Active
@@ -228,7 +229,7 @@ class ChildCard extends StatelessWidget {
             Container(
               padding: EdgeInsets.all(14.w),
               decoration: BoxDecoration(
-                color: AppColor.lightSecondary,
+                color: AppColor.cardBgColor,
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
@@ -245,108 +246,11 @@ class ChildCard extends StatelessWidget {
                   ),
                   SpaceHelper(h: 12.h),
                   // Pickup and School with icons and dotted line
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Left side with icons and dotted line
-                      Column(
-                        children: [
-                          // Pickup icon
-                          Container(
-                            width: 32.w,
-                            height: 32.w,
-                            decoration: BoxDecoration(
-                              color: AppColor.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: SvgPicture.asset(
-                                'assets/images/svg/pickup.svg',
-                                width: 18.w,
-                                height: 18.w,
-                                colorFilter: ColorFilter.mode(
-                                  AppColor.textLightBlackColor4A4A4A,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                            ),
-                          ),
-                          // Dotted vertical line
-                          SizedBox(
-                            height: 32.h,
-                            child: CustomPaint(painter: DottedLinePainter()),
-                          ),
-                          // School icon
-                          Container(
-                            width: 32.w,
-                            height: 32.w,
-                            decoration: BoxDecoration(
-                              color: AppColor.white,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Center(
-                              child: SvgPicture.asset(
-                                'assets/images/svg/school.svg',
-                                width: 18.w,
-                                height: 18.w,
-                                colorFilter: ColorFilter.mode(
-                                  AppColor.textLightBlackColor4A4A4A,
-                                  BlendMode.srcIn,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      SpaceHelper(w: 12.w),
-                      // Right side with labels and addresses
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Pickup point
-                            Text(
-                              'Pickup point',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: xs,
-                              ),
-                            ),
-                            SpaceHelper(h: 4.h),
-                            Text(
-                              child.pickUpAddressDescription ?? 'Not set',
-                              style: poppinFonts(
-                                color: AppColor.black,
-                                fontSize: sm,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            SpaceHelper(h: 24.h),
-                            // School
-                            Text(
-                              'School',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: xs,
-                              ),
-                            ),
-                            SpaceHelper(h: 4.h),
-                            Text(
-                              child.schoolDescription ?? child.dropOffAddressDescription ?? 'Not set',
-                              style: poppinFonts(
-                                color: AppColor.black,
-                                fontSize: sm,
-                                fontWeight: FontWeight.w500,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  RouteEntryWidget(
+                    pickupAddress: child.pickUpAddressDescription ?? '',
+                    schoolName: child.schoolDescription ?? '',
+                    backgroundColor: AppColor.cardBgColor,
+                    padding: EdgeInsets.zero,
                   ),
                 ],
               ),

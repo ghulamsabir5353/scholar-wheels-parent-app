@@ -56,25 +56,6 @@ class AppDrawer extends StatelessWidget {
                   ],
                 ),
                 SpaceHelper(h: 12.w),
-                // Service Info
-                Text(
-                  'TransportCo Services',
-                  style: poppinFonts(
-                    fontSize: base,
-                    fontWeight: FontWeight.w600,
-                    color: AppColor.black,
-                  ),
-                ),
-                SpaceHelper(h: 4.w),
-                Text(
-                  'Bus #12 (ABC-123)',
-                  style: poppinFonts(
-                    fontSize: sm,
-                    fontWeight: FontWeight.w400,
-                    color: AppColor.textLightBlackColor4A4A4A,
-                  ),
-                ),
-                SpaceHelper(h: 16.w),
                 // Confirmation Message
                 Text(
                   'Are You sure? You want to logout this account.',
