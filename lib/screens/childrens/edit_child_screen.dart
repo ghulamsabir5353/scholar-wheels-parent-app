@@ -12,7 +12,7 @@ import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
-import 'package:scholarwheels/core/helper.widgets/location_autocomplete_field.dart';
+import 'package:scholarwheels/core/helper.widgets/location_field.dart';
 import 'package:scholarwheels/controllers/image_upload_controller.dart';
 import 'package:scholarwheels/models/child_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
@@ -36,7 +36,9 @@ class _EditChildScreenState extends State<EditChildScreen> {
   final ImagePicker _picker = ImagePicker();
   String? childId;
   File? _profileImage;
-  String? _existingProfileImageUrl;
+  String? _existingProfileImageUrl; // For display (profileImagePresignedUrl)
+  String? _originalProfileImagePath; // Original profileImage path from server
+  bool _isImageDeleted = false; // Track if user wants to delete image
   String _childInitials = '';
 
   @override
@@ -58,6 +60,10 @@ class _EditChildScreenState extends State<EditChildScreen> {
       try {
         final child = state.data.firstWhere((c) => c.id == childId);
 
+        // Reset image-related flags
+        _isImageDeleted = false;
+        _profileImage = null;
+
         childController.nameController.text = child.name ?? '';
         childController.ageController.text = child.age?.toString() ?? '';
         childController.schoolController.text = child.schoolDescription ?? '';
@@ -68,41 +74,25 @@ class _EditChildScreenState extends State<EditChildScreen> {
         childController.dropOffAddressController.text =
             child.dropOffAddressDescription ?? '';
 
-        // Load location data if it's structured data
-        if (child.school is Map<String, dynamic>) {
-          try {
-            childController.schoolLocationData = LocationData.fromJson(
-              child.school as Map<String, dynamic>,
-            );
-          } catch (e) {
-            // Ignore parsing errors
-          }
+        // Load location data if it's LocationData model
+        if (child.pickUpAddress is LocationData) {
+          childController.pickUpAddressLocationData =
+              child.pickUpAddress as LocationData;
         }
-        if (child.pickUpAddress is Map<String, dynamic>) {
-          try {
-            childController.pickUpAddressLocationData = LocationData.fromJson(
-              child.pickUpAddress as Map<String, dynamic>,
-            );
-          } catch (e) {
-            // Ignore parsing errors
-          }
-        }
-        if (child.dropOffAddress is Map<String, dynamic>) {
-          try {
-            childController.dropOffAddressLocationData = LocationData.fromJson(
-              child.dropOffAddress as Map<String, dynamic>,
-            );
-          } catch (e) {
-            // Ignore parsing errors
-          }
+        if (child.dropOffAddress is LocationData) {
+          childController.dropOffAddressLocationData =
+              child.dropOffAddress as LocationData;
         }
         childController.primaryContactNumberController.text =
             child.primaryContactNumber ?? '';
         childController.secondaryContactNumberController.text =
             child.secondaryContactNumber ?? '';
 
-        // Load profile image URL if available
-        _existingProfileImageUrl = child.user?.profileImage;
+        // Load profile image URL for display (use profileImagePresignedUrl)
+        _existingProfileImageUrl = child.user?.profileImagePresignedUrl;
+        // Store original profileImage path for comparison
+        _originalProfileImagePath = child.user?.profileImage;
+
         // Get first 2 characters of name (first char of first name + first char of last name, or first 2 chars if single word)
         if (child.name != null && child.name!.isNotEmpty) {
           final nameParts = child.name!
@@ -127,12 +117,6 @@ class _EditChildScreenState extends State<EditChildScreen> {
         } else {
           _childInitials = 'C';
         }
-
-        // Load existing profile image path if available
-        if (child.user?.profileImage != null &&
-            child.user!.profileImage!.isNotEmpty) {
-          childController.profileImagePath = child.user!.profileImage;
-        }
       } catch (e) {
         // Child not found
       }
@@ -153,12 +137,14 @@ class _EditChildScreenState extends State<EditChildScreen> {
           _profileImage = file;
           _existingProfileImageUrl =
               null; // Clear existing URL when new image is selected
+          _isImageDeleted =
+              false; // Reset delete flag when new image is selected
         });
 
         // Upload image and get URL
         final imageUrl = await imageUploadController.uploadImage(file);
         if (imageUrl != null && mounted) {
-          // Store URL in controller
+          // Store new image URL in controller (this will be sent as profileImage)
           childController.profileImagePath = imageUrl;
         }
       }
@@ -176,23 +162,32 @@ class _EditChildScreenState extends State<EditChildScreen> {
   }
 
   Future<void> _removePhoto() async {
-    // Delete existing image from server if URL exists
-    if (_existingProfileImageUrl != null &&
-        _existingProfileImageUrl!.isNotEmpty) {
-      await imageUploadController.deleteImage(_existingProfileImageUrl!);
-    }
-
     setState(() {
       _profileImage = null;
       _existingProfileImageUrl = null;
+      _isImageDeleted = true; // Mark that user wants to delete image
     });
-    // Clear in controller
-    childController.profileImagePath = null;
+    // Clear in controller - empty string will be sent to API to delete image
+    childController.profileImagePath = '';
   }
 
   void _handleSave() async {
     if (_formKey.currentState?.validate() ?? false) {
       if (childId != null) {
+        // Determine profileImage value:
+        // - If image deleted: send empty string
+        // - If new image uploaded: send new image path (already set in _pickImage)
+        // - If no change: send original path (or empty string if no original)
+        if (_isImageDeleted) {
+          // User wants to delete image - send empty string
+          childController.profileImagePath = '';
+        } else if (childController.profileImagePath == null ||
+            childController.profileImagePath!.isEmpty) {
+          // No new image uploaded and not deleted - keep original if exists
+          childController.profileImagePath = _originalProfileImagePath ?? '';
+        }
+        // If profileImagePath already has a value (new image), use it as-is
+
         await childController.updateChild(childId!);
       }
     }
@@ -207,6 +202,12 @@ class _EditChildScreenState extends State<EditChildScreen> {
     childController.dropOffAddressController.clear();
     childController.primaryContactNumberController.clear();
     childController.secondaryContactNumberController.clear();
+    // Reset image-related state
+    _profileImage = null;
+    _existingProfileImageUrl = null;
+    _originalProfileImagePath = null;
+    _isImageDeleted = false;
+    childController.profileImagePath = null;
   }
 
   @override
@@ -285,7 +286,7 @@ class _EditChildScreenState extends State<EditChildScreen> {
                   },
                 ),
 
-                LocationAutocompleteField(
+                CustomTextField(
                   controller: childController.schoolController,
                   label: "School",
                   hintText: "Enter School",
@@ -294,9 +295,6 @@ class _EditChildScreenState extends State<EditChildScreen> {
                       return 'School is required';
                     }
                     return null;
-                  },
-                  onLocationSelected: (locationData) {
-                    childController.schoolLocationData = locationData;
                   },
                 ),
 
@@ -326,7 +324,7 @@ class _EditChildScreenState extends State<EditChildScreen> {
                   },
                 ),
 
-                LocationAutocompleteField(
+                LocationField(
                   controller: childController.pickUpAddressController,
                   label: "Pickup Address",
                   hintText: "Enter Pickup Address",
@@ -341,7 +339,7 @@ class _EditChildScreenState extends State<EditChildScreen> {
                   },
                 ),
 
-                LocationAutocompleteField(
+                LocationField(
                   controller: childController.dropOffAddressController,
                   label: "Drop-off Address/School",
                   hintText: "Enter Drop-off Address",
@@ -558,16 +556,18 @@ class _EditChildScreenState extends State<EditChildScreen> {
                     ),
                     SpaceHelper(w: 12.w),
                     Expanded(
-                      child: Obx(
-                        () => CustomButton(
-                          height: 36.h,
+                      child: Obx(() {
+                        final isSaving = childController.isLoading.value;
+                        final isUploading =
+                            imageUploadController.isUploading.value;
+                        final isDisabled = isSaving || isUploading;
+
+                        return CustomButton(
                           title: "Save",
-                          isLoading: childController.isLoading.value,
-                          onPressed: childController.isLoading.value
-                              ? null
-                              : _handleSave,
-                        ),
-                      ),
+                          isLoading: isSaving,
+                          onPressed: isDisabled ? null : _handleSave,
+                        );
+                      }),
                     ),
                   ],
                 ),

@@ -1,5 +1,15 @@
+// To parse this JSON data, do
+//
+//     final contractModel = contractModelFromJson(jsonString);
+
 import 'dart:convert';
+
 import 'package:scholarwheels/models/location_data_model.dart';
+
+ContractModel contractModelFromJson(String str) =>
+    ContractModel.fromJson(json.decode(str));
+
+String contractModelToJson(ContractModel data) => json.encode(data.toJson());
 
 class ContractModel {
   String? id;
@@ -16,11 +26,12 @@ class ContractModel {
   String? contractDuration;
   String? status;
   bool? isDeleted;
-  dynamic monthlyPayment;
-  dynamic totalPayment;
+  int? monthlyPayment;
+  int? totalPayment;
   String? paymentStatus;
   dynamic paymentDate;
   dynamic paymentMethod;
+  dynamic isTwoWay;
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
@@ -29,6 +40,7 @@ class ContractModel {
   Parent? parent;
   Route? route;
   List<Child>? children;
+  BillingHistory? billingHistory;
 
   ContractModel({
     this.id,
@@ -50,6 +62,7 @@ class ContractModel {
     this.paymentStatus,
     this.paymentDate,
     this.paymentMethod,
+    this.isTwoWay,
     this.createdAt,
     this.updatedAt,
     this.v,
@@ -58,6 +71,7 @@ class ContractModel {
     this.parent,
     this.route,
     this.children,
+    this.billingHistory,
   });
 
   ContractModel copyWith({
@@ -75,11 +89,12 @@ class ContractModel {
     String? contractDuration,
     String? status,
     bool? isDeleted,
-    dynamic monthlyPayment,
-    dynamic totalPayment,
+    int? monthlyPayment,
+    int? totalPayment,
     String? paymentStatus,
     dynamic paymentDate,
     dynamic paymentMethod,
+    dynamic isTwoWay,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
@@ -88,6 +103,7 @@ class ContractModel {
     Parent? parent,
     Route? route,
     List<Child>? children,
+    BillingHistory? billingHistory,
   }) => ContractModel(
     id: id ?? this.id,
     contractId: contractId ?? this.contractId,
@@ -108,6 +124,7 @@ class ContractModel {
     paymentStatus: paymentStatus ?? this.paymentStatus,
     paymentDate: paymentDate ?? this.paymentDate,
     paymentMethod: paymentMethod ?? this.paymentMethod,
+    isTwoWay: isTwoWay ?? this.isTwoWay,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     v: v ?? this.v,
@@ -116,6 +133,7 @@ class ContractModel {
     parent: parent ?? this.parent,
     route: route ?? this.route,
     children: children ?? this.children,
+    billingHistory: billingHistory ?? this.billingHistory,
   );
 
   factory ContractModel.fromJson(Map<String, dynamic> json) => ContractModel(
@@ -142,6 +160,7 @@ class ContractModel {
     paymentStatus: json["paymentStatus"],
     paymentDate: json["paymentDate"],
     paymentMethod: json["paymentMethod"],
+    isTwoWay: json["isTwoWay"],
     createdAt: json["createdAt"] == null
         ? null
         : DateTime.parse(json["createdAt"]),
@@ -158,6 +177,9 @@ class ContractModel {
     children: json["children"] == null
         ? []
         : List<Child>.from(json["children"]!.map((x) => Child.fromJson(x))),
+    billingHistory: json["billingHistory"] == null
+        ? null
+        : BillingHistory.fromJson(json["billingHistory"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -182,6 +204,7 @@ class ContractModel {
     "paymentStatus": paymentStatus,
     "paymentDate": paymentDate,
     "paymentMethod": paymentMethod,
+    "isTwoWay": isTwoWay,
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
@@ -192,6 +215,47 @@ class ContractModel {
     "children": children == null
         ? []
         : List<dynamic>.from(children!.map((x) => x.toJson())),
+    "billingHistory": billingHistory?.toJson(),
+  };
+}
+
+class BillingHistory {
+  int? totalPayment;
+  int? paidAmount;
+  int? dueAmount;
+  int? nextPayment;
+
+  BillingHistory({
+    this.totalPayment,
+    this.paidAmount,
+    this.dueAmount,
+    this.nextPayment,
+  });
+
+  BillingHistory copyWith({
+    int? totalPayment,
+    int? paidAmount,
+    int? dueAmount,
+    int? nextPayment,
+  }) => BillingHistory(
+    totalPayment: totalPayment ?? this.totalPayment,
+    paidAmount: paidAmount ?? this.paidAmount,
+    dueAmount: dueAmount ?? this.dueAmount,
+    nextPayment: nextPayment ?? this.nextPayment,
+  );
+
+  factory BillingHistory.fromJson(Map<String, dynamic> json) => BillingHistory(
+    totalPayment: json["totalPayment"],
+    paidAmount: json["paidAmount"],
+    dueAmount: json["dueAmount"],
+    nextPayment: json["nextPayment"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "totalPayment": totalPayment,
+    "paidAmount": paidAmount,
+    "dueAmount": dueAmount,
+    "nextPayment": nextPayment,
   };
 }
 
@@ -329,66 +393,17 @@ class Child {
   String? parentId;
   String? name;
   int? age;
-  dynamic school; // Can be String or LocationData (Map)
+  String? school;
   String? primaryContactNumber;
   String? secondaryContactNumber;
-  dynamic pickUpAddress; // Can be String or LocationData (Map)
-  dynamic dropOffAddress; // Can be String or LocationData (Map)
+  LocationData? pickUpAddress;
+  LocationData? dropOffAddress;
   bool? isDeleted;
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
   ChildUser? user;
   String? contractId;
-
-  // Helper getters to extract description from location data
-  String? get schoolDescription {
-    if (school == null) return null;
-    if (school is String) return school;
-    if (school is Map<String, dynamic>) {
-      try {
-        final locationData = LocationData.fromJson(
-          school as Map<String, dynamic>,
-        );
-        return locationData.description;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  String? get pickUpAddressDescription {
-    if (pickUpAddress == null) return null;
-    if (pickUpAddress is String) return pickUpAddress;
-    if (pickUpAddress is Map<String, dynamic>) {
-      try {
-        final locationData = LocationData.fromJson(
-          pickUpAddress as Map<String, dynamic>,
-        );
-        return locationData.description;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
-
-  String? get dropOffAddressDescription {
-    if (dropOffAddress == null) return null;
-    if (dropOffAddress is String) return dropOffAddress;
-    if (dropOffAddress is Map<String, dynamic>) {
-      try {
-        final locationData = LocationData.fromJson(
-          dropOffAddress as Map<String, dynamic>,
-        );
-        return locationData.description;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
 
   Child({
     this.id,
@@ -409,28 +424,17 @@ class Child {
     this.contractId,
   });
 
-  // Helper method to parse location data from JSON
-  static dynamic _parseLocationData(dynamic json) {
-    if (json == null) return null;
-    if (json is String) return json;
-    if (json is Map<String, dynamic>) {
-      // Return as-is, can be parsed as LocationData when needed
-      return json;
-    }
-    return json;
-  }
-
   Child copyWith({
     String? id,
     String? userId,
     String? parentId,
     String? name,
     int? age,
-    dynamic school,
+    String? school,
     String? primaryContactNumber,
     String? secondaryContactNumber,
-    dynamic pickUpAddress,
-    dynamic dropOffAddress,
+    LocationData? pickUpAddress,
+    LocationData? dropOffAddress,
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -463,11 +467,15 @@ class Child {
     parentId: json["parentId"],
     name: json["name"],
     age: json["age"],
-    school: _parseLocationData(json["school"]),
+    school: json["school"],
     primaryContactNumber: json["primaryContactNumber"],
     secondaryContactNumber: json["secondaryContactNumber"],
-    pickUpAddress: _parseLocationData(json["pickUpAddress"]),
-    dropOffAddress: _parseLocationData(json["dropOffAddress"]),
+    pickUpAddress: json["pickUpAddress"] == null
+        ? null
+        : LocationData.fromJson(json["pickUpAddress"]),
+    dropOffAddress: json["dropOffAddress"] == null
+        ? null
+        : LocationData.fromJson(json["dropOffAddress"]),
     isDeleted: json["isDeleted"],
     createdAt: json["createdAt"] == null
         ? null
@@ -486,11 +494,11 @@ class Child {
     "parentId": parentId,
     "name": name,
     "age": age,
-    "school": school is Map ? school : school,
+    "school": school,
     "primaryContactNumber": primaryContactNumber,
     "secondaryContactNumber": secondaryContactNumber,
-    "pickUpAddress": pickUpAddress is Map ? pickUpAddress : pickUpAddress,
-    "dropOffAddress": dropOffAddress is Map ? dropOffAddress : dropOffAddress,
+    "pickUpAddress": pickUpAddress?.toJson(),
+    "dropOffAddress": dropOffAddress?.toJson(),
     "isDeleted": isDeleted,
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
@@ -691,8 +699,8 @@ class ParentUser {
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
-  String? lastName;
   String? profileImage;
+  String? lastName;
 
   ParentUser({
     this.id,
@@ -707,8 +715,8 @@ class ParentUser {
     this.createdAt,
     this.updatedAt,
     this.v,
-    this.lastName,
     this.profileImage,
+    this.lastName,
   });
 
   ParentUser copyWith({
@@ -724,8 +732,8 @@ class ParentUser {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
-    String? lastName,
     String? profileImage,
+    String? lastName,
   }) => ParentUser(
     id: id ?? this.id,
     email: email ?? this.email,
@@ -739,8 +747,8 @@ class ParentUser {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     v: v ?? this.v,
-    lastName: lastName ?? this.lastName,
     profileImage: profileImage ?? this.profileImage,
+    lastName: lastName ?? this.lastName,
   );
 
   factory ParentUser.fromJson(Map<String, dynamic> json) => ParentUser(
@@ -760,8 +768,8 @@ class ParentUser {
         ? null
         : DateTime.parse(json["updatedAt"]),
     v: json["__v"],
-    lastName: json["lastName"],
     profileImage: json["profileImage"],
+    lastName: json["lastName"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -777,8 +785,8 @@ class ParentUser {
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
-    "lastName": lastName,
     "profileImage": profileImage,
+    "lastName": lastName,
   };
 }
 
@@ -787,8 +795,8 @@ class Route {
   String? routeId;
   String? transportOwnerId;
   String? routeName;
-  String? suburb;
-  String? dropOffPoint;
+  LocationData? suburb;
+  LocationData? dropOffPoint;
   String? assignedVehicle;
   String? assignedDriver;
   String? status;
@@ -797,6 +805,8 @@ class Route {
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
+  Vehicle? vehicle;
+  Driver? driver;
 
   Route({
     this.id,
@@ -813,6 +823,8 @@ class Route {
     this.createdAt,
     this.updatedAt,
     this.v,
+    this.vehicle,
+    this.driver,
   });
 
   Route copyWith({
@@ -820,8 +832,8 @@ class Route {
     String? routeId,
     String? transportOwnerId,
     String? routeName,
-    String? suburb,
-    String? dropOffPoint,
+    LocationData? suburb,
+    LocationData? dropOffPoint,
     String? assignedVehicle,
     String? assignedDriver,
     String? status,
@@ -830,6 +842,8 @@ class Route {
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
+    Vehicle? vehicle,
+    Driver? driver,
   }) => Route(
     id: id ?? this.id,
     routeId: routeId ?? this.routeId,
@@ -845,6 +859,8 @@ class Route {
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
     v: v ?? this.v,
+    vehicle: vehicle ?? this.vehicle,
+    driver: driver ?? this.driver,
   );
 
   factory Route.fromJson(Map<String, dynamic> json) => Route(
@@ -852,8 +868,12 @@ class Route {
     routeId: json["routeId"],
     transportOwnerId: json["transportOwnerId"],
     routeName: json["routeName"],
-    suburb: json["suburb"],
-    dropOffPoint: json["dropOffPoint"],
+    suburb: json["suburb"] == null
+        ? null
+        : LocationData.fromJson(json["suburb"]),
+    dropOffPoint: json["dropOffPoint"] == null
+        ? null
+        : LocationData.fromJson(json["dropOffPoint"]),
     assignedVehicle: json["assignedVehicle"],
     assignedDriver: json["assignedDriver"],
     status: json["status"],
@@ -866,6 +886,8 @@ class Route {
         ? null
         : DateTime.parse(json["updatedAt"]),
     v: json["__v"],
+    vehicle: json["vehicle"] == null ? null : Vehicle.fromJson(json["vehicle"]),
+    driver: json["driver"] == null ? null : Driver.fromJson(json["driver"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -873,8 +895,8 @@ class Route {
     "routeId": routeId,
     "transportOwnerId": transportOwnerId,
     "routeName": routeName,
-    "suburb": suburb,
-    "dropOffPoint": dropOffPoint,
+    "suburb": suburb?.toJson(),
+    "dropOffPoint": dropOffPoint?.toJson(),
     "assignedVehicle": assignedVehicle,
     "assignedDriver": assignedDriver,
     "status": status,
@@ -883,6 +905,384 @@ class Route {
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
+    "vehicle": vehicle?.toJson(),
+    "driver": driver?.toJson(),
+  };
+}
+
+class Driver {
+  String? id;
+  String? userId;
+  String? transportOwnerId;
+  String? fullName;
+  String? licenseNumber;
+  String? gender;
+  String? identifyNumber;
+  DateTime? joiningDate;
+  String? pdp;
+  String? licenseCategory;
+  String? contactNumber;
+  DateTime? licenseExpiry;
+  String? licenseId;
+  List<BusinessDocument>? licenseDocuments;
+  String? status;
+  bool? isDeleted;
+  bool? archived;
+  List<dynamic>? assignedVehicles;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  int? v;
+  ChildUser? user;
+
+  Driver({
+    this.id,
+    this.userId,
+    this.transportOwnerId,
+    this.fullName,
+    this.licenseNumber,
+    this.gender,
+    this.identifyNumber,
+    this.joiningDate,
+    this.pdp,
+    this.licenseCategory,
+    this.contactNumber,
+    this.licenseExpiry,
+    this.licenseId,
+    this.licenseDocuments,
+    this.status,
+    this.isDeleted,
+    this.archived,
+    this.assignedVehicles,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.user,
+  });
+
+  Driver copyWith({
+    String? id,
+    String? userId,
+    String? transportOwnerId,
+    String? fullName,
+    String? licenseNumber,
+    String? gender,
+    String? identifyNumber,
+    DateTime? joiningDate,
+    String? pdp,
+    String? licenseCategory,
+    String? contactNumber,
+    DateTime? licenseExpiry,
+    String? licenseId,
+    List<BusinessDocument>? licenseDocuments,
+    String? status,
+    bool? isDeleted,
+    bool? archived,
+    List<dynamic>? assignedVehicles,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? v,
+    ChildUser? user,
+  }) => Driver(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    transportOwnerId: transportOwnerId ?? this.transportOwnerId,
+    fullName: fullName ?? this.fullName,
+    licenseNumber: licenseNumber ?? this.licenseNumber,
+    gender: gender ?? this.gender,
+    identifyNumber: identifyNumber ?? this.identifyNumber,
+    joiningDate: joiningDate ?? this.joiningDate,
+    pdp: pdp ?? this.pdp,
+    licenseCategory: licenseCategory ?? this.licenseCategory,
+    contactNumber: contactNumber ?? this.contactNumber,
+    licenseExpiry: licenseExpiry ?? this.licenseExpiry,
+    licenseId: licenseId ?? this.licenseId,
+    licenseDocuments: licenseDocuments ?? this.licenseDocuments,
+    status: status ?? this.status,
+    isDeleted: isDeleted ?? this.isDeleted,
+    archived: archived ?? this.archived,
+    assignedVehicles: assignedVehicles ?? this.assignedVehicles,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    v: v ?? this.v,
+    user: user ?? this.user,
+  );
+
+  factory Driver.fromJson(Map<String, dynamic> json) => Driver(
+    id: json["_id"],
+    userId: json["userId"],
+    transportOwnerId: json["transportOwnerId"],
+    fullName: json["fullName"],
+    licenseNumber: json["licenseNumber"],
+    gender: json["gender"],
+    identifyNumber: json["identifyNumber"],
+    joiningDate: json["joiningDate"] == null
+        ? null
+        : DateTime.parse(json["joiningDate"]),
+    pdp: json["pdp"],
+    licenseCategory: json["licenseCategory"],
+    contactNumber: json["contactNumber"],
+    licenseExpiry: json["licenseExpiry"] == null
+        ? null
+        : DateTime.parse(json["licenseExpiry"]),
+    licenseId: json["licenseId"],
+    licenseDocuments: json["licenseDocuments"] == null
+        ? []
+        : List<BusinessDocument>.from(
+            json["licenseDocuments"]!.map((x) => BusinessDocument.fromJson(x)),
+          ),
+    status: json["status"],
+    isDeleted: json["isDeleted"],
+    archived: json["archived"],
+    assignedVehicles: json["assignedVehicles"] == null
+        ? []
+        : List<dynamic>.from(json["assignedVehicles"]!.map((x) => x)),
+    createdAt: json["createdAt"] == null
+        ? null
+        : DateTime.parse(json["createdAt"]),
+    updatedAt: json["updatedAt"] == null
+        ? null
+        : DateTime.parse(json["updatedAt"]),
+    v: json["__v"],
+    user: json["user"] == null ? null : ChildUser.fromJson(json["user"]),
+  );
+
+  Map<String, dynamic> toJson() => {
+    "_id": id,
+    "userId": userId,
+    "transportOwnerId": transportOwnerId,
+    "fullName": fullName,
+    "licenseNumber": licenseNumber,
+    "gender": gender,
+    "identifyNumber": identifyNumber,
+    "joiningDate": joiningDate?.toIso8601String(),
+    "pdp": pdp,
+    "licenseCategory": licenseCategory,
+    "contactNumber": contactNumber,
+    "licenseExpiry": licenseExpiry?.toIso8601String(),
+    "licenseId": licenseId,
+    "licenseDocuments": licenseDocuments == null
+        ? []
+        : List<dynamic>.from(licenseDocuments!.map((x) => x.toJson())),
+    "status": status,
+    "isDeleted": isDeleted,
+    "archived": archived,
+    "assignedVehicles": assignedVehicles == null
+        ? []
+        : List<dynamic>.from(assignedVehicles!.map((x) => x)),
+    "createdAt": createdAt?.toIso8601String(),
+    "updatedAt": updatedAt?.toIso8601String(),
+    "__v": v,
+    "user": user?.toJson(),
+  };
+}
+
+class BusinessDocument {
+  String? url;
+  String? fileName;
+  String? id;
+  DateTime? uploadedAt;
+
+  BusinessDocument({this.url, this.fileName, this.id, this.uploadedAt});
+
+  BusinessDocument copyWith({
+    String? url,
+    String? fileName,
+    String? id,
+    DateTime? uploadedAt,
+  }) => BusinessDocument(
+    url: url ?? this.url,
+    fileName: fileName ?? this.fileName,
+    id: id ?? this.id,
+    uploadedAt: uploadedAt ?? this.uploadedAt,
+  );
+
+  factory BusinessDocument.fromJson(Map<String, dynamic> json) =>
+      BusinessDocument(
+        url: json["url"],
+        fileName: json["fileName"],
+        id: json["_id"],
+        uploadedAt: json["uploadedAt"] == null
+            ? null
+            : DateTime.parse(json["uploadedAt"]),
+      );
+
+  Map<String, dynamic> toJson() => {
+    "url": url,
+    "fileName": fileName,
+    "_id": id,
+    "uploadedAt": uploadedAt?.toIso8601String(),
+  };
+}
+
+class Vehicle {
+  String? id;
+  String? transportOwnerId;
+  String? registrationNumber;
+  String? vehicleType;
+  String? make;
+  String? model;
+  String? manufacturingYear;
+  DateTime? registrationExpiry;
+  List<BusinessDocument>? documents;
+  String? status;
+  List<BusinessDocument>? pictures;
+  String? assignedTo;
+  int? capacity;
+  bool? assigned;
+  bool? isInsured;
+  String? insurer;
+  String? insurenceNumber;
+  bool? isDeleted;
+  bool? archived;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  int? v;
+  String? color;
+
+  Vehicle({
+    this.id,
+    this.transportOwnerId,
+    this.registrationNumber,
+    this.vehicleType,
+    this.make,
+    this.model,
+    this.manufacturingYear,
+    this.registrationExpiry,
+    this.documents,
+    this.status,
+    this.pictures,
+    this.assignedTo,
+    this.capacity,
+    this.assigned,
+    this.isInsured,
+    this.insurer,
+    this.insurenceNumber,
+    this.isDeleted,
+    this.archived,
+    this.createdAt,
+    this.updatedAt,
+    this.v,
+    this.color,
+  });
+
+  Vehicle copyWith({
+    String? id,
+    String? transportOwnerId,
+    String? registrationNumber,
+    String? vehicleType,
+    String? make,
+    String? model,
+    String? manufacturingYear,
+    DateTime? registrationExpiry,
+    List<BusinessDocument>? documents,
+    String? status,
+    List<BusinessDocument>? pictures,
+    String? assignedTo,
+    int? capacity,
+    bool? assigned,
+    bool? isInsured,
+    String? insurer,
+    String? insurenceNumber,
+    bool? isDeleted,
+    bool? archived,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    int? v,
+    String? color,
+  }) => Vehicle(
+    id: id ?? this.id,
+    transportOwnerId: transportOwnerId ?? this.transportOwnerId,
+    registrationNumber: registrationNumber ?? this.registrationNumber,
+    vehicleType: vehicleType ?? this.vehicleType,
+    make: make ?? this.make,
+    model: model ?? this.model,
+    manufacturingYear: manufacturingYear ?? this.manufacturingYear,
+    registrationExpiry: registrationExpiry ?? this.registrationExpiry,
+    documents: documents ?? this.documents,
+    status: status ?? this.status,
+    pictures: pictures ?? this.pictures,
+    assignedTo: assignedTo ?? this.assignedTo,
+    capacity: capacity ?? this.capacity,
+    assigned: assigned ?? this.assigned,
+    isInsured: isInsured ?? this.isInsured,
+    insurer: insurer ?? this.insurer,
+    insurenceNumber: insurenceNumber ?? this.insurenceNumber,
+    isDeleted: isDeleted ?? this.isDeleted,
+    archived: archived ?? this.archived,
+    createdAt: createdAt ?? this.createdAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    v: v ?? this.v,
+    color: color ?? this.color,
+  );
+
+  factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
+    id: json["_id"],
+    transportOwnerId: json["transportOwnerId"],
+    registrationNumber: json["registrationNumber"],
+    vehicleType: json["vehicleType"],
+    make: json["make"],
+    model: json["model"],
+    manufacturingYear: json["manufacturingYear"],
+    registrationExpiry: json["registrationExpiry"] == null
+        ? null
+        : DateTime.parse(json["registrationExpiry"]),
+    documents: json["documents"] == null
+        ? []
+        : List<BusinessDocument>.from(
+            json["documents"]!.map((x) => BusinessDocument.fromJson(x)),
+          ),
+    status: json["status"],
+    pictures: json["pictures"] == null
+        ? []
+        : List<BusinessDocument>.from(
+            json["pictures"]!.map((x) => BusinessDocument.fromJson(x)),
+          ),
+    assignedTo: json["assigned_to"],
+    capacity: json["capacity"],
+    assigned: json["assigned"],
+    isInsured: json["isInsured"],
+    insurer: json["insurer"],
+    insurenceNumber: json["insurenceNumber"],
+    isDeleted: json["isDeleted"],
+    archived: json["archived"],
+    createdAt: json["createdAt"] == null
+        ? null
+        : DateTime.parse(json["createdAt"]),
+    updatedAt: json["updatedAt"] == null
+        ? null
+        : DateTime.parse(json["updatedAt"]),
+    v: json["__v"],
+    color: json["color"],
+  );
+
+  Map<String, dynamic> toJson() => {
+    "_id": id,
+    "transportOwnerId": transportOwnerId,
+    "registrationNumber": registrationNumber,
+    "vehicleType": vehicleType,
+    "make": make,
+    "model": model,
+    "manufacturingYear": manufacturingYear,
+    "registrationExpiry": registrationExpiry?.toIso8601String(),
+    "documents": documents == null
+        ? []
+        : List<dynamic>.from(documents!.map((x) => x.toJson())),
+    "status": status,
+    "pictures": pictures == null
+        ? []
+        : List<dynamic>.from(pictures!.map((x) => x.toJson())),
+    "assigned_to": assignedTo,
+    "capacity": capacity,
+    "assigned": assigned,
+    "isInsured": isInsured,
+    "insurer": insurer,
+    "insurenceNumber": insurenceNumber,
+    "isDeleted": isDeleted,
+    "archived": archived,
+    "createdAt": createdAt?.toIso8601String(),
+    "updatedAt": updatedAt?.toIso8601String(),
+    "__v": v,
+    "color": color,
   };
 }
 
@@ -1037,47 +1437,3 @@ class TransportOwner {
     "totalRatings": totalRatings,
   };
 }
-
-class BusinessDocument {
-  String? fileName;
-  String? url;
-  DateTime? uploadedAt;
-  String? id;
-
-  BusinessDocument({this.fileName, this.url, this.uploadedAt, this.id});
-
-  BusinessDocument copyWith({
-    String? fileName,
-    String? url,
-    DateTime? uploadedAt,
-    String? id,
-  }) => BusinessDocument(
-    fileName: fileName ?? this.fileName,
-    url: url ?? this.url,
-    uploadedAt: uploadedAt ?? this.uploadedAt,
-    id: id ?? this.id,
-  );
-
-  factory BusinessDocument.fromJson(Map<String, dynamic> json) =>
-      BusinessDocument(
-        fileName: json["fileName"],
-        url: json["url"],
-        uploadedAt: json["uploadedAt"] == null
-            ? null
-            : DateTime.parse(json["uploadedAt"]),
-        id: json["_id"],
-      );
-
-  Map<String, dynamic> toJson() => {
-    "fileName": fileName,
-    "url": url,
-    "uploadedAt": uploadedAt?.toIso8601String(),
-    "_id": id,
-  };
-}
-
-// Helper functions for JSON serialization
-ContractModel contractModelFromJson(String str) =>
-    ContractModel.fromJson(json.decode(str));
-
-String contractModelToJson(ContractModel data) => json.encode(data.toJson());

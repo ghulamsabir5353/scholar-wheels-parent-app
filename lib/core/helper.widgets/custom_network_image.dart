@@ -1,6 +1,6 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
-import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CustomNetworkImageWidget extends StatelessWidget {
   final String imageUrl;
@@ -19,6 +19,30 @@ class CustomNetworkImageWidget extends StatelessWidget {
     this.errorWidget,
   });
 
+  Widget _buildShimmerPlaceholder() {
+    if (!showShimmer) {
+      return Container(
+        width: width ?? 47,
+        height: height ?? 47,
+        color: Colors.grey.shade300,
+      );
+    }
+
+    return Shimmer.fromColors(
+      baseColor: Colors.grey.shade300,
+      highlightColor: Colors.grey.shade100,
+      period: const Duration(milliseconds: 1500),
+      child: Container(
+        width: width ?? 47,
+        height: height ?? 47,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(borderRadius ?? 12),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
@@ -27,16 +51,30 @@ class CustomNetworkImageWidget extends StatelessWidget {
         imageUrl: imageUrl,
         width: width ?? 47,
         height: height ?? 47,
+        fit: fit ?? BoxFit.cover,
         imageBuilder: (context, imageProvider) => Container(
           width: width ?? 47,
           height: height ?? 47,
           decoration: BoxDecoration(
-            image: DecorationImage(image: imageProvider, fit: fit),
+            image: DecorationImage(image: imageProvider, fit: fit ?? BoxFit.cover),
           ),
         ),
-        placeholder: (context, url) => SpaceHelper(),
+        placeholder: (context, url) => _buildShimmerPlaceholder(),
         errorWidget: (context, url, error) =>
-            errorWidget ?? const Center(child: Icon(Icons.error)),
+            errorWidget ?? 
+            Container(
+              width: width ?? 47,
+              height: height ?? 47,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(borderRadius ?? 12),
+              ),
+              child: Icon(
+                Icons.error_outline,
+                color: Colors.grey.shade400,
+                size: (width ?? 47) * 0.4,
+              ),
+            ),
       ),
     );
   }

@@ -43,7 +43,8 @@ class ChatBubble extends StatelessWidget {
                     Text(
                       message.message ?? '',
                       style: poppinFonts(
-                        fontSize: xs,
+                        fontSize: sm,
+
                         color: isSent ? Colors.white : AppColor.black,
                       ),
                     ),
@@ -57,7 +58,7 @@ class ChatBubble extends StatelessWidget {
                         Text(
                           _formatDateTime(message.createdAt),
                           style: poppinFonts(
-                            fontSize: 10.sp,
+                            fontSize: xs,
                             color: isSent
                                 ? Colors.white70
                                 : AppColor.textLightBlackColor4A4A4A,

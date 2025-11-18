@@ -18,6 +18,9 @@ class ContractController extends GetxController {
   final RxBool isLoadingBookings = false.obs;
   final Rx<ViewState<List<BookingModel>>> bookingsState =
       Rx<ViewState<List<BookingModel>>>(LoadingState());
+  final RxBool isLoadingContractDetail = false.obs;
+  final Rx<ViewState<ContractModel>> contractDetailState =
+      Rx<ViewState<ContractModel>>(LoadingState());
 
   @override
   void onInit() {
@@ -42,7 +45,7 @@ class ContractController extends GetxController {
 
       final response = await apiService.fetchData(
         AppConstants.contract,
-        query: {'parentId': parentId},
+        query: {'parentId': parentId, 'presigned': true},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -107,7 +110,7 @@ class ContractController extends GetxController {
 
       final response = await apiService.fetchData(
         AppConstants.booking,
-        query: {'parentId': parentId},
+        query: {'parentId': parentId, 'presigned': true},
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -164,5 +167,48 @@ class ContractController extends GetxController {
   /// Refresh bookings list
   void refreshBookings() {
     getBookings();
+  }
+
+  /// Get single contract by ID
+  Future<void> getContractById(String contractId) async {
+    try {
+      isLoadingContractDetail.value = true;
+      contractDetailState.value = LoadingState();
+
+      final endpoint = '${AppConstants.contract}/$contractId';
+      final response = await apiService.fetchData(
+        endpoint,
+        query: {'presigned': true},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        log('Contract detail response: ${response.data}');
+
+        // Parse contract from response.data['contract']
+        if (response.data != null && response.data['contract'] != null) {
+          final contractJson = response.data['contract'] as Map<String, dynamic>;
+          final contract = ContractModel.fromJson(contractJson);
+
+          contractDetailState.value = DataState(data: contract);
+          log('Loaded contract: ${contract.contractId}');
+        } else {
+          contractDetailState.value = EmptyState(
+            message: 'Contract not found',
+          );
+          customToaster('Contract not found', color: Colors.red);
+        }
+      } else {
+        contractDetailState.value = ErrorState(
+          response.data['message'] ?? 'Failed to fetch contract',
+        );
+        customToaster('Failed to load contract', color: Colors.red);
+      }
+    } catch (e) {
+      contractDetailState.value = ExceptionState(Exception(e.toString()));
+      customToaster('Something went wrong', color: Colors.red);
+      log('error loading contract detail: $e');
+    } finally {
+      isLoadingContractDetail.value = false;
+    }
   }
 }

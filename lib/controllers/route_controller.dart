@@ -30,9 +30,16 @@ class RouteController extends GetxController {
     try {
       isLoading.value = true;
       routesState.value = LoadingState();
+
+      // Merge query parameters with presigned: true
+      final mergedQuery = <String, dynamic>{
+        'presigned': true,
+        if (query != null) ...query,
+      };
+
       final response = await apiService.fetchData(
         AppConstants.route,
-        query: query,
+        query: mergedQuery,
       );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
@@ -94,7 +101,10 @@ class RouteController extends GetxController {
     try {
       popularRoutesState.value = LoadingState();
 
-      final response = await apiService.fetchData(AppConstants.popularRoutes);
+      final response = await apiService.fetchData(
+        AppConstants.popularRoutes,
+        query: {'presigned': true},
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         if (response.data != null && response.data['data'] != null) {

@@ -5,8 +5,9 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/route_controller.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
-import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
+import 'package:scholarwheels/core/helper.widgets/location_field.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
+import 'package:scholarwheels/models/location_data_model.dart';
 
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/textStyle.dart';
@@ -26,6 +27,8 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
       TextEditingController();
   final TextEditingController dropOffLocationController =
       TextEditingController();
+  LocationData? pickupLocationData;
+  LocationData? dropOffLocationData;
   String? selectedVehicleType;
   String? selectedCapacity;
 
@@ -71,6 +74,26 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
       dropOffLocationController.text = previousFilters['dropOffLocation'] ?? '';
       selectedVehicleType = previousFilters['vehicleType'];
       selectedCapacity = previousFilters['capacity'];
+
+      // Restore location data if available
+      if (previousFilters['pickupLocationData'] != null) {
+        try {
+          pickupLocationData = LocationData.fromJson(
+            previousFilters['pickupLocationData'],
+          );
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
+      if (previousFilters['dropOffLocationData'] != null) {
+        try {
+          dropOffLocationData = LocationData.fromJson(
+            previousFilters['dropOffLocationData'],
+          );
+        } catch (e) {
+          // Ignore parsing errors
+        }
+      }
     }
   }
 
@@ -112,16 +135,26 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                 ),
               ),
               SpaceHelper(h: 12.w),
-              CustomTextField(
+              LocationField(
                 label: "Pickup Location",
                 hintText: 'Enter Pickup Location',
                 controller: pickupLocationController,
+                onLocationSelected: (locationData) {
+                  setState(() {
+                    pickupLocationData = locationData;
+                  });
+                },
               ),
               SpaceHelper(h: 12.w),
-              CustomTextField(
+              LocationField(
                 label: "School/Drop-off",
                 hintText: 'Enter School/Drop-off',
                 controller: dropOffLocationController,
+                onLocationSelected: (locationData) {
+                  setState(() {
+                    dropOffLocationData = locationData;
+                  });
+                },
               ),
               SpaceHelper(h: 12.w),
               Row(
@@ -193,7 +226,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                                     item,
                                     style: poppinFonts(
                                       color: AppColor.appBlackColor,
-                                      fontSize: sm,
+                                      fontSize: base,
                                     ),
                                   ),
                                 ),
@@ -286,7 +319,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                           hint: Text(
                             'Select Capacity',
                             style: TextStyle(
-                              fontSize: sm,
+                              fontSize: base,
                               color: const Color(0xffADA4A5),
                               fontFamily: 'Poppins',
                             ),
@@ -347,12 +380,17 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                       : () async {
                           // Build query and fetch routes here
                           final selected = {
-                            'pickupLocation': pickupLocationController.text
-                                .trim(),
-                            'dropOffLocation': dropOffLocationController.text
-                                .trim(),
+                            'pickupLocation':
+                                pickupLocationData?.description ??
+                                pickupLocationController.text.trim(),
+                            'dropOffLocation':
+                                dropOffLocationData?.description ??
+                                dropOffLocationController.text.trim(),
                             'vehicleType': selectedVehicleType,
                             'capacity': selectedCapacity,
+                            'pickupLocationData': pickupLocationData?.toJson(),
+                            'dropOffLocationData': dropOffLocationData
+                                ?.toJson(),
                           };
 
                           final query = _buildQueryFromFilters(selected);
@@ -389,6 +427,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
       query['capacity'] = capacity.toLowerCase();
     }
 
+    // Use description from location data if available, otherwise use text input
     final pickup = (selected['pickupLocation'] ?? '').toString();
     if (pickup.isNotEmpty) {
       query['suburb'] = pickup.toLowerCase();

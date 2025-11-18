@@ -339,6 +339,7 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                     SpaceHelper(h: 12.w),
                     // Route Details
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SvgPicture.asset(
                           'assets/images/svg/pickup.svg',
@@ -350,32 +351,39 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                           ),
                         ),
                         SpaceHelper(w: 8.w),
-                        Row(
-                          children: [
-                            Text(
-                              'Route: ',
-                              style: poppinFonts(
-                                color: AppColor.textLightBlackColor4A4A4A,
-                                fontSize: sm,
-                                fontWeight: FontWeight.w400,
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Route: ',
+                                style: poppinFonts(
+                                  color: AppColor.textLightBlackColor4A4A4A,
+                                  fontSize: sm,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                            Text(
-                              _getRouteDisplay(),
 
-                              style: poppinFonts(
-                                color: AppColor.black,
-                                fontSize: sm,
-                                fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  _getRouteDisplay(),
+
+                                  style: poppinFonts(
+                                    color: AppColor.black,
+                                    fontSize: sm,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
                     SpaceHelper(h: 8.h),
                     // Vehicle Details
                     Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SvgPicture.asset(
                           'assets/images/svg/vahicle.svg',
@@ -387,25 +395,30 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                           ),
                         ),
                         SpaceHelper(w: 8.w),
-                        Row(
-                          children: [
-                            Text(
-                              'Vehicle: ',
-                              style: poppinFonts(
-                                color: AppColor.black,
-                                fontSize: sm,
-                                fontWeight: FontWeight.w400,
+                        Expanded(
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Vehicle: ',
+                                style: poppinFonts(
+                                  color: AppColor.black,
+                                  fontSize: sm,
+                                  fontWeight: FontWeight.w400,
+                                ),
                               ),
-                            ),
-                            Text(
-                              _getVehicleDisplay(),
-                              style: poppinFonts(
-                                color: AppColor.black,
-                                fontSize: sm,
-                                fontWeight: FontWeight.w500,
+                              Expanded(
+                                child: Text(
+                                  _getVehicleDisplay(),
+                                  style: poppinFonts(
+                                    color: AppColor.black,
+                                    fontSize: sm,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
@@ -738,14 +751,6 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                             : _handleRequestBooking,
                         title: "Request Sent",
                         isLoading: routeController.isLoading.value,
-                        width: double.infinity,
-                        height: 36.h,
-                        radius: 8.r,
-                        style: poppinFonts(
-                          fontWeight: FontWeight.w500,
-                          fontSize: base,
-                          color: AppColor.white,
-                        ),
                       ),
                     ),
                   ),

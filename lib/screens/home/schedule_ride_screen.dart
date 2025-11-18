@@ -6,6 +6,9 @@ import 'package:scholarwheels/screens/home/widgets/schdule_card.dart';
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/font_sized.dart';
 import '../../core/helper.constants/textStyle.dart';
+import '../../controllers/main.controller.dart';
+import '../../models/dashboard_model.dart';
+import '../../services/api_state.dart';
 
 class ScheduleRideScreen extends StatefulWidget {
   static const route = '/schedule-ride';
@@ -18,8 +21,29 @@ class ScheduleRideScreen extends StatefulWidget {
 
 class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
   final buttonList = ['Daily', 'Weekly', 'Monthly'];
-
   int selectedIndex = 0;
+  final MainController mainController = Get.find<MainController>();
+  late String status;
+
+  @override
+  void initState() {
+    super.initState();
+    // Get status from arguments, default to 'scheduled'
+    status = Get.arguments as String? ?? 'scheduled';
+    _loadTrips();
+  }
+
+  void _loadTrips() {
+    final filterType = buttonList[selectedIndex].toLowerCase();
+    mainController.getTrips(filterType: filterType, status: status);
+  }
+
+  String _getScreenTitle() {
+    if (status.toLowerCase() == 'active') {
+      return 'Active Rides';
+    }
+    return 'Schedule Rides';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,70 +59,88 @@ class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
             Get.back();
           },
         ),
-
         title: Text(
-          'Schedule Rides',
+          _getScreenTitle(),
           style: poppinFonts(fontSize: xl, fontWeight: FontWeight.w500),
         ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 12.w, horizontal: 12.w),
-          child: Column(
-            children: [
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: 12.w),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: List.generate(buttonList.length, (index) {
-                    return InkWell(
-                      onTap: () {
-                        setState(() {
-                          selectedIndex = index;
-                        });
-                      },
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: selectedIndex == index
-                              ? AppColor.primary
-                              : AppColor.white,
-                          border: Border.all(
-                            color: selectedIndex == index
-                                ? AppColor.primary
-                                : AppColor.black,
-                          ),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        margin: const EdgeInsets.only(right: 12),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        child: Text(
-                          buttonList[index],
-                          style: poppinFonts(
-                            color: selectedIndex == index
-                                ? AppColor.appColorWhite
-                                : AppColor.black,
-                            fontSize: xs,
-                          ),
-                        ),
+      body: Column(
+        children: [
+          // Trips List
+          Expanded(
+            child: Obx(() {
+              final state = mainController.tripsState.value;
+
+              if (mainController.isLoadingTrips.value) {
+                return Center(
+                  child: CircularProgressIndicator(color: AppColor.primary),
+                );
+              }
+
+              if (state is ErrorState<List<NextTrip>>) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        state.message,
+                        style: poppinFonts(color: Colors.red),
                       ),
-                    );
-                  }),
-                ),
-              ),
-              Column(
-                children: List.generate(5, (index) {
-                  return Padding(
-                    padding: EdgeInsets.symmetric(vertical: 2.w),
-                    child: SchduleCard(),
+                      SizedBox(height: 16.h),
+                      ElevatedButton(
+                        onPressed: _loadTrips,
+                        child: Text('Retry'),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              if (state is EmptyState<List<NextTrip>>) {
+                return Center(
+                  child: Text(
+                    state.message,
+                    style: poppinFonts(
+                      color: AppColor.textLightBlackColor4A4A4A,
+                    ),
+                  ),
+                );
+              }
+
+              if (state is DataState<List<NextTrip>>) {
+                final trips = state.data;
+                if (trips.isEmpty) {
+                  return Center(
+                    child: Text(
+                      status.toLowerCase() == 'active'
+                          ? 'No active rides found'
+                          : 'No scheduled rides found',
+                      style: poppinFonts(
+                        color: AppColor.textLightBlackColor4A4A4A,
+                      ),
+                    ),
                   );
-                }),
-              ),
-            ],
+                }
+
+                return SingleChildScrollView(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 12.w),
+                    child: Column(
+                      children: trips.map((trip) {
+                        return Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.w),
+                          child: SchduleCard(trip: trip, status: status),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                );
+              }
+
+              return SizedBox.shrink();
+            }),
           ),
-        ),
+        ],
       ),
     );
   }

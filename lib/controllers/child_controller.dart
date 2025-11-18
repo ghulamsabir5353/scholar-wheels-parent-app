@@ -37,7 +37,6 @@ class ChildController extends GetxController {
   String? profileImagePath;
 
   // Location data
-  LocationData? schoolLocationData;
   LocationData? pickUpAddressLocationData;
   LocationData? dropOffAddressLocationData;
 
@@ -65,7 +64,7 @@ class ChildController extends GetxController {
         "password": passwordController.text,
         "name": nameController.text.trim(),
         "age": ageController.text.trim(),
-        "school": schoolLocationData?.toJson() ?? schoolController.text.trim(),
+        "school": schoolController.text.trim(),
         "primaryContactNumber": primaryContactNumberController.text.trim(),
         "secondaryContactNumber": secondaryContactNumberController.text.trim(),
         "profileImage": profileImagePath ?? "",
@@ -85,21 +84,8 @@ class ChildController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         log('Child added successfully: ${response.data}');
 
-        // Parse and add the new child to the list
-        if (response.data != null && response.data['child'] != null) {
-          final newChild = ChildModel.fromJson(response.data['child']);
-
-          // Add to the current list if it's DataState, otherwise create a new list
-          if (childrenState.value is DataState<List<ChildModel>>) {
-            final currentState =
-                childrenState.value as DataState<List<ChildModel>>;
-            final updatedList = [newChild, ...currentState.data];
-            childrenState.value = DataState(data: updatedList);
-          } else {
-            // If it's EmptyState or any other state, create a new DataState with the child
-            childrenState.value = DataState(data: [newChild]);
-          }
-        }
+        // Fetch fresh data from API
+        await getChildrenList();
 
         customToaster('Child added successfully!', color: Colors.green);
         resetForm(); // Clear all form fields
@@ -127,7 +113,6 @@ class ChildController extends GetxController {
     primaryContactNumberController.clear();
     secondaryContactNumberController.clear();
     profileImagePath = null;
-    schoolLocationData = null;
     pickUpAddressLocationData = null;
     dropOffAddressLocationData = null;
   }
@@ -142,7 +127,7 @@ class ChildController extends GetxController {
         "password": passwordController.text,
         "name": nameController.text.trim(),
         "age": ageController.text.trim(),
-        "school": schoolLocationData?.toJson() ?? schoolController.text.trim(),
+        "school": schoolController.text.trim(),
         "primaryContactNumber": primaryContactNumberController.text.trim(),
         "secondaryContactNumber": secondaryContactNumberController.text.trim(),
         "profileImage": profileImagePath ?? "",
@@ -160,20 +145,8 @@ class ChildController extends GetxController {
       if (response.statusCode == 200 || response.statusCode == 201) {
         log('Child updated successfully: ${response.data}');
 
-        // Parse and update the child in the list
-        if (response.data != null && response.data['child'] != null) {
-          final updatedChild = ChildModel.fromJson(response.data['child']);
-
-          // Update in the list if it's DataState
-          if (childrenState.value is DataState<List<ChildModel>>) {
-            final currentState =
-                childrenState.value as DataState<List<ChildModel>>;
-            final updatedList = currentState.data.map((child) {
-              return child.id == childId ? updatedChild : child;
-            }).toList();
-            childrenState.value = DataState(data: updatedList);
-          }
-        }
+        // Fetch fresh data from API
+        await getChildrenList();
 
         customToaster('Child updated successfully!', color: Colors.green);
         resetForm(); // Clear all form fields
@@ -243,7 +216,10 @@ class ChildController extends GetxController {
       }
 
       final endpoint = 'children/parent/$parentId';
-      final response = await apiService.fetchData(endpoint);
+      final response = await apiService.fetchData(
+        endpoint,
+        query: {'presigned': true},
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         log('Children list: ${response.data}');

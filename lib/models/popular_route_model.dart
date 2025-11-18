@@ -1,11 +1,13 @@
+import 'package:scholarwheels/models/location_data_model.dart';
+
 class PopularRouteModel {
   int? bookingCount;
   String? id;
   String? routeId;
   String? transportOwnerId;
   String? routeName;
-  String? suburb;
-  String? dropOffPoint;
+  LocationData? suburb; // LocationData model or null
+  LocationData? dropOffPoint; // LocationData model or null
   String? assignedVehicle;
   String? assignedDriver;
   String? status;
@@ -33,14 +35,40 @@ class PopularRouteModel {
     this.v,
   });
 
+  // Helper getters to extract description from location data
+  String? get suburbDescription => suburb?.description;
+
+  String? get dropOffPointDescription => dropOffPoint?.description;
+
+  // Helper method to parse location data from JSON
+  // Returns LocationData if it's a Map, null otherwise (handles String, null, or invalid types)
+  static LocationData? _parseLocationData(dynamic json) {
+    if (json == null) return null;
+    // If it's a String, return null (location data must be a Map)
+    if (json is String) return null;
+    // Check if it's any type of Map (including _Map<String, dynamic>)
+    if (json is Map) {
+      try {
+        // Convert to Map<String, dynamic> and parse into LocationData model
+        final map = Map<String, dynamic>.from(json);
+        return LocationData.fromJson(map);
+      } catch (e) {
+        // If parsing fails, return null
+        return null;
+      }
+    }
+    // For any other type (int, bool, etc.), return null
+    return null;
+  }
+
   PopularRouteModel copyWith({
     int? bookingCount,
     String? id,
     String? routeId,
     String? transportOwnerId,
     String? routeName,
-    String? suburb,
-    String? dropOffPoint,
+    LocationData? suburb,
+    LocationData? dropOffPoint,
     String? assignedVehicle,
     String? assignedDriver,
     String? status,
@@ -74,8 +102,8 @@ class PopularRouteModel {
         routeId: json["routeId"],
         transportOwnerId: json["transportOwnerId"],
         routeName: json["routeName"],
-        suburb: json["suburb"],
-        dropOffPoint: json["dropOffPoint"],
+        suburb: _parseLocationData(json["suburb"]),
+        dropOffPoint: _parseLocationData(json["dropOffPoint"]),
         assignedVehicle: json["assignedVehicle"],
         assignedDriver: json["assignedDriver"],
         status: json["status"],
@@ -96,8 +124,8 @@ class PopularRouteModel {
     "routeId": routeId,
     "transportOwnerId": transportOwnerId,
     "routeName": routeName,
-    "suburb": suburb,
-    "dropOffPoint": dropOffPoint,
+    "suburb": suburb?.toJson(),
+    "dropOffPoint": dropOffPoint?.toJson(),
     "assignedVehicle": assignedVehicle,
     "assignedDriver": assignedDriver,
     "status": status,

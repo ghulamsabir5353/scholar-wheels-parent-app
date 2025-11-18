@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
@@ -222,7 +221,7 @@ class AuthController extends GetxController {
         "email": emailController.text.trim(),
         "profileImage": profileImagePath ?? "",
         "firstName": firstNameController.text.trim(),
-        "lastName": surNameController.text.trim(), // API uses lastName
+        "surName": surNameController.text.trim(), // API uses lastName
         "phone": phoneController.text.trim(),
       };
 
@@ -232,13 +231,25 @@ class AuthController extends GetxController {
       final response = await apiService.patchData(endpoint, requestBody);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
+        print(' user data: ${BaseHelper.currentUser.value}}');
         log('update user data: ${response.data}');
 
         // Update current user data if response contains user data
         if (response.data != null && response.data['data'] != null) {
           final userData = response.data['data'];
-          BaseHelper.currentUser.value = UserDetail.fromJson(userData);
-          box.write(AppConstants.USER_DETAIL, userData);
+          UserDetail user = UserDetail.fromJson(userData);
+          BaseHelper.currentUser.value = BaseHelper.currentUser.value.copyWith(
+            firstName: user.firstName,
+            surName: user.surName,
+            email: user.email,
+            phone: user.phone,
+            profileImage: user.profileImage,
+            profileImagePresignedUrl: user.profileImagePresignedUrl,
+          );
+          box.write(
+            AppConstants.USER_DETAIL,
+            BaseHelper.currentUser.value.toJson(),
+          );
         }
 
         customToaster(
@@ -296,6 +307,9 @@ class AuthController extends GetxController {
 
           // Clear all fields after successful login
           clearAllFields();
+
+          // Socket connection will be initialized by ChatController.onInit()
+          // when TabScreenBinding creates ChatController after navigation
 
           customToaster('Login successful!', color: Colors.green);
           Get.offAllNamed(TabScreen.route);

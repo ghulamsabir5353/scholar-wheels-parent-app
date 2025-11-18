@@ -35,7 +35,7 @@ class Chat {
   dynamic rideId;
   dynamic rideInstanceId;
   String? lastMessage;
-  dynamic lastMessageAt;
+  String? lastMessageAt;
   dynamic lastMessageSender;
   int? unreadCount;
   bool? isActive;
@@ -74,7 +74,7 @@ class Chat {
     dynamic rideId,
     dynamic rideInstanceId,
     String? lastMessage,
-    dynamic lastMessageAt,
+    String? lastMessageAt,
     dynamic lastMessageSender,
     int? unreadCount,
     bool? isActive,

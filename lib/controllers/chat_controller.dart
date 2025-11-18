@@ -24,7 +24,15 @@ class ChatController extends GetxController {
   final RxBool isLoadingMessages = false.obs;
   final Rx<ViewState<List<MessageModel>>> messagesState =
       Rx<ViewState<List<MessageModel>>>(LoadingState());
-  final RxList<MessageModel> messages = <MessageModel>[].obs;
+
+  /// Getter to access messages list from state
+  List<MessageModel> get messages {
+    final state = messagesState.value;
+    if (state is DataState<List<MessageModel>>) {
+      return state.data;
+    }
+    return [];
+  }
 
   // Current active chat
   String? currentChatId;
@@ -37,6 +45,11 @@ class ChatController extends GetxController {
   void onInit() {
     super.onInit();
     getChatRooms();
+
+    // Initialize socket connection if user is already logged in (app open case)
+    if (BaseHelper.isLogin.value) {
+      initializeSocket();
+    }
   }
 
   /// Get list of chat rooms
@@ -56,6 +69,8 @@ class ChatController extends GetxController {
         if (rooms.isEmpty) {
           roomsState.value = EmptyState();
         } else {
+          // Sort rooms by lastMessageAt (most recent first)
+          _sortRoomsByLastMessage(rooms);
           roomsState.value = DataState(data: rooms);
         }
         log('Loaded ${rooms.length} chat rooms');
@@ -89,10 +104,9 @@ class ChatController extends GetxController {
               )
               .toList();
 
-          messages.value = parsedMessages;
           // Sort messages oldest to newest (index 0 = oldest, last index = newest)
           // With reverse: true ListView, newest messages appear at bottom
-          messages.sort((a, b) {
+          parsedMessages.sort((a, b) {
             final aTime = a.createdAt ?? DateTime(1970);
             final bTime = b.createdAt ?? DateTime(1970);
             return aTime.compareTo(bTime);
@@ -101,11 +115,10 @@ class ChatController extends GetxController {
           if (parsedMessages.isEmpty) {
             messagesState.value = EmptyState();
           } else {
-            messagesState.value = DataState(data: messages);
+            messagesState.value = DataState(data: parsedMessages);
           }
-          log('Loaded ${messages.length} messages for chat $chatId');
+          log('Loaded ${parsedMessages.length} messages for chat $chatId');
         } else {
-          messages.value = [];
           messagesState.value = EmptyState();
         }
       }
@@ -126,6 +139,124 @@ class ChatController extends GetxController {
   /// Refresh messages for current chat
   void refreshMessages(String chatId) {
     getMessages(chatId);
+  }
+
+  /// Sort rooms list by lastMessageAt (most recent first)
+  void _sortRoomsByLastMessage(List<Chat> rooms) {
+    rooms.sort((a, b) {
+      DateTime? aTime;
+      DateTime? bTime;
+
+      // Parse lastMessageAt - it can be String (ISO8601) or DateTime
+      if (a.lastMessageAt != null) {
+        if (a.lastMessageAt is String) {
+          try {
+            aTime = DateTime.parse(a.lastMessageAt as String);
+          } catch (e) {
+            aTime = null;
+          }
+        } else if (a.lastMessageAt is DateTime) {
+          aTime = a.lastMessageAt as DateTime;
+        }
+      }
+
+      if (b.lastMessageAt != null) {
+        if (b.lastMessageAt is String) {
+          try {
+            bTime = DateTime.parse(b.lastMessageAt as String);
+          } catch (e) {
+            bTime = null;
+          }
+        } else if (b.lastMessageAt is DateTime) {
+          bTime = b.lastMessageAt as DateTime;
+        }
+      }
+
+      // Sort descending (most recent first)
+      // If both have times, compare them
+      if (aTime != null && bTime != null) {
+        return bTime.compareTo(aTime);
+      }
+      // If only one has time, prioritize it
+      if (aTime != null) return -1;
+      if (bTime != null) return 1;
+      // If neither has time, maintain order
+      return 0;
+    });
+  }
+
+  /// Update chat room when a new message is received
+  void _updateChatRoomForNewMessage({
+    required String chatId,
+    required String message,
+    required DateTime messageAt,
+    String? senderId,
+    bool incrementUnreadCount = true,
+  }) {
+    try {
+      final currentState = roomsState.value;
+      if (currentState is DataState<List<Chat>>) {
+        final rooms = currentState.data;
+        final roomIndex = rooms.indexWhere((room) => room.id == chatId);
+
+        if (roomIndex != -1) {
+          // Found the chat room - update it
+          final currentUnreadCount = rooms[roomIndex].unreadCount ?? 0;
+          final updatedRoom = rooms[roomIndex].copyWith(
+            lastMessage: message,
+            lastMessageAt: messageAt.toIso8601String(),
+            lastMessageSender: senderId,
+            unreadCount: incrementUnreadCount
+                ? currentUnreadCount + 1
+                : currentUnreadCount,
+            updatedAt: DateTime.now(),
+          );
+
+          // Create new list with updated room
+          final updatedRooms = List<Chat>.from(rooms);
+          updatedRooms[roomIndex] = updatedRoom;
+
+          // Sort rooms by lastMessageAt (most recent first)
+          _sortRoomsByLastMessage(updatedRooms);
+
+          // Update state to trigger UI refresh
+          roomsState.value = DataState(data: updatedRooms);
+          log(
+            'Updated chat room $chatId with new message${incrementUnreadCount ? ' and incremented unread count' : ''} and sorted rooms list',
+          );
+        } else {
+          log('Chat room $chatId not found in rooms list');
+        }
+      }
+    } catch (e) {
+      log('Error updating chat room for new message: $e');
+    }
+  }
+
+  /// Clear unread count for a specific chat room
+  void _clearUnreadCountForChatRoom(String chatId) {
+    try {
+      final currentState = roomsState.value;
+      if (currentState is DataState<List<Chat>>) {
+        final rooms = currentState.data;
+        final roomIndex = rooms.indexWhere((room) => room.id == chatId);
+
+        if (roomIndex != -1 && (rooms[roomIndex].unreadCount ?? 0) > 0) {
+          // Found the chat room and it has unread messages - clear the count
+          final updatedRoom = rooms[roomIndex].copyWith(unreadCount: 0);
+
+          // Create new list with updated room
+          final updatedRooms = List<Chat>.from(rooms);
+          updatedRooms[roomIndex] = updatedRoom;
+
+          // Update state to trigger UI refresh
+          roomsState.value = DataState(data: updatedRooms);
+          log('Cleared unread count for chat room $chatId');
+        }
+      }
+    } catch (e) {
+      log('Error clearing unread count for chat room: $e');
+    }
   }
 
   /// Initialize socket connection (call after login)
@@ -156,42 +287,52 @@ class ChatController extends GetxController {
     socketService!.onReceiveMessage = (data) {
       log('Received message event: $data');
       try {
-        // Data may have message nested or at top level, with possible chatDetails/timestamp
-        final messageData = data['message'] ?? data;
+        final message = MessageModel.fromJson(data);
+        final messageChatId = message.chatId ?? data['chatId'];
 
-        if (messageData is Map<String, dynamic>) {
-          // Create a clean map excluding fields not in MessageModel
-          final Map<String, dynamic> cleanMessageData = Map.from(messageData);
-          cleanMessageData.remove('chatDetails');
-          cleanMessageData.remove('timestamp');
+        if (messageChatId == null) {
+          log('Received message without chatId');
+          return;
+        }
 
-          final message = MessageModel.fromJson(cleanMessageData);
-          final messageChatId = message.chatId ?? data['chatId'];
-
-          // Only add message if it belongs to current chat
-          if (messageChatId == currentChatId) {
-            // Check if message already exists
-            final existingIndex = messages.indexWhere(
-              (m) => m.id == message.id,
+        // If message is for current chat room, add to messages list
+        if (messageChatId == currentChatId) {
+          final currentMessages = List<MessageModel>.from(messages);
+          // Check if message already exists
+          final existingIndex = currentMessages.indexWhere(
+            (m) => m.id == message.id,
+          );
+          if (existingIndex == -1) {
+            currentMessages.add(message);
+            // Sort messages oldest to newest
+            currentMessages.sort((a, b) {
+              final aTime = a.createdAt ?? DateTime(1970);
+              final bTime = b.createdAt ?? DateTime(1970);
+              return aTime.compareTo(bTime);
+            });
+            // Always update state to DataState when we have messages
+            messagesState.value = DataState(data: currentMessages);
+            log(
+              'Added new received message to chat. Total: ${currentMessages.length}',
             );
-            if (existingIndex == -1) {
-              messages.add(message);
-              messages.sort((a, b) {
-                final aTime = a.createdAt ?? DateTime(1970);
-                final bTime = b.createdAt ?? DateTime(1970);
-                return aTime.compareTo(bTime);
-              });
-              // Trigger reactive update
-              messages.refresh();
-              // Update state if it was empty
-              if (messagesState.value is EmptyState) {
-                messagesState.value = DataState(data: messages);
-              }
-              log(
-                'Added new received message to chat. Total: ${messages.length}',
-              );
-            }
           }
+          // Update last message info but don't increment unread count (we're in same room)
+          _updateChatRoomForNewMessage(
+            chatId: messageChatId,
+            message: message.message ?? '',
+            messageAt: message.createdAt ?? DateTime.now(),
+            senderId: message.senderId,
+            incrementUnreadCount: false,
+          );
+        } else {
+          // Message is for a different chat room - update unread count
+          _updateChatRoomForNewMessage(
+            chatId: messageChatId,
+            message: message.message ?? '',
+            messageAt: message.createdAt ?? DateTime.now(),
+            senderId: message.senderId,
+            incrementUnreadCount: true,
+          );
         }
       } catch (e) {
         log('Error parsing received message: $e');
@@ -204,44 +345,44 @@ class ChatController extends GetxController {
       try {
         // The data contains message fields at top level plus chatDetails and timestamp
         // Extract only MessageModel fields (exclude chatDetails and timestamp)
-        final messageId = data['_id'] ?? data['messageId'] ?? data['id'];
+        final messageId = data['_id'];
 
         if (messageId != null) {
+          final currentMessages = List<MessageModel>.from(messages);
           // Check if message already exists
-          final existingIndex = messages.indexWhere((m) => m.id == messageId);
+          final existingIndex = currentMessages.indexWhere(
+            (m) => m.id == messageId,
+          );
 
           if (existingIndex != -1) {
             // Update existing message delivery status
-            messages[existingIndex] = messages[existingIndex].copyWith(
-              delivered: data['delivered'] ?? true,
-              deliveredAt: data['deliveredAt'] != null
-                  ? DateTime.parse(data['deliveredAt'])
-                  : DateTime.now(),
-            );
-            messages.refresh();
+            currentMessages[existingIndex] = currentMessages[existingIndex]
+                .copyWith(
+                  delivered: data['delivered'] ?? true,
+                  deliveredAt: data['deliveredAt'] != null
+                      ? DateTime.parse(data['deliveredAt'])
+                      : DateTime.now(),
+                );
+            messagesState.value = DataState(data: currentMessages);
           } else {
-            // Create a clean map with only MessageModel fields (exclude chatDetails, timestamp)
-            final Map<String, dynamic> messageData = Map.from(data);
-            messageData.remove(
-              'chatDetails',
-            ); // Remove fields not in MessageModel
-            messageData.remove('timestamp');
-
             // Parse message from clean data
-            final message = MessageModel.fromJson(messageData);
+            final message = MessageModel.fromJson(data);
             final messageChatId = message.chatId ?? data['chatId'];
 
             // Only add if it belongs to current chat
             if (messageChatId == currentChatId) {
-              messages.add(message);
+              currentMessages.add(message);
               // Sort messages oldest to newest
-              messages.sort((a, b) {
+              currentMessages.sort((a, b) {
                 final aTime = a.createdAt ?? DateTime(1970);
                 final bTime = b.createdAt ?? DateTime(1970);
                 return aTime.compareTo(bTime);
               });
-              messages.refresh(); // Trigger reactive update
-              log('Added new sent message to chat. Total: ${messages.length}');
+              // Always update state to DataState when we have messages
+              messagesState.value = DataState(data: currentMessages);
+              log(
+                'Added new sent message to chat. Total: ${currentMessages.length}',
+              );
             }
           }
         }
@@ -275,13 +416,19 @@ class ChatController extends GetxController {
       try {
         final messageId = data['messageId'] ?? data['_id'] ?? data['id'];
         if (messageId != null) {
-          final index = messages.indexWhere((m) => m.id == messageId);
+          final currentMessages = List<MessageModel>.from(messages);
+          final index = currentMessages.indexWhere((m) => m.id == messageId);
           if (index != -1) {
-            messages[index] = messages[index].copyWith(
+            currentMessages[index] = currentMessages[index].copyWith(
               read: true,
               readAt: DateTime.now(),
             );
-            messages.refresh(); // Trigger reactive update
+            messagesState.value = DataState(data: currentMessages);
+          }
+
+          // Clear unread count for current chat room when messages are read
+          if (currentChatId != null) {
+            _clearUnreadCountForChatRoom(currentChatId!);
           }
         }
       } catch (e) {
@@ -303,6 +450,8 @@ class ChatController extends GetxController {
   void joinChatRoom(String chatId) {
     currentChatId = chatId;
     socketService?.joinChat(chatId);
+    // Clear unread count when opening chat room
+    _clearUnreadCountForChatRoom(chatId);
     log('Joined chat room: $chatId');
   }
 

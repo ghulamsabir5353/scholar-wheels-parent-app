@@ -60,10 +60,47 @@ class RoomCard extends StatelessWidget {
     return 'Chat';
   }
 
-  /// Format time
-  String _formatTime(dynamic time) {
-    // Handle time formatting if needed
-    return 'now';
+  /// Format time as relative time (now, X minutes ago, X hours ago, X days ago)
+  String _formatTime(String? time) {
+    if (time == null) {
+      return 'N/A';
+    }
+
+    DateTime? messageTime;
+
+    // Handle both String and DateTime types
+    if (time.isEmpty) {
+      return 'N/A';
+    }
+    try {
+      messageTime = DateTime.parse(time);
+    } catch (e) {
+      return 'N/A';
+    }
+
+    final now = DateTime.now();
+    final difference = now.difference(messageTime);
+
+    // Less than 1 minute ago
+    if (difference.inMinutes < 1) {
+      return 'now';
+    }
+
+    // Less than 1 hour ago
+    if (difference.inHours < 1) {
+      final minutes = difference.inMinutes;
+      return '$minutes ${minutes == 1 ? 'minute' : 'minutes'} ago';
+    }
+
+    // Less than 24 hours ago
+    if (difference.inDays < 1) {
+      final hours = difference.inHours;
+      return '$hours ${hours == 1 ? 'hour' : 'hours'} ago';
+    }
+
+    // More than 24 hours ago
+    final days = difference.inDays;
+    return '$days ${days == 1 ? 'day' : 'days'} ago';
   }
 
   @override
@@ -128,7 +165,7 @@ class RoomCard extends StatelessWidget {
                 ),
                 Column(
                   mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     if (room.lastMessageAt != null)
                       Text(
@@ -139,16 +176,22 @@ class RoomCard extends StatelessWidget {
                         ),
                       ),
                     if (room.unreadCount != null && room.unreadCount! > 0)
-                      Card(
-                        color: AppColor.secondary,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 5,
-                          ),
-                          child: Text(
-                            '${room.unreadCount}',
-                            style: poppinFonts(color: AppColor.primary),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColor.secondary,
+
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '${room.unreadCount}',
+                          style: poppinFonts(
+                            color: AppColor.primary,
+                            fontSize: sm,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),

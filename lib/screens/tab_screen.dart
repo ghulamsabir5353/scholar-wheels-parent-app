@@ -64,9 +64,17 @@ class _TabScreenState extends State<TabScreen> {
                 child: Semantics(
                   label: 'Bottom navigation bar',
                   child: Material(
-                    elevation: 0.2,
+                    elevation: 0,
                     color: Colors.white,
-                    child: SizedBox(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: Border(
+                          top: BorderSide(
+                            color: AppColor.bgGrayD9D8D8,
+                            width: 0.5,
+                          ),
+                        ),
+                      ),
                       height: 67,
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,

@@ -11,6 +11,7 @@ import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/screens/chat/widgets/chat_bubble.dart';
 import 'package:scholarwheels/models/room_model.dart';
+import 'package:scholarwheels/models/message_model.dart';
 import 'package:scholarwheels/services/api_state.dart';
 
 import '../../core/helper.constants/color.dart';
@@ -53,9 +54,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     // Fetch messages and join chat room when screen is built
     if (_chatId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) async {
-        // Initialize socket if not already done
-        await _chatController.initializeSocket();
-        // Join the chat room for real-time updates
+        // Join the chat room for real-time updates (socket should already be initialized)
         _chatController.joinChatRoom(_chatId!);
         // Fetch existing messages
         _chatController.getMessages(_chatId!);
@@ -65,9 +64,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     // Mark messages as read when they become visible
     _messageController.addListener(_onMessageTextChanged);
 
-    // Listen to messages list changes and scroll to bottom when new messages arrive
-    _chatController.messages.listen((messageList) {
-      if (messageList.isNotEmpty) {
+    // Listen to messages state changes and scroll to bottom when new messages arrive
+    _chatController.messagesState.listen((state) {
+      if (state is DataState<List<MessageModel>> && state.data.isNotEmpty) {
         // Small delay to ensure ListView has updated
         Future.delayed(const Duration(milliseconds: 100), () {
           _scrollToBottom();
@@ -222,7 +221,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              if (messagesState is EmptyState || messages.isEmpty) {
+              if (messagesState is EmptyState ||
+                  (messagesState is DataState<List<MessageModel>> &&
+                      messagesState.data.isEmpty)) {
                 return Center(
                   child: Text(
                     'No messages yet',

@@ -95,7 +95,7 @@ class CustomTextField extends StatelessWidget {
               ),
             ),
           SizedBox(
-            height: height ?? 70,
+            height: height ?? 72,
             child: TextFormField(
               initialValue: initialValue,
               focusNode: focusNode,

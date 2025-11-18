@@ -7,10 +7,12 @@ import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/screens/bookings/request_history_screen.dart';
 import 'package:scholarwheels/screens/settings/logbook/logbook_screen.dart';
 import 'package:scholarwheels/screens/settings/privacy_policy_screen.dart';
+import 'package:scholarwheels/screens/settings/setting_screen.dart';
 import 'package:scholarwheels/screens/settings/terms_and_conditions_screen.dart';
 
 class AppDrawer extends StatelessWidget {
@@ -139,47 +141,96 @@ class AppDrawer extends StatelessWidget {
                 top: 16.h,
                 bottom: 42.h,
               ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: AppColor.darkPrimary,
-                    radius: 20,
-                    child: Text(
-                      (userName?.isNotEmpty == true
-                              ? userName!.substring(0, 1)
-                              : 'A')
-                          .toUpperCase(),
-                      style: poppinFonts(
-                        color: AppColor.appColorWhite,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+              child: Obx(() {
+                final user = BaseHelper.currentUser.value;
+                final profileImageUrl =
+                    user.profileImagePresignedUrl ?? user.profileImage;
+                final initials =
+                    (userName?.isNotEmpty == true
+                            ? userName!.substring(0, 1)
+                            : user.firstName?.isNotEmpty == true
+                            ? user.firstName!.substring(0, 1)
+                            : 'A')
+                        .toUpperCase();
+
+                return Row(
+                  children: [
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color:
+                            profileImageUrl != null &&
+                                profileImageUrl.isNotEmpty
+                            ? Colors.transparent
+                            : AppColor.darkPrimary,
                       ),
+                      child:
+                          profileImageUrl != null && profileImageUrl.isNotEmpty
+                          ? ClipOval(
+                              child: CustomNetworkImageWidget(
+                                imageUrl: profileImageUrl,
+                                width: 40,
+                                height: 40,
+                                borderRadius: 20,
+                                fit: BoxFit.cover,
+                                errorWidget: Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: AppColor.darkPrimary,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      initials,
+                                      style: poppinFonts(
+                                        color: AppColor.appColorWhite,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Center(
+                              child: Text(
+                                initials,
+                                style: poppinFonts(
+                                  color: AppColor.appColorWhite,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Hello, 👋',
-                        style: poppinFonts(
-                          color: AppColor.black,
-                          fontSize: base,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      if (userName != null)
+                    const SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Text(
-                          userName ?? 'Hello, 👋',
+                          'Hello, 👋',
                           style: poppinFonts(
-                            color: AppColor.textLightBlackColor4A4A4A,
-                            fontSize: sm,
+                            color: AppColor.black,
+                            fontSize: base,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                    ],
-                  ),
-                ],
-              ),
+                        if (userName != null)
+                          Text(
+                            userName ?? 'Hello, 👋',
+                            style: poppinFonts(
+                              color: AppColor.textLightBlackColor4A4A4A,
+                              fontSize: sm,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                );
+              }),
             ),
             SpaceHelper(h: 16.w),
             _item(
@@ -256,6 +307,14 @@ class AppDrawer extends StatelessWidget {
               },
             ),
             const Spacer(),
+            _item(
+              icon: 'assets/images/svg/settings_icon.svg',
+              label: 'Settings',
+              onTap: () {
+                Navigator.pop(context);
+                Get.toNamed(SettingScreen.route);
+              },
+            ),
             _item(
               icon: 'assets/images/svg/logout_icon.svg',
               label: 'Logout',

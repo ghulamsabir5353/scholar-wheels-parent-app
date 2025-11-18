@@ -216,8 +216,11 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
                                             );
                                           },
                                           child: RouteEntryWidget(
-                                            pickupAddress: item.suburb ?? '',
-                                            schoolName: item.dropOffPoint ?? '',
+                                            pickupAddress:
+                                                item.suburbDescription ?? '',
+                                            schoolName:
+                                                item.dropOffPointDescription ??
+                                                '',
                                             isLast: idx == list.length - 1,
                                           ),
                                         );
@@ -253,8 +256,7 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
                                   },
                             title: "Find Your Route",
                             width: double.infinity,
-                            height: 36.h,
-                            radius: 12.r,
+
                             isLoading: routeController.isLoading.value,
                             style: poppinFonts(
                               fontSize: base,
@@ -458,7 +460,7 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
                                   padding: EdgeInsets.only(bottom: 12.h),
                                   child: TransportCard(route: route),
                                 );
-                              }).toList(),
+                              }),
                             ],
                           ),
                         ),
@@ -545,9 +547,10 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
   Widget _buildFilterChip(String label, String filterKey) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 6.h),
+      margin: EdgeInsets.only(right: 8.w),
       decoration: BoxDecoration(
         color: AppColor.lightSecondary,
-        borderRadius: BorderRadius.circular(20.r),
+        borderRadius: BorderRadius.circular(16.r),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

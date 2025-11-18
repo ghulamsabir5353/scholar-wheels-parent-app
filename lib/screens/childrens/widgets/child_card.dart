@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/child_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/models/child_model.dart';
 import 'package:scholarwheels/screens/childrens/edit_child_screen.dart';
@@ -164,17 +164,59 @@ class ChildCard extends StatelessWidget {
             Row(
               children: [
                 // Avatar
-                CircleAvatar(
-                  backgroundColor: AppColor.darkPrimary,
-                  radius: 28.w,
-                  child: Text(
-                    _getInitial(),
-                    style: poppinFonts(
-                      color: AppColor.white,
-                      fontSize: base,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                ClipOval(
+                  child: () {
+                    final profileImageUrl =
+                        child.user?.profileImagePresignedUrl ??
+                        child.user?.profileImage;
+                    final hasImage =
+                        profileImageUrl != null && profileImageUrl.isNotEmpty;
+
+                    return hasImage
+                        ? CustomNetworkImageWidget(
+                            imageUrl: profileImageUrl,
+                            width: 56.w,
+                            height: 56.w,
+                            borderRadius: 28.w,
+                            fit: BoxFit.cover,
+                            errorWidget: Container(
+                              width: 56.w,
+                              height: 56.w,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: AppColor.darkPrimary,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  _getInitial(),
+                                  style: poppinFonts(
+                                    color: AppColor.white,
+                                    fontSize: base,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+                        : Container(
+                            width: 56.w,
+                            height: 56.w,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColor.darkPrimary,
+                            ),
+                            child: Center(
+                              child: Text(
+                                _getInitial(),
+                                style: poppinFonts(
+                                  color: AppColor.white,
+                                  fontSize: base,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          );
+                  }(),
                 ),
                 SpaceHelper(w: 12.w),
                 // Name and Age
@@ -268,7 +310,7 @@ class ChildCard extends StatelessWidget {
                       _showDeleteDialog();
                     },
                     child: Container(
-                      height: 32.h,
+                      height: 36.h,
                       decoration: BoxDecoration(
                         color: AppColor.white,
                         border: Border.all(color: AppColor.secondary, width: 1),
@@ -291,7 +333,6 @@ class ChildCard extends StatelessWidget {
                 // Edit Details Button
                 Expanded(
                   child: CustomButton(
-                    height: 32.h,
                     onPressed: () {
                       Get.toNamed(EditChildScreen.route, arguments: child.id);
                     },

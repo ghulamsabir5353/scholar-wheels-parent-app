@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
@@ -77,21 +76,21 @@ class BookingHistoryCard extends StatelessWidget {
 
   String _getPickupAddress() {
     if (booking.children != null && booking.children!.isNotEmpty) {
-      return booking.children!.first.pickUpAddress ??
-          booking.route?.suburb ??
+      return booking.children!.first.pickUpAddress?.description ??
+          booking.route?.suburb?.description ??
           'N/A';
     }
-    return booking.route?.suburb ?? 'N/A';
+    return booking.route?.suburb?.description ?? 'N/A';
   }
 
   String _getSchoolName() {
     if (booking.children != null && booking.children!.isNotEmpty) {
-      return booking.children!.first.dropOffAddress ??
+      return booking.children!.first.dropOffAddress?.description ??
           booking.children!.first.school ??
-          booking.route?.dropOffPoint ??
+          booking.route?.dropOffPoint?.description ??
           'N/A';
     }
-    return booking.route?.dropOffPoint ?? 'N/A';
+    return booking.route?.dropOffPoint?.description ?? 'N/A';
   }
 
   String _getRequestId() {
@@ -168,7 +167,7 @@ class BookingHistoryCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Request Date',
@@ -222,7 +221,7 @@ class BookingHistoryCard extends StatelessWidget {
                 ),
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Child',

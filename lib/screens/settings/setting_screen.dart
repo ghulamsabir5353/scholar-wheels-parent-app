@@ -4,6 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/screens/settings/personal_profile_screen.dart';
 import 'package:scholarwheels/screens/settings/change_password_screen.dart';
@@ -139,6 +140,24 @@ class SettingScreen extends StatelessWidget {
     return '$firstName $surName'.trim();
   }
 
+  /// Get user initials for avatar
+  String _getInitials(String fullName) {
+    if (fullName.isEmpty) return 'U';
+    final parts = fullName
+        .trim()
+        .split(' ')
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    } else if (parts.length == 1 && parts[0].length >= 2) {
+      return parts[0].substring(0, 2).toUpperCase();
+    } else if (parts.length == 1 && parts[0].length == 1) {
+      return parts[0][0].toUpperCase();
+    }
+    return 'U';
+  }
+
   void _handleItemTap(String item, BuildContext context) {
     switch (item) {
       case "Logout":
@@ -187,7 +206,11 @@ class SettingScreen extends StatelessWidget {
         final fullName = _getFullName(user);
         final email = user.email ?? '';
         final phone = user.phone ?? '';
-        final profileImage = user.profileImagePresignedUrl ?? user.profileImage;
+        // Use profileImagePresignedUrl for display (presigned URL from server)
+        // Fallback to profileImage if presigned URL is not available
+        final profileImageUrl =
+            user.profileImagePresignedUrl ?? user.profileImage;
+        final initials = _getInitials(fullName);
 
         return SingleChildScrollView(
           child: Padding(
@@ -201,15 +224,57 @@ class SettingScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
                       children: [
-                        CircleAvatar(
-                          radius: 26.w,
-                          backgroundColor: AppColor.white,
-                          backgroundImage: profileImage != null
-                              ? NetworkImage(profileImage)
-                              : null,
-                          child: profileImage == null
-                              ? Image.asset('assets/images/png/profile.png')
-                              : null,
+                        Container(
+                          width: 52.w,
+                          height: 52.w,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color:
+                                profileImageUrl != null &&
+                                    profileImageUrl.isNotEmpty
+                                ? Colors.transparent
+                                : AppColor.darkPrimary,
+                          ),
+                          child:
+                              profileImageUrl != null &&
+                                  profileImageUrl.isNotEmpty
+                              ? ClipOval(
+                                  child: CustomNetworkImageWidget(
+                                    imageUrl: profileImageUrl,
+                                    width: 52.w,
+                                    height: 52.w,
+                                    borderRadius: 26.w,
+                                    fit: BoxFit.cover,
+                                    errorWidget: Container(
+                                      width: 52.w,
+                                      height: 52.w,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColor.darkPrimary,
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          initials,
+                                          style: poppinFonts(
+                                            color: Colors.white,
+                                            fontSize: base,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                )
+                              : Center(
+                                  child: Text(
+                                    initials,
+                                    style: poppinFonts(
+                                      color: Colors.white,
+                                      fontSize: base,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
                         ),
                         SpaceHelper(w: 8.w),
                         Expanded(

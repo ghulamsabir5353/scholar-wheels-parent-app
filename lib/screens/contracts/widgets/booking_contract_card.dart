@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
@@ -61,10 +62,71 @@ class BookingContractCard extends StatelessWidget {
   }
 
   String _getContractDuration() {
+    if (contract.startDate != null && contract.endDate != null) {
+      final startDate = contract.startDate!;
+      final endDate = contract.endDate!;
+
+      if (endDate.isBefore(startDate)) {
+        return 'N/A';
+      }
+
+      // Calculate full calendar months
+      int years = endDate.year - startDate.year;
+      int monthDiff = endDate.month - startDate.month;
+      int fullMonths = (years * 12) + monthDiff;
+
+      // Adjust if end day is before start day (partial month)
+      if (endDate.day < startDate.day) {
+        fullMonths--;
+      }
+
+      // Calculate the date after full months
+      DateTime dateAfterFullMonths = DateTime(
+        startDate.year,
+        startDate.month + fullMonths,
+        startDate.day,
+      );
+
+      // Calculate remaining days
+      int remainingDays = endDate.difference(dateAfterFullMonths).inDays;
+
+      // Average days per month (accounts for leap years: 365.25/12)
+      const double averageDaysPerMonth = 365.25 / 12;
+
+      // Convert remaining days to fraction of a month
+      double monthFraction = remainingDays / averageDaysPerMonth;
+
+      // Total months with decimal precision
+      double totalMonths = fullMonths + monthFraction;
+
+      // Format the result
+      if (totalMonths >= 1) {
+        // Check if it's a whole number (within 0.01 tolerance)
+        final rounded = totalMonths.round();
+        if ((totalMonths - rounded).abs() < 0.01) {
+          return '$rounded ${rounded == 1 ? 'Month' : 'Months'}';
+        } else {
+          // Show one decimal place
+          final formatted = totalMonths.toStringAsFixed(1);
+          return '$formatted Months';
+        }
+      } else {
+        // Less than a month, show total days
+        final totalDays = endDate.difference(startDate).inDays;
+        if (totalDays > 0) {
+          return '$totalDays ${totalDays == 1 ? 'Day' : 'Days'}';
+        } else {
+          return '0 Days';
+        }
+      }
+    }
+
+    // Fallback to contractDuration if available
     if (contract.contractDuration != null &&
         contract.contractDuration!.isNotEmpty) {
       return contract.contractDuration!;
     }
+
     return 'N/A';
   }
 
@@ -244,8 +306,11 @@ class BookingContractCard extends StatelessWidget {
                         SpaceHelper(h: 12.h),
                         // Route Details with Icons and Dotted Line
                         RouteEntryWidget(
-                          pickupAddress: contract.route?.suburb ?? 'N/A',
-                          schoolName: contract.route?.dropOffPoint ?? 'N/A',
+                          pickupAddress:
+                              contract.route?.suburb?.description ?? 'N/A',
+                          schoolName:
+                              contract.route?.dropOffPoint?.description ??
+                              'N/A',
                         ),
                         SpaceHelper(h: 12.h),
                         // Monthly Pay
@@ -281,13 +346,13 @@ class BookingContractCard extends StatelessWidget {
                           vertical: 6.h,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColor.lightSecondary,
+                          color: AppColor.primary,
                           borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Text(
                           contract.status?.capitalizeFirst ?? 'N/A',
                           style: poppinFonts(
-                            color: AppColor.primary,
+                            color: AppColor.white,
                             fontSize: sm,
                             fontWeight: FontWeight.w500,
                           ),
@@ -305,8 +370,8 @@ class BookingContractCard extends StatelessWidget {
                     child: InkWell(
                       onTap: () {
                         Get.toNamed(
-                          BookingDetailScreen.route,
-                          arguments: contract,
+                          ContractDetailScreen.route,
+                          arguments: contract.id ?? contract.contractId,
                         );
                       },
                       child: Container(
@@ -333,7 +398,9 @@ class BookingContractCard extends StatelessWidget {
                   Expanded(
                     child: CustomButton(
                       height: 32.h,
-                      onPressed: () {},
+                      onPressed: () {
+                        Get.find<BottomTabController>().setTabIndex(4);
+                      },
                       title: "Chat",
                       style: poppinFonts(
                         fontSize: sm,

@@ -11,7 +11,6 @@ import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
-import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/screens/auth/profile_screen.dart';
 
@@ -29,17 +28,6 @@ class _ProfilePictureScreenState extends State<ProfilePictureScreen> {
       Get.find<ImageUploadController>();
   final ImagePicker _picker = ImagePicker();
   File? _selectedImageFile;
-  String? _uploadedImageUrl;
-
-  @override
-  void initState() {
-    super.initState();
-    // Load existing profile image if available
-    if (authController.profileImagePath != null &&
-        authController.profileImagePath!.isNotEmpty) {
-      _uploadedImageUrl = authController.profileImagePath;
-    }
-  }
 
   Future<void> _pickImage() async {
     try {
@@ -59,9 +47,6 @@ class _ProfilePictureScreenState extends State<ProfilePictureScreen> {
         final imageUrl = await imageUploadController.uploadImage(file);
         if (imageUrl != null && mounted) {
           print('imageUrl: $imageUrl');
-          setState(() {
-            _uploadedImageUrl = imageUrl;
-          });
           // Store URL in controller
           authController.profileImagePath = imageUrl;
         }
@@ -111,10 +96,7 @@ class _ProfilePictureScreenState extends State<ProfilePictureScreen> {
                         ? null
                         : _pickImage,
                     child: Obx(() {
-                      final hasImage =
-                          (_uploadedImageUrl != null &&
-                              _uploadedImageUrl!.isNotEmpty) ||
-                          _selectedImageFile != null;
+                      final hasImage = _selectedImageFile != null;
 
                       return Container(
                         width: 120.w,
@@ -131,17 +113,6 @@ class _ProfilePictureScreenState extends State<ProfilePictureScreen> {
                             ? Center(
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                ),
-                              )
-                            : (_uploadedImageUrl != null &&
-                                  _uploadedImageUrl!.isNotEmpty)
-                            ? ClipOval(
-                                child: CustomNetworkImageWidget(
-                                  imageUrl: _uploadedImageUrl!,
-                                  width: 120.w,
-                                  height: 120.w,
-                                  borderRadius: 0,
-                                  fit: BoxFit.cover,
                                 ),
                               )
                             : _selectedImageFile != null
@@ -162,11 +133,14 @@ class _ProfilePictureScreenState extends State<ProfilePictureScreen> {
                 ],
               ),
               SpaceHelper(h: 24),
-              CustomButton(
-                onPressed: () {
-                  Get.toNamed(ProfileScreen.route);
-                },
-                title: "Continue",
+              Obx(
+                () => CustomButton(
+                  onPressed: () {
+                    Get.toNamed(ProfileScreen.route);
+                  },
+                  title: "Continue",
+                  isDisabled: imageUploadController.isUploading.value,
+                ),
               ),
             ],
           ),

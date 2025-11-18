@@ -28,6 +28,17 @@ class RouteEntryWidget extends StatelessWidget {
     this.border,
   });
 
+  int _calculateLineCount(String text, double maxWidth) {
+    final textStyle = poppinFonts(fontSize: sm, fontWeight: FontWeight.w500);
+    final textPainter = TextPainter(
+      text: TextSpan(text: text, style: textStyle),
+      maxLines: 3,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout(maxWidth: maxWidth);
+    return textPainter.computeLineMetrics().length;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -39,129 +50,157 @@ class RouteEntryWidget extends StatelessWidget {
       margin: margin ?? EdgeInsets.only(bottom: isLast ? 0 : 12.w),
       padding:
           padding ?? EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Left side with icons and dotted line
-          Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisAlignment: MainAxisAlignment.center,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          // Calculate available width for text
+          // Container width - container padding (both sides) - icon width - spacing
+          final containerWidth = constraints.maxWidth;
+          final containerPadding = 12.w * 2; // left + right padding
+          final iconWidth = 30.w;
+          final spacing = 6.w;
+          final availableWidth =
+              containerWidth - containerPadding - iconWidth - spacing;
+
+          final pickupLineCount = _calculateLineCount(
+            pickupAddress,
+            availableWidth,
+          );
+          // Calculate line height: 24.h for first line, then 20.h for each additional line
+          final lineCount = pickupLineCount > 0 ? pickupLineCount : 1;
+          final lineHeight = lineCount == 1
+              ? 24.h
+              : 24.h + (20.h * (lineCount - 1));
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Pickup icon
-              Container(
-                width: 30.w,
-                height: 32.w,
-                decoration: BoxDecoration(
-                  color: AppColor.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.gray.withOpacity(0.8),
-                      blurRadius: 1.5.r,
-                      offset: Offset(0, 1.5.r),
+              // Left side with icons and dotted line
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Pickup icon
+                  Container(
+                    width: 30.w,
+                    height: 32.w,
+                    decoration: BoxDecoration(
+                      color: AppColor.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColor.gray.withOpacity(0.8),
+                          blurRadius: 1.5.r,
+                          offset: Offset(0, 1.5.r),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/images/svg/pickup.svg',
-                    width: 18.w,
-                    height: 18.w,
-                    colorFilter: ColorFilter.mode(
-                      AppColor.textLightBlackColor4A4A4A,
-                      BlendMode.srcIn,
-                    ),
-                  ),
-                ),
-              ),
-              // Dotted vertical line connecting pickup to school
-              SizedBox(
-                height: 24.h,
-                child: CustomPaint(painter: DottedLinePainter()),
-              ),
-              // School icon
-              Container(
-                width: 32.w,
-                height: 32.w,
-                decoration: BoxDecoration(
-                  color: AppColor.white,
-                  shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColor.gray.withOpacity(0.8),
-                      blurRadius: 1.5.r,
-                      offset: Offset(0, 1.5.r),
-                    ),
-                  ],
-                ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/images/svg/school.svg',
-                    width: 18.w,
-                    height: 18.w,
-                    colorFilter: ColorFilter.mode(
-                      AppColor.textLightBlackColor4A4A4A,
-                      BlendMode.srcIn,
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/images/svg/pickup.svg',
+                        width: 18.w,
+                        height: 18.w,
+                        colorFilter: ColorFilter.mode(
+                          AppColor.textLightBlackColor4A4A4A,
+                          BlendMode.srcIn,
+                        ),
+                      ),
                     ),
                   ),
+                  // Dotted vertical line connecting pickup to school
+                  SizedBox(
+                    height: lineHeight,
+                    child: CustomPaint(
+                      painter: DottedLinePainter(),
+                      size: Size(1.w, lineHeight),
+                    ),
+                  ),
+                  // School icon
+                  Container(
+                    width: 32.w,
+                    height: 32.w,
+                    decoration: BoxDecoration(
+                      color: AppColor.white,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColor.gray.withOpacity(0.8),
+                          blurRadius: 1.5.r,
+                          offset: Offset(0, 1.5.r),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: SvgPicture.asset(
+                        'assets/images/svg/school.svg',
+                        width: 18.w,
+                        height: 18.w,
+                        colorFilter: ColorFilter.mode(
+                          AppColor.textLightBlackColor4A4A4A,
+                          BlendMode.srcIn,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SpaceHelper(w: 6.w),
+              // Right side with labels and addresses
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Pickup point
+                    Text(
+                      'Pickup:',
+                      style: poppinFonts(
+                        color: AppColor.textLightBlackColor4A4A4A,
+                        fontSize: xs,
+                      ),
+                    ),
+                    SpaceHelper(h: 2.h),
+                    Text(
+                      pickupAddress,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: poppinFonts(
+                        color: AppColor.black,
+                        fontSize: sm,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 24.h,
+                      child: CustomPaint(
+                        painter: HorizontalDottedLinePainter(),
+                      ),
+                    ),
+                    // School
+                    Text(
+                      'School:',
+                      style: poppinFonts(
+                        color: AppColor.textLightBlackColor4A4A4A,
+                        fontSize: xs,
+                      ),
+                    ),
+                    SpaceHelper(h: 3.h),
+                    Text(
+                      schoolName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: poppinFonts(
+                        color: AppColor.black,
+                        fontSize: sm,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
-          ),
-          SpaceHelper(w: 6.w),
-          // Right side with labels and addresses
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Pickup point
-                Text(
-                  'Pickup:',
-                  style: poppinFonts(
-                    color: AppColor.textLightBlackColor4A4A4A,
-                    fontSize: xs,
-                  ),
-                ),
-                SpaceHelper(h: 2.h),
-                Text(
-                  pickupAddress,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: poppinFonts(
-                    color: AppColor.black,
-                    fontSize: sm,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                SizedBox(
-                  width: double.infinity,
-                  height: 22.h,
-                  child: CustomPaint(painter: HorizontalDottedLinePainter()),
-                ),
-                // School
-                Text(
-                  'School:',
-                  style: poppinFonts(
-                    color: AppColor.textLightBlackColor4A4A4A,
-                    fontSize: xs,
-                  ),
-                ),
-                SpaceHelper(h: 3.h),
-                Text(
-                  schoolName,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: poppinFonts(
-                    color: AppColor.black,
-                    fontSize: sm,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }

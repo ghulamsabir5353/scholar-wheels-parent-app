@@ -11,6 +11,7 @@ import 'package:scholarwheels/screens/childrens/add_children_screen.dart';
 import 'package:scholarwheels/screens/childrens/set_account_for_child_screen.dart';
 import 'package:scholarwheels/screens/find_transport/find_transport_filter_screen.dart';
 import 'package:scholarwheels/screens/find_transport/request_booking_screen.dart';
+import 'package:scholarwheels/screens/common/location_search_screen.dart';
 import 'package:scholarwheels/screens/find_transport/booking_success_screen.dart';
 import 'package:scholarwheels/screens/home/notification_screen.dart';
 import 'package:scholarwheels/screens/home/schedule_ride_screen.dart';
@@ -29,10 +30,11 @@ import 'package:scholarwheels/screens/tab_screen.dart';
 import 'package:scholarwheels/core/helper.middlewares/auth_middleware.dart';
 
 import '../screens/childrens/edit_child_screen.dart';
-import '../screens/contracts/contract_detail_screen.dart' as contract;
-import '../screens/bookings/request_history_screen.dart';
+import '../screens/contracts/contract_detail_screen.dart';
 import '../screens/bookings/booking_detail_screen.dart';
+import '../screens/bookings/request_history_screen.dart';
 import '../screens/settings/setting_screen.dart';
+import '../screens/home/tracking/live_tracking_screen.dart';
 
 class AppRoutes {
   static final List<GetPage> pages = [
@@ -86,6 +88,13 @@ class AppRoutes {
       page: () => FindTransportFilterScreen(),
     ),
     GetPage(
+      name: LocationSearchScreen.route,
+      page: () => LocationSearchScreen(
+        initialValue: Get.arguments?['initialValue'],
+        hintText: Get.arguments?['hintText'] ?? 'Search for a location...',
+      ),
+    ),
+    GetPage(
       name: RequestBookingScreen.route,
       page: () => RequestBookingScreen(),
     ),
@@ -93,17 +102,15 @@ class AppRoutes {
       name: BookingSuccessScreen.route,
       page: () => const BookingSuccessScreen(),
     ),
-    GetPage(
-      name: contract.BookingDetailScreen.route,
-      page: () => contract.BookingDetailScreen(),
-    ),
+
     GetPage(
       name: RequestHistoryScreen.route,
       page: () => const RequestHistoryScreen(),
     ),
+
     GetPage(
-      name: BookingDetailScreen.route,
-      page: () => const BookingDetailScreen(),
+      name: ContractDetailScreen.route,
+      page: () => ContractDetailScreen(),
     ),
     GetPage(name: ChatRoomScreen.route, page: () => ChatRoomScreen()),
     GetPage(name: SettingScreen.route, page: () => SettingScreen()),
@@ -146,6 +153,11 @@ class AppRoutes {
       name: ProfilePictureScreen.route,
       page: () => ProfilePictureScreen(),
       middlewares: [AuthMiddleware()],
+    ),
+    GetPage(name: BookingDetailScreen.route, page: () => BookingDetailScreen()),
+    GetPage(
+      name: LiveTrackingScreen.route,
+      page: () => const LiveTrackingScreen(),
     ),
   ];
 }

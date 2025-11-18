@@ -114,6 +114,7 @@ class SocketIntilized extends GetxService {
     // error - Handle connection or authentication errors
     socket?.on('error', (data) {
       print('Socket error event: $data');
+
       onError?.call(data);
     });
   }
@@ -123,6 +124,7 @@ class SocketIntilized extends GetxService {
     final token = BaseHelper.accessToken.value;
     if (token.isNotEmpty) {
       socket?.emit('authenticate', {'token': token});
+
       print('Socket authenticated with token');
     } else {
       print('No token available for socket authentication');

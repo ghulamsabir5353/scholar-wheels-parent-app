@@ -4,6 +4,7 @@
 
 import 'dart:convert';
 import 'package:scholarwheels/models/location_data_model.dart';
+import 'package:scholarwheels/models/user_model.dart';
 
 ChildModel childModelFromJson(String str) =>
     ChildModel.fromJson(json.decode(str));
@@ -16,66 +17,24 @@ class ChildModel {
   String? parentId;
   String? name;
   int? age;
-  dynamic school; // Can be String or LocationData (Map)
+  String? school; // String school name
   String? primaryContactNumber;
   String? secondaryContactNumber;
-  dynamic pickUpAddress; // Can be String or LocationData (Map)
-  dynamic dropOffAddress; // Can be String or LocationData (Map)
+  LocationData? pickUpAddress; // LocationData model or null
+  LocationData? dropOffAddress; // LocationData model or null
   bool? isDeleted;
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
-  User? user;
-  Parent? parent;
+  UserDetail? user; // Child user
+  Parent? parent; // Parent user
 
   // Helper getters to extract description from location data
-  String? get schoolDescription {
-    if (school == null) return null;
-    if (school is String) return school;
-    if (school is Map<String, dynamic>) {
-      try {
-        final locationData = LocationData.fromJson(
-          school as Map<String, dynamic>,
-        );
-        return locationData.description;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
+  String? get schoolDescription => school;
 
-  String? get pickUpAddressDescription {
-    if (pickUpAddress == null) return null;
-    if (pickUpAddress is String) return pickUpAddress;
-    if (pickUpAddress is Map<String, dynamic>) {
-      try {
-        final locationData = LocationData.fromJson(
-          pickUpAddress as Map<String, dynamic>,
-        );
-        return locationData.description;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
+  String? get pickUpAddressDescription => pickUpAddress?.description;
 
-  String? get dropOffAddressDescription {
-    if (dropOffAddress == null) return null;
-    if (dropOffAddress is String) return dropOffAddress;
-    if (dropOffAddress is Map<String, dynamic>) {
-      try {
-        final locationData = LocationData.fromJson(
-          dropOffAddress as Map<String, dynamic>,
-        );
-        return locationData.description;
-      } catch (e) {
-        return null;
-      }
-    }
-    return null;
-  }
+  String? get dropOffAddressDescription => dropOffAddress?.description;
 
   ChildModel({
     this.id,
@@ -97,14 +56,24 @@ class ChildModel {
   });
 
   // Helper method to parse location data from JSON
-  static dynamic _parseLocationData(dynamic json) {
+  // Returns LocationData if it's a Map, null otherwise (handles String, null, or invalid types)
+  static LocationData? _parseLocationData(dynamic json) {
     if (json == null) return null;
-    if (json is String) return json;
-    if (json is Map<String, dynamic>) {
-      // Return as-is, can be parsed as LocationData when needed
-      return json;
+    // If it's a String, return null (location data must be a Map)
+    if (json is String) return null;
+    // Check if it's any type of Map (including _Map<String, dynamic>)
+    if (json is Map) {
+      try {
+        // Convert to Map<String, dynamic> and parse into LocationData model
+        final map = Map<String, dynamic>.from(json);
+        return LocationData.fromJson(map);
+      } catch (e) {
+        // If parsing fails, return null
+        return null;
+      }
     }
-    return json;
+    // For any other type (int, bool, etc.), return null
+    return null;
   }
 
   ChildModel copyWith({
@@ -113,16 +82,16 @@ class ChildModel {
     String? parentId,
     String? name,
     int? age,
-    dynamic school,
+    String? school,
     String? primaryContactNumber,
     String? secondaryContactNumber,
-    dynamic pickUpAddress,
-    dynamic dropOffAddress,
+    LocationData? pickUpAddress,
+    LocationData? dropOffAddress,
     bool? isDeleted,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
-    User? user,
+    UserDetail? user,
     Parent? parent,
   }) => ChildModel(
     id: id ?? this.id,
@@ -139,7 +108,7 @@ class ChildModel {
     isDeleted: isDeleted ?? this.isDeleted,
     createdAt: createdAt ?? this.createdAt,
     updatedAt: updatedAt ?? this.updatedAt,
-    v: v ?? this.v,
+
     user: user ?? this.user,
     parent: parent ?? this.parent,
   );
@@ -150,7 +119,9 @@ class ChildModel {
     parentId: json["parentId"],
     name: json["name"],
     age: json["age"],
-    school: _parseLocationData(json["school"]),
+    school: json["school"] is String
+        ? json["school"]
+        : (json["school"] is Map ? json["school"]["description"] : null),
     primaryContactNumber: json["primaryContactNumber"],
     secondaryContactNumber: json["secondaryContactNumber"],
     pickUpAddress: _parseLocationData(json["pickUpAddress"]),
@@ -163,7 +134,7 @@ class ChildModel {
         ? null
         : DateTime.parse(json["updatedAt"]),
     v: json["__v"],
-    user: json["user"] == null ? null : User.fromJson(json["user"]),
+    user: json["user"] == null ? null : UserDetail.fromJson(json["user"]),
     parent: json["parent"] == null ? null : Parent.fromJson(json["parent"]),
   );
 
@@ -173,11 +144,11 @@ class ChildModel {
     "parentId": parentId,
     "name": name,
     "age": age,
-    "school": school is Map ? school : school,
+    "school": school,
     "primaryContactNumber": primaryContactNumber,
     "secondaryContactNumber": secondaryContactNumber,
-    "pickUpAddress": pickUpAddress is Map ? pickUpAddress : pickUpAddress,
-    "dropOffAddress": dropOffAddress is Map ? dropOffAddress : dropOffAddress,
+    "pickUpAddress": pickUpAddress?.toJson(),
+    "dropOffAddress": dropOffAddress?.toJson(),
     "isDeleted": isDeleted,
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
@@ -370,85 +341,5 @@ class ParentUser {
     "__v": v,
     "lastName": lastName,
     "profileImage": profileImage,
-  };
-}
-
-class User {
-  String? id;
-  String? email;
-  String? role;
-  String? status;
-  String? profileImage;
-  bool? emailVerified;
-  bool? isDeleted;
-  DateTime? createdAt;
-  DateTime? updatedAt;
-  int? v;
-
-  User({
-    this.id,
-    this.email,
-    this.role,
-    this.status,
-    this.profileImage,
-    this.emailVerified,
-    this.isDeleted,
-    this.createdAt,
-    this.updatedAt,
-    this.v,
-  });
-
-  User copyWith({
-    String? id,
-    String? email,
-    String? role,
-    String? status,
-    String? profileImage,
-    bool? emailVerified,
-    bool? isDeleted,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    int? v,
-  }) => User(
-    id: id ?? this.id,
-    email: email ?? this.email,
-    role: role ?? this.role,
-    status: status ?? this.status,
-    profileImage: profileImage ?? this.profileImage,
-    emailVerified: emailVerified ?? this.emailVerified,
-    isDeleted: isDeleted ?? this.isDeleted,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    v: v ?? this.v,
-  );
-
-  factory User.fromJson(Map<String, dynamic> json) => User(
-    id: json["_id"],
-    email: json["email"],
-    role: json["role"],
-    status: json["status"],
-    profileImage: json["profileImage"],
-    emailVerified: json["emailVerified"],
-    isDeleted: json["isDeleted"],
-    createdAt: json["createdAt"] == null
-        ? null
-        : DateTime.parse(json["createdAt"]),
-    updatedAt: json["updatedAt"] == null
-        ? null
-        : DateTime.parse(json["updatedAt"]),
-    v: json["__v"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "_id": id,
-    "email": email,
-    "role": role,
-    "status": status,
-    "profileImage": profileImage,
-    "emailVerified": emailVerified,
-    "isDeleted": isDeleted,
-    "createdAt": createdAt?.toIso8601String(),
-    "updatedAt": updatedAt?.toIso8601String(),
-    "__v": v,
   };
 }

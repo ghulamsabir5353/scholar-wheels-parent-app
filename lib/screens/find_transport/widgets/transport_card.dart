@@ -231,6 +231,7 @@ class TransportCard extends StatelessWidget {
 
             // Route Details Section
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SvgPicture.asset(
                   'assets/images/svg/pickup.svg',
@@ -244,6 +245,7 @@ class TransportCard extends StatelessWidget {
                 SpaceHelper(w: 8.w),
                 Expanded(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Route: ',
@@ -273,6 +275,7 @@ class TransportCard extends StatelessWidget {
 
             // Vehicle Details Section
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 SvgPicture.asset(
                   'assets/images/svg/vahicle.svg',
@@ -286,6 +289,7 @@ class TransportCard extends StatelessWidget {
                 SpaceHelper(w: 8.w),
                 Expanded(
                   child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         'Vehicle: ',
@@ -295,12 +299,14 @@ class TransportCard extends StatelessWidget {
                           fontWeight: FontWeight.w400,
                         ),
                       ),
-                      Text(
-                        _getVehicleDisplay(),
-                        style: poppinFonts(
-                          fontSize: sm,
-                          color: AppColor.black,
-                          fontWeight: FontWeight.w500,
+                      Expanded(
+                        child: Text(
+                          _getVehicleDisplay(),
+                          style: poppinFonts(
+                            fontSize: sm,
+                            color: AppColor.black,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
                     ],
@@ -373,14 +379,6 @@ class TransportCard extends StatelessWidget {
                 Get.toNamed(RequestBookingScreen.route, arguments: route);
               },
               title: 'Request Booking',
-              width: double.infinity,
-              height: 44.h,
-              radius: 12.r,
-              style: poppinFonts(
-                fontSize: base,
-                color: AppColor.white,
-                fontWeight: FontWeight.w500,
-              ),
             ),
           ],
         ),
