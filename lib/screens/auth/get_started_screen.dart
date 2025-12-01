@@ -43,73 +43,71 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Scaffold(
-        resizeToAvoidBottomInset: true,
-        backgroundColor: const Color(0xffFFFFFF),
-        body: GestureDetector(
-          onTap: () {
-            focusNode.unfocus();
-          },
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Expanded(child: BaseHelper.getLogo()),
-                      Expanded(
-                        child: SvgPicture.asset(
-                          'assets/images/svg/get_started.svg',
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      backgroundColor: const Color(0xffFFFFFF),
+      body: GestureDetector(
+        onTap: () {
+          focusNode.unfocus();
+        },
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Expanded(child: BaseHelper.getLogo()),
+                    Expanded(
+                      child: SvgPicture.asset(
+                        'assets/images/svg/get_started.svg',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Column(
+                      children: [
+                        Text(
+                          'Easy Child Management',
+                          style: poppinFonts(
+                            fontWeight: FontWeight.w500,
+                            fontSize: 18,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Column(
-                        children: [
-                          Text(
-                            'Easy Child Management',
+                        Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 16.w,
+                            vertical: 6.w,
+                          ),
+                          child: Text(
+                            'Add your children and manage their school rides with just a few taps',
+                            textAlign: TextAlign.center,
                             style: poppinFonts(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 18,
+                              fontWeight: FontWeight.normal,
+                              fontSize: 14,
+                              color: AppColor.lightGreenColorText,
                             ),
                           ),
-                          Padding(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16.w,
-                              vertical: 6.w,
-                            ),
-                            child: Text(
-                              'Add your children and manage their school rides with just a few taps',
-                              textAlign: TextAlign.center,
-                              style: poppinFonts(
-                                fontWeight: FontWeight.normal,
-                                fontSize: 14,
-                                color: AppColor.lightGreenColorText,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      CustomButton(
-                        onPressed: () {
-                          Get.to(() => LoginScreen());
-                        },
-                        title: "Next",
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                    CustomButton(
+                      onPressed: () {
+                        Get.to(() => LoginScreen());
+                      },
+                      title: "Next",
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),

@@ -78,9 +78,7 @@ class _MyAppState extends State<MyApp> {
           theme: ThemeData(
             textTheme: GoogleFonts.plusJakartaSansTextTheme(),
             scaffoldBackgroundColor: AppColor.appColorWhite,
-            colorScheme: ColorScheme.light(
-              primary: AppColor.primary,
-            ),
+            colorScheme: ColorScheme.light(primary: AppColor.primary),
             progressIndicatorTheme: ProgressIndicatorThemeData(
               color: AppColor.primary,
             ),
@@ -96,7 +94,14 @@ class _MyAppState extends State<MyApp> {
                 data: MediaQuery.of(
                   context,
                 ).copyWith(textScaler: const TextScaler.linear(1.0)),
-                child: child!,
+                child: SafeArea(
+                  top: false,
+                  bottom: true,
+                  left: true,
+                  right: true,
+                  minimum: EdgeInsets.zero,
+                  child: child!,
+                ),
               );
             },
           ),

@@ -66,151 +66,148 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      top: false,
-      child: Scaffold(
-        body: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 52.w),
-          child: SingleChildScrollView(
-            child: Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  BaseHelper.getLogo(width: 160, height: 90),
-                  Column(
-                    children: [
-                      Text(
-                        'Complete Your Profile',
-                        style: poppinFonts(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 26,
-                        ),
+    return Scaffold(
+      body: Padding(
+        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 52.w),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                BaseHelper.getLogo(width: 160, height: 90),
+                Column(
+                  children: [
+                    Text(
+                      'Complete Your Profile',
+                      style: poppinFonts(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 26,
                       ),
-                      Text(
-                        'Let\'s set up your account for a personalized experience.',
-                        textAlign: TextAlign.center,
-                        style: poppinFonts(
-                          fontWeight: FontWeight.normal,
-                          fontSize: 14,
-                          color: AppColor.lightGreenColorText,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SpaceHelper(h: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomTextField(
-                          controller: authController.firstNameController,
-                          label: 'First Name',
-                          hintText: 'Enter First Name',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'First name is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      SpaceHelper(w: 12),
-                      Expanded(
-                        child: CustomTextField(
-                          controller: authController.surNameController,
-                          label: 'Surname',
-                          hintText: 'Enter Surname',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Surname is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  CustomTextField(
-                    controller: authController.emailController,
-                    label: 'Email',
-                    hintText: 'Enter your email',
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Email is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  CustomTextField(
-                    controller: authController.phoneController,
-                    label: 'Phone Number',
-                    hintText: 'Enter your phone',
-                    isNumericKeyboard: true,
-                    keyboardType: TextInputType.phone,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Phone is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: CustomTextField(
-                          controller: authController.cityController,
-                          label: 'City',
-                          hintText: 'Enter City',
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'City is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                      SpaceHelper(w: 12),
-                      Expanded(
-                        child: CustomTextField(
-                          controller: authController.zipCodeController,
-                          label: 'Zip Code',
-                          hintText: 'Enter Code',
-                          isNumericKeyboard: true,
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Zip code is required';
-                            }
-                            return null;
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  CustomTextField(
-                    controller: authController.addressController,
-                    label: 'Address',
-                    hintText: 'Enter your address',
-                    height: 120,
-                    maxLines: 10,
-                    keyboardType: TextInputType.multiline,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Address is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  SpaceHelper(h: 16.h),
-                  Obx(
-                    () => CustomButton(
-                      isLoading: authController.isLoading.value,
-                      onPressed: authController.isLoading.value
-                          ? null
-                          : _handleCompleteProfile,
-                      title: 'Complete Profile',
                     ),
+                    Text(
+                      'Let\'s set up your account for a personalized experience.',
+                      textAlign: TextAlign.center,
+                      style: poppinFonts(
+                        fontWeight: FontWeight.normal,
+                        fontSize: 14,
+                        color: AppColor.lightGreenColorText,
+                      ),
+                    ),
+                  ],
+                ),
+                SpaceHelper(h: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomTextField(
+                        controller: authController.firstNameController,
+                        label: 'First Name',
+                        hintText: 'Enter First Name',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'First name is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SpaceHelper(w: 12),
+                    Expanded(
+                      child: CustomTextField(
+                        controller: authController.surNameController,
+                        label: 'Surname',
+                        hintText: 'Enter Surname',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Surname is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                CustomTextField(
+                  controller: authController.emailController,
+                  label: 'Email',
+                  hintText: 'Enter your email',
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Email is required';
+                    }
+                    return null;
+                  },
+                ),
+                CustomTextField(
+                  controller: authController.phoneController,
+                  label: 'Phone Number',
+                  hintText: 'Enter your phone',
+                  isNumericKeyboard: true,
+                  keyboardType: TextInputType.phone,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Phone is required';
+                    }
+                    return null;
+                  },
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: CustomTextField(
+                        controller: authController.cityController,
+                        label: 'City',
+                        hintText: 'Enter City',
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'City is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                    SpaceHelper(w: 12),
+                    Expanded(
+                      child: CustomTextField(
+                        controller: authController.zipCodeController,
+                        label: 'Zip Code',
+                        hintText: 'Enter Code',
+                        isNumericKeyboard: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Zip code is required';
+                          }
+                          return null;
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                CustomTextField(
+                  controller: authController.addressController,
+                  label: 'Address',
+                  hintText: 'Enter your address',
+                  height: 120,
+                  maxLines: 10,
+                  keyboardType: TextInputType.multiline,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Address is required';
+                    }
+                    return null;
+                  },
+                ),
+                SpaceHelper(h: 16.h),
+                Obx(
+                  () => CustomButton(
+                    isLoading: authController.isLoading.value,
+                    onPressed: authController.isLoading.value
+                        ? null
+                        : _handleCompleteProfile,
+                    title: 'Complete Profile',
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
