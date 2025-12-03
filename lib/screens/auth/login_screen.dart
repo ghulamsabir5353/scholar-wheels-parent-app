@@ -141,6 +141,26 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     SpaceHelper(h: 12),
+                    // Forgot Password Button
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: () {
+                          Get.toNamed('/forgot-password');
+                        },
+                        child: Padding(
+                          padding: EdgeInsets.only(bottom: 8.h),
+                          child: Text(
+                            'Forgot Password?',
+                            style: poppinFonts(
+                              fontSize: 14,
+                              color: AppColor.primary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                     Obx(
                       () => CustomButton(
                         isLoading: authController.isLoading.value,

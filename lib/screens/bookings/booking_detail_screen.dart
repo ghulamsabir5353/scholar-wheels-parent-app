@@ -12,6 +12,7 @@ import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/models/booking_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
+import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 
 import '../../core/helper.widgets/route_map_widget.dart';
 
@@ -33,13 +34,13 @@ class BookingDetailScreen extends StatelessWidget {
   }
 
   String _getRequestDuration(BookingModel? booking) {
-    if (booking?.contractDuration != null) {
-      return booking!.contractDuration!;
-    }
     if (booking?.startDate != null && booking?.endDate != null) {
       final difference = booking!.endDate!.difference(booking.startDate!);
       final months = (difference.inDays / 30).round();
       return '$months Months';
+    }
+    if (booking?.contractDuration != null) {
+      return '${booking!.contractDuration} Days';
     }
     return 'N/A';
   }
@@ -88,14 +89,10 @@ class BookingDetailScreen extends StatelessWidget {
 
   String _getTransportOwnerName(BookingModel? booking) {
     if (booking?.transportOwner == null) return 'N/A';
-    final firstName = booking!.transportOwner!.firstName ?? '';
-    final surName = booking.transportOwner!.surName ?? '';
-    if (firstName.isNotEmpty && surName.isNotEmpty) {
-      return '$firstName $surName';
-    } else if (firstName.isNotEmpty) {
-      return firstName;
-    } else if (surName.isNotEmpty) {
-      return surName;
+    final firstName = booking!.transportOwner!.businessName ?? '';
+
+    if (firstName.isNotEmpty) {
+      return '$firstName';
     }
     return 'N/A';
   }
@@ -499,7 +496,15 @@ class BookingDetailScreen extends StatelessWidget {
                             CustomButton(
                               height: 36.h,
                               onPressed: () {
-                                // Navigate to chat
+                                // Navigate to chat tab (4th tab, index 4)
+                                final bottomController =
+                                    Get.find<BottomTabController>();
+                                bottomController.setTabIndex(4);
+                                // Navigate to tab screen if not already there
+                                Get.until(
+                                  (route) =>
+                                      route.settings.name == '/tab_screen',
+                                );
                               },
                               title: "Chat",
                               style: poppinFonts(

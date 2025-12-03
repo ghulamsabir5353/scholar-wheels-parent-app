@@ -272,13 +272,18 @@ class BookingContractCard extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Vehicle Name (top left)
-                        Text(
-                          _getVehicleName(),
-                          style: poppinFonts(
-                            color: AppColor.black,
-                            fontSize: base,
-                            fontWeight: FontWeight.w500,
+                        // Vehicle Name (top left) - with padding to avoid status badge
+                        Padding(
+                          padding: EdgeInsets.only(right: 80.w),
+                          child: Text(
+                            _getVehicleName(),
+                            style: poppinFonts(
+                              color: AppColor.black,
+                              fontSize: base,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 2,
                           ),
                         ),
                         SpaceHelper(h: 12.h),

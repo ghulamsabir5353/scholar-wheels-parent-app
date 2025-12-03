@@ -75,14 +75,10 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
   String _getFullName(ContractModel? contract) {
     if (contract?.transportOwner == null) return 'N/A';
-    final firstName = contract!.transportOwner!.firstName ?? '';
-    final surName = contract.transportOwner!.surName ?? '';
-    if (firstName.isNotEmpty && surName.isNotEmpty) {
-      return '$firstName $surName';
-    } else if (firstName.isNotEmpty) {
-      return firstName;
-    } else if (surName.isNotEmpty) {
-      return surName;
+    final businessName = contract!.transportOwner!.businessName ?? '';
+
+    if (businessName.isNotEmpty) {
+      return '$businessName';
     }
     return 'N/A';
   }

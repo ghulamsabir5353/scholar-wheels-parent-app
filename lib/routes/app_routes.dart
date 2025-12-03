@@ -6,6 +6,9 @@ import 'package:scholarwheels/screens/auth/profile_picture_screen.dart';
 import 'package:scholarwheels/screens/auth/profile_screen.dart';
 import 'package:scholarwheels/screens/auth/signup_screen.dart';
 import 'package:scholarwheels/screens/auth/splash_screen.dart';
+import 'package:scholarwheels/screens/auth/forgot_password_screen.dart';
+import 'package:scholarwheels/screens/auth/verify_otp_screen.dart';
+import 'package:scholarwheels/screens/auth/reset_password_screen.dart';
 import 'package:scholarwheels/screens/chat/chat_room_screen.dart';
 import 'package:scholarwheels/screens/childrens/add_children_screen.dart';
 import 'package:scholarwheels/screens/childrens/set_account_for_child_screen.dart';
@@ -63,6 +66,24 @@ class AppRoutes {
     GetPage(
       name: SignupScreen.route,
       page: () => SignupScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: ForgotPasswordScreen.route,
+      page: () => const ForgotPasswordScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: VerifyOTPScreen.route,
+      page: () => const VerifyOTPScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: ResetPasswordScreen.route,
+      page: () => const ResetPasswordScreen(),
       transition: Transition.rightToLeft,
       middlewares: [GuestMiddleware()],
     ),

@@ -31,6 +31,10 @@ abstract class AppConstants {
   static const String updateUser = "user";
   static const String chat = "chat";
   static const String changePassword = 'user/change-password';
+  static const String forgotPassword = "forgot-password";
+  static const String verifyOTP = "verify-otp";
+  static const String resendOTP = "resend-otp";
+  static const String resetPassword = "reset-password";
   static const String route = "route";
   static const String popularRoutes = "route/popular-routes";
   static const String requestBooking = "booking/request";

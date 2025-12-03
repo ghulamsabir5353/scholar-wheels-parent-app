@@ -13,6 +13,7 @@ import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/core/helper.widgets/focus_manager.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
 import 'package:scholarwheels/screens/home/notification_screen.dart';
 import 'package:scholarwheels/screens/home/schedule_ride_screen.dart';
 import 'package:scholarwheels/screens/home/widgets/manage_ride_modal.dart';
@@ -136,18 +137,67 @@ class HomeScreen extends StatelessWidget {
                   },
                   child: Padding(
                     padding: const EdgeInsets.only(left: 0),
-                    child: CircleAvatar(
-                      backgroundColor: AppColor.darkPrimary,
-                      radius: 18,
-                      child: Text(
-                        _getFullName().substring(0, 1).toUpperCase(),
-                        style: poppinFonts(
-                          color: AppColor.appColorWhite,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
+                    child: Obx(() {
+                      final user = BaseHelper.currentUser.value;
+                      final profileImageUrl =
+                          user.profileImagePresignedUrl ?? user.profileImage;
+                      final initials = _getFullName()
+                          .substring(0, 1)
+                          .toUpperCase();
+
+                      return Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              profileImageUrl != null &&
+                                  profileImageUrl.isNotEmpty
+                              ? Colors.transparent
+                              : AppColor.darkPrimary,
                         ),
-                      ),
-                    ),
+                        child:
+                            profileImageUrl != null &&
+                                profileImageUrl.isNotEmpty
+                            ? ClipOval(
+                                child: CustomNetworkImageWidget(
+                                  imageUrl: profileImageUrl,
+                                  width: 36,
+                                  height: 36,
+                                  borderRadius: 18,
+                                  fit: BoxFit.cover,
+                                  errorWidget: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: AppColor.darkPrimary,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        initials,
+                                        style: poppinFonts(
+                                          color: AppColor.appColorWhite,
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : Center(
+                                child: Text(
+                                  initials,
+                                  style: poppinFonts(
+                                    color: AppColor.appColorWhite,
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                      );
+                    }),
                   ),
                 ),
               ),
@@ -437,6 +487,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildActiveContractsSection(List<dynamic> contracts) {
+    final bottomController = Get.find<BottomTabController>();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -444,7 +495,10 @@ class HomeScreen extends StatelessWidget {
           'Active Contracts',
           'View and manage your transport contracts',
           onViewAll: () {
-            // Navigate to all contracts
+            // Navigate to contracts tab (4th tab, index 3)
+            bottomController.setTabIndex(3);
+            // Navigate to tab screen if not already there
+            Get.until((route) => route.settings.name == '/tab_screen');
           },
         ),
         SpaceHelper(h: 12.h),
@@ -920,6 +974,7 @@ class HomeScreen extends StatelessWidget {
   }
 
   Widget _buildContractCard(dynamic contract) {
+    final bottomController = Get.find<BottomTabController>();
     // Handle both ContractModel and Map
     String? contractId;
     String? contractDuration;
@@ -943,105 +998,113 @@ class HomeScreen extends StatelessWidget {
       }
     }
 
-    return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColor.cardBgColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColor.secondary),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'School Transport',
-                  style: poppinFonts(
-                    color: AppColor.black,
-                    fontSize: base,
-                    fontWeight: FontWeight.w500,
+    return GestureDetector(
+      onTap: () {
+        // Navigate to contracts tab (4th tab, index 3)
+        bottomController.setTabIndex(3);
+        // Navigate to tab screen if not already there
+        Get.until((route) => route.settings.name == '/tab_screen');
+      },
+      child: Container(
+        margin: EdgeInsets.only(bottom: 12.h),
+        padding: EdgeInsets.all(16.w),
+        decoration: BoxDecoration(
+          color: AppColor.cardBgColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColor.secondary),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'School Transport',
+                    style: poppinFonts(
+                      color: AppColor.black,
+                      fontSize: base,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
-                SpaceHelper(h: 8.h),
-                Row(
-                  children: [
-                    Text(
-                      'Contract# ',
-                      style: poppinFonts(
-                        color: AppColor.textLightBlackColor4A4A4A,
-                        fontSize: sm,
+                  SpaceHelper(h: 8.h),
+                  Row(
+                    children: [
+                      Text(
+                        'Contract# ',
+                        style: poppinFonts(
+                          color: AppColor.textLightBlackColor4A4A4A,
+                          fontSize: sm,
+                        ),
                       ),
-                    ),
-                    Text(
-                      contractId ?? 'N/A',
-                      style: poppinFonts(
-                        color: AppColor.black,
-                        fontSize: sm,
-                        fontWeight: FontWeight.w500,
+                      Text(
+                        contractId ?? 'N/A',
+                        style: poppinFonts(
+                          color: AppColor.black,
+                          fontSize: sm,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Text(
-                      'Contract Duration: ',
-                      style: poppinFonts(
-                        color: AppColor.textLightBlackColor4A4A4A,
-                        fontSize: sm,
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        'Contract Duration: ',
+                        style: poppinFonts(
+                          color: AppColor.textLightBlackColor4A4A4A,
+                          fontSize: sm,
+                        ),
                       ),
-                    ),
-                    Text(
-                      contractDuration ?? 'N/A',
-                      style: poppinFonts(
-                        color: AppColor.black,
-                        fontSize: sm,
-                        fontWeight: FontWeight.w500,
+                      Text(
+                        "${contractDuration} Days",
+                        style: poppinFonts(
+                          color: AppColor.black,
+                          fontSize: sm,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                Row(
-                  children: [
-                    Text(
-                      'Monthly Fee: ',
-                      style: poppinFonts(
-                        color: AppColor.textLightBlackColor4A4A4A,
-                        fontSize: sm,
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        'Monthly Fee: ',
+                        style: poppinFonts(
+                          color: AppColor.textLightBlackColor4A4A4A,
+                          fontSize: sm,
+                        ),
                       ),
-                    ),
-                    Text(
-                      monthlyFee ?? '0',
-                      style: poppinFonts(
-                        color: AppColor.black,
-                        fontSize: sm,
-                        fontWeight: FontWeight.w500,
+                      Text(
+                        monthlyFee ?? '0',
+                        style: poppinFonts(
+                          color: AppColor.black,
+                          fontSize: sm,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-            decoration: BoxDecoration(
-              color: AppColor.primary,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Text(
-              status?.capitalizeFirst ?? 'Active',
-              style: poppinFonts(
-                color: AppColor.white,
-                fontSize: sm,
-                fontWeight: FontWeight.w500,
+                    ],
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+              decoration: BoxDecoration(
+                color: AppColor.primary,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                status?.capitalizeFirst ?? 'Active',
+                style: poppinFonts(
+                  color: AppColor.white,
+                  fontSize: sm,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

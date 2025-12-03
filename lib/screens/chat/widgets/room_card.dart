@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/models/room_model.dart';
 import 'package:scholarwheels/screens/chat/chat_room_screen.dart';
+import 'package:scholarwheels/controllers/base.helper.controller.dart';
 
 import '../../../core/helper.constants/font_sized.dart';
 import '../../../core/helper.constants/textStyle.dart';
@@ -14,49 +15,89 @@ class RoomCard extends StatelessWidget {
 
   const RoomCard({super.key, required this.room});
 
+  /// Get opponent (the other participant, not the current user)
+  ParticipantDetail? _getOpponent() {
+    if (room.participantDetails == null || room.participantDetails!.isEmpty) {
+      return null;
+    }
+
+    final currentUserId = BaseHelper.currentUser.value.id;
+    if (currentUserId == null || currentUserId.isEmpty) {
+      // If no current user ID, return first participant if available
+      if (room.participantDetails!.isNotEmpty) {
+        return room.participantDetails!.first;
+      }
+      return null;
+    }
+
+    // Find the participant who is NOT the current user
+    for (var participant in room.participantDetails!) {
+      if (participant.id != currentUserId) {
+        return participant;
+      }
+    }
+
+    // If all participants are the current user (shouldn't happen), return null
+    // or first participant if list is not empty
+    if (room.participantDetails!.isNotEmpty) {
+      return room.participantDetails!.first;
+    }
+    return null;
+  }
+
   /// Get initials for avatar
   String _getInitials() {
-    if (room.participantDetails != null &&
-        room.participantDetails!.isNotEmpty) {
-      final firstParticipant = room.participantDetails!.first;
-      final name =
-          '${firstParticipant.firstName ?? ''} ${firstParticipant.lastName ?? ''}'
-              .trim();
-      if (name.isNotEmpty) {
-        final parts = name.split(' ');
-        if (parts.length > 1) {
-          return '${parts[0][0]}${parts[1][0]}'.toUpperCase();
+    final opponent = _getOpponent();
+    if (opponent == null) {
+      return 'C';
+    }
+
+    final name = '${opponent.firstName ?? ''} ${opponent.lastName ?? ''}'
+        .trim();
+    if (name.isNotEmpty) {
+      final parts = name.split(' ').where((p) => p.isNotEmpty).toList();
+      if (parts.length > 1) {
+        final first = parts[0].isNotEmpty ? parts[0][0] : '';
+        final second = parts[1].isNotEmpty ? parts[1][0] : '';
+        if (first.isNotEmpty && second.isNotEmpty) {
+          return '$first$second'.toUpperCase();
         }
+        if (first.isNotEmpty) {
+          return first.toUpperCase();
+        }
+      }
+      if (name.isNotEmpty) {
         return name[0].toUpperCase();
       }
-      if (firstParticipant.email != null &&
-          firstParticipant.email!.isNotEmpty) {
-        return firstParticipant.email![0].toUpperCase();
-      }
+    }
+    if (opponent.email != null && opponent.email!.isNotEmpty) {
+      return opponent.email![0].toUpperCase();
     }
     return 'C';
   }
 
   /// Get chat title
   String _getChatTitle() {
-    if (room.participantDetails != null &&
-        room.participantDetails!.isNotEmpty) {
-      final firstParticipant = room.participantDetails!.first;
-      final name =
-          '${firstParticipant.firstName ?? ''} ${firstParticipant.lastName ?? ''}'
-              .trim();
-      if (name.isNotEmpty) {
-        return name;
-      }
-      if (firstParticipant.email != null &&
-          firstParticipant.email!.isNotEmpty) {
-        return firstParticipant.email!;
-      }
-      if (firstParticipant.businessName != null &&
-          firstParticipant.businessName!.isNotEmpty) {
-        return firstParticipant.businessName!;
-      }
+    final opponent = _getOpponent();
+    if (opponent == null) {
+      return 'Chat';
     }
+
+    // Priority: businessName > firstName + lastName > email
+    if (opponent.businessName != null && opponent.businessName!.isNotEmpty) {
+      return opponent.businessName!;
+    }
+
+    final name = '${opponent.firstName ?? ''} ${opponent.lastName ?? ''}'
+        .trim();
+    if (name.isNotEmpty) {
+      return name;
+    }
+
+    if (opponent.email != null && opponent.email!.isNotEmpty) {
+      return opponent.email!;
+    }
+
     return 'Chat';
   }
 

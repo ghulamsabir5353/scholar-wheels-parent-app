@@ -154,17 +154,54 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   String _getChatTitle() {
     if (_chat?.participantDetails != null &&
-        _chat!.participantDetails!.isNotEmpty) {
+        _chat!.participantDetails!.isNotEmpty &&
+        _currentUserId != null) {
+      // Find the receiver (transport owner) - the participant who is not the current user
+      ParticipantDetail? receiverParticipant;
+      for (final participant in _chat!.participantDetails!) {
+        if (participant.id != _currentUserId) {
+          receiverParticipant = participant;
+          break;
+        }
+      }
+
+      // If we found the receiver, get their name
+      if (receiverParticipant != null) {
+        // Prefer business name if available
+        if (receiverParticipant.businessName != null &&
+            receiverParticipant.businessName!.isNotEmpty) {
+          return receiverParticipant.businessName!;
+        }
+
+        // Otherwise, use first name and last name/surname
+        final firstName = receiverParticipant.firstName ?? '';
+        final lastName =
+            receiverParticipant.lastName ?? receiverParticipant.surName ?? '';
+        final fullName = '$firstName $lastName'.trim();
+        if (fullName.isNotEmpty) {
+          return fullName;
+        }
+
+        // Fallback to email if name is not available
+        if (receiverParticipant.email != null &&
+            receiverParticipant.email!.isNotEmpty) {
+          return receiverParticipant.email!;
+        }
+      }
+
+      // Fallback: use first participant if receiver not found
       final firstParticipant = _chat!.participantDetails!.first;
+      if (firstParticipant.businessName != null &&
+          firstParticipant.businessName!.isNotEmpty) {
+        return firstParticipant.businessName!;
+      }
       final name =
-          '${firstParticipant.firstName ?? ''} ${firstParticipant.lastName ?? ''}'
+          '${firstParticipant.firstName ?? ''} ${firstParticipant.lastName ?? firstParticipant.surName ?? ''}'
               .trim();
       if (name.isNotEmpty) {
         return name;
-      } else if (firstParticipant.businessName != null &&
-          firstParticipant.businessName!.isNotEmpty) {
-        return firstParticipant.businessName!;
-      } else if (firstParticipant.email != null &&
+      }
+      if (firstParticipant.email != null &&
           firstParticipant.email!.isNotEmpty) {
         return firstParticipant.email!;
       }

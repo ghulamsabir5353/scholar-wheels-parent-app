@@ -5,6 +5,7 @@ import 'package:scholarwheels/controllers/in_it.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/models/user_model.dart';
 import 'package:scholarwheels/screens/auth/login_screen.dart';
+import 'package:scholarwheels/services/fcm_notification_service.dart';
 
 abstract class BaseHelper {
   static RxBool isLogin = false.obs;
@@ -22,6 +23,9 @@ abstract class BaseHelper {
   }
 
   static void signOut() {
+    // Delete FCM token
+    FCMNotificationService.deleteToken();
+    
     // Clear global state
     isLogin.value = false;
     accessToken.value = "";

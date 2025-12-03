@@ -7,14 +7,32 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:scholarwheels/controllers/in_it.dart';
 import 'package:scholarwheels/controllers/network_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/firebase_options.dart';
 import 'package:scholarwheels/routes/app_routes.dart';
 import 'package:scholarwheels/screens/auth/splash_screen.dart';
+import 'package:scholarwheels/services/fcm_notification_service.dart';
+
+// Top-level function for background message handling
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  log('Handling background message: ${message.messageId}');
+  // Handle background notification here if needed
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Set up background message handler
+  FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
 
   // Configure System UI for Android navigation bar
   SystemChrome.setSystemUIOverlayStyle(
@@ -30,6 +48,9 @@ void main() async {
   await _preCacheFonts();
 
   await init();
+
+  // Initialize FCM notification service
+  FCMNotificationService.initialize();
 
   runApp(
     ChangeNotifierProvider(

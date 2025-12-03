@@ -7,6 +7,7 @@ import 'package:scholarwheels/models/user_model.dart';
 import 'package:scholarwheels/screens/auth/profile_picture_screen.dart';
 import 'package:scholarwheels/screens/tab_screen.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/fcm_notification_service.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
 
@@ -173,6 +174,9 @@ class AuthController extends GetxController {
 
           // Update user with roleData (parent details)
           final updatedUser = BaseHelper.currentUser.value.copyWith(
+            profileImage: parentData['user']['profileImage'],
+            profileImagePresignedUrl:
+                parentData['user']['profileImagePresignedUrl'],
             roleData: RoleData.fromJson(parentData),
           );
           BaseHelper.currentUser.value = updatedUser;
@@ -307,6 +311,9 @@ class AuthController extends GetxController {
 
           // Clear all fields after successful login
           clearAllFields();
+
+          // Save FCM token after login
+          FCMNotificationService.refreshToken();
 
           // Socket connection will be initialized by ChatController.onInit()
           // when TabScreenBinding creates ChatController after navigation

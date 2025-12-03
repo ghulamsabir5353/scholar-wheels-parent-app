@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "804830104261",
+    "project_id": "scholarwheels-dev",
+    "storage_bucket": "scholarwheels-dev.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:804830104261:android:965e228f2adb6556bf3eac",
+        "android_client_info": {
+          "package_name": "com.example.scholarwheels"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAqZJsu8xASUgTmQbWh5MyctqL3O6nxzJ8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
