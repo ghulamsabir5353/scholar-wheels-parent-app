@@ -22,9 +22,10 @@ abstract class BaseHelper {
     }
   }
 
-  static void signOut() {
-    // Delete FCM token
-    FCMNotificationService.deleteToken();
+  static Future<void> signOut() async {
+    // Delete FCM token from backend before clearing login state
+    // This ensures we have access token to make the API call
+    await FCMNotificationService.deleteToken();
     
     // Clear global state
     isLogin.value = false;

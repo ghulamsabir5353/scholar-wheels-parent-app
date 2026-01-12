@@ -42,6 +42,7 @@ abstract class AppConstants {
   static const String booking = "booking";
   static const String uploadFile = "upload/file-upload";
   static const String deleteFile = "upload/file-delete";
+  static const String notification = "notification";
   // Fonts
   static const String POPPIN = 'Poppins';
   static const String IS_TARGET_SCREEN_PENDING = 'isTargetScreenPending';

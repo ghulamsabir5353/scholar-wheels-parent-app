@@ -38,6 +38,7 @@ import '../screens/bookings/booking_detail_screen.dart';
 import '../screens/bookings/request_history_screen.dart';
 import '../screens/settings/setting_screen.dart';
 import '../screens/home/tracking/live_tracking_screen.dart';
+import '../bindings/live_tracking_binding.dart';
 
 class AppRoutes {
   static final List<GetPage> pages = [
@@ -179,6 +180,7 @@ class AppRoutes {
     GetPage(
       name: LiveTrackingScreen.route,
       page: () => const LiveTrackingScreen(),
+      binding: LiveTrackingBinding(),
     ),
   ];
 }

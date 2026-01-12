@@ -16,6 +16,7 @@ import 'package:scholarwheels/core/helper.widgets/focus_manager.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
 import 'package:scholarwheels/screens/home/notification_screen.dart';
 import 'package:scholarwheels/screens/home/schedule_ride_screen.dart';
+import 'package:scholarwheels/controllers/notification_controller.dart';
 import 'package:scholarwheels/screens/home/widgets/manage_ride_modal.dart';
 import 'package:scholarwheels/screens/settings/setting_screen.dart';
 import 'package:scholarwheels/screens/home/tracking/live_tracking_screen.dart';
@@ -105,6 +106,8 @@ class HomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final bottomController = Get.find<BottomTabController>();
     final mainController = Get.find<MainController>();
+    // Initialize notification controller to start unread count polling
+    Get.put(NotificationController(), permanent: true);
 
     return KeyboardNavigator(
       child: Scaffold(
@@ -232,56 +235,63 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           actions: [
-            Semantics(
-              label: 'Notifications',
-              hint: 'Tap to view notifications. You have 1 unread notification',
-              button: true,
-              onTap: () {
-                Get.toNamed(NotificationScreen.route);
-              },
-              child: GestureDetector(
+            Obx(() {
+              final notificationController = Get.find<NotificationController>();
+              final count = notificationController.unreadCount.value;
+              return Semantics(
+                label: 'Notifications',
+                hint: count > 0
+                    ? 'Tap to view notifications. You have $count unread ${count == 1 ? 'notification' : 'notifications'}'
+                    : 'Tap to view notifications',
+                button: true,
                 onTap: () {
                   Get.toNamed(NotificationScreen.route);
                 },
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 16, left: 8),
-                  child: badges.Badge(
-                    position: badges.BadgePosition.topEnd(top: -6, end: -2),
-                    showBadge: true,
-                    badgeStyle: badges.BadgeStyle(
-                      badgeColor: AppColor.redColor,
-                      padding: EdgeInsets.all(6),
-                      borderRadius: BorderRadius.circular(1),
-                    ),
-                    badgeContent: Semantics(
-                      label: '1 unread notification',
-                      child: Text(
-                        '1',
-                        style: poppinFonts(
-                          color: AppColor.appColorWhite,
-                          fontSize: 10,
+                child: GestureDetector(
+                  onTap: () {
+                    Get.toNamed(NotificationScreen.route);
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16, left: 8),
+                    child: badges.Badge(
+                      position: badges.BadgePosition.topEnd(top: -6, end: -2),
+                      showBadge: count > 0,
+                      badgeStyle: badges.BadgeStyle(
+                        badgeColor: AppColor.redColor,
+                        padding: EdgeInsets.all(6),
+                        borderRadius: BorderRadius.circular(1),
+                      ),
+                      badgeContent: Semantics(
+                        label:
+                            '$count unread ${count == 1 ? 'notification' : 'notifications'}',
+                        child: Text(
+                          count > 99 ? '99+' : '$count',
+                          style: poppinFonts(
+                            color: AppColor.appColorWhite,
+                            fontSize: 10,
+                          ),
                         ),
                       ),
-                    ),
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(shape: BoxShape.circle),
-                      child: SvgPicture.asset(
-                        "assets/images/svg/notification.svg",
-                        width: 12,
-                        height: 12,
-                        colorFilter: const ColorFilter.mode(
-                          AppColor.appBlackColor,
-                          BlendMode.srcIn,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(shape: BoxShape.circle),
+                        child: SvgPicture.asset(
+                          "assets/images/svg/notification.svg",
+                          width: 12,
+                          height: 12,
+                          colorFilter: const ColorFilter.mode(
+                            AppColor.appBlackColor,
+                            BlendMode.srcIn,
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ),
+              );
+            }),
           ],
         ),
         body: Obx(() {
@@ -1076,7 +1086,7 @@ class HomeScreen extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        monthlyFee ?? '0',
+                        'R${monthlyFee ?? '0'}',
                         style: poppinFonts(
                           color: AppColor.black,
                           fontSize: sm,

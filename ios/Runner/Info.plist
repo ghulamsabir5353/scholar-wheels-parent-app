@@ -34,9 +34,16 @@
 	<array>
 		<string>remote-notification</string>
 		<string>fetch</string>
+		<string>location</string>
 	</array>
 	<key>NSUserNotificationsUsageDescription</key>
 	<string>We need to send you notifications about your bookings, messages, and important updates.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs location access to show your child's ride location on the map.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs location access to track your child's ride in real-time.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs location access to track your child's ride in real-time.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

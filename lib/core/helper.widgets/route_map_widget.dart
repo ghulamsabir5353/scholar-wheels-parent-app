@@ -1,11 +1,22 @@
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_animarker/flutter_map_marker_animation.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter/services.dart';
+import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
 
 class RouteMapWidget extends StatefulWidget {
   final LocationData? pickupLocation;
   final LocationData? dropOffLocation;
+  final LatLng? driverLocation;
+  final List<LatLng>? coveredPath;
+  final List<LatLng>? remainingPath;
   final double height;
   final double width;
 
@@ -13,6 +24,9 @@ class RouteMapWidget extends StatefulWidget {
     super.key,
     required this.pickupLocation,
     required this.dropOffLocation,
+    this.driverLocation,
+    this.coveredPath,
+    this.remainingPath,
     this.height = 200,
     this.width = double.infinity,
   });
@@ -25,11 +39,42 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
   GoogleMapController? _mapController;
   Set<Marker> _markers = {};
   Set<Polyline> _polylines = {};
+  final Completer<int> _mapIdCompleter = Completer<int>();
+  List<LatLng> _routePolylinePoints = [];
+  bool _isFetchingRoute = false;
+  BitmapDescriptor? _driverIcon;
+  // Hide all third‑party place labels/icons so only our markers are visible.
+  static const _mapStyle = '''
+  [
+    { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
+    { "featureType": "poi.business", "stylers": [{ "visibility": "off" }] },
+    { "featureType": "transit", "stylers": [{ "visibility": "off" }] },
+    { "featureType": "administrative", "elementType": "labels", "stylers": [{ "visibility": "off" }] },
+    // { "featureType": "road", "elementType": "labels", "stylers": [{ "visibility": "off" }] },
+    // { "featureType": "road", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
+    { "featureType": "water", "elementType": "labels", "stylers": [{ "visibility": "off" }] }
+  ]
+  ''';
 
   @override
   void initState() {
     super.initState();
+    _loadDriverIcon();
     _initializeMap();
+    _loadRoutePolyline();
+  }
+
+  @override
+  void didUpdateWidget(covariant RouteMapWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.driverLocation != widget.driverLocation ||
+        oldWidget.coveredPath != widget.coveredPath ||
+        oldWidget.remainingPath != widget.remainingPath ||
+        oldWidget.pickupLocation != widget.pickupLocation ||
+        oldWidget.dropOffLocation != widget.dropOffLocation) {
+      _initializeMap();
+      _loadRoutePolyline();
+    }
   }
 
   void _initializeMap() {
@@ -39,6 +84,24 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
 
     final markers = <Marker>{};
     final polylines = <Polyline>{};
+
+    if (widget.driverLocation != null) {
+      markers.add(
+        Marker(
+          markerId: const MarkerId('driver'),
+          position: widget.driverLocation!,
+          icon:
+              _driverIcon ??
+              BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueAzure),
+          infoWindow: const InfoWindow(
+            title: 'Driver',
+            snippet: 'Current position',
+          ),
+          flat: true,
+          zIndex: 100,
+        ),
+      );
+    }
 
     // Pickup marker
     if (widget.pickupLocation != null) {
@@ -84,8 +147,41 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       }
     }
 
-    // Polyline between pickup and dropoff
-    if (widget.pickupLocation != null &&
+    // Covered path (gray) if provided
+    if (widget.coveredPath != null && widget.coveredPath!.length > 1) {
+      polylines.add(
+        Polyline(
+          polylineId: const PolylineId('covered'),
+          points: widget.coveredPath!,
+          color: Colors.grey,
+          width: 6,
+          patterns: [PatternItem.dash(12), PatternItem.gap(6)],
+        ),
+      );
+    }
+
+    // Driving route from Google Directions (blue, solid) if available.
+    if (_routePolylinePoints.isNotEmpty) {
+      polylines.add(
+        Polyline(
+          polylineId: const PolylineId('google_route'),
+          points: _routePolylinePoints,
+          color: Colors.blue,
+          width: 6,
+        ),
+      );
+    }
+    // Remaining path (blue) fallback if directions are not available.
+    else if (widget.remainingPath != null && widget.remainingPath!.length > 1) {
+      polylines.add(
+        Polyline(
+          polylineId: const PolylineId('remaining'),
+          points: widget.remainingPath!,
+          color: Colors.blue,
+          width: 6,
+        ),
+      );
+    } else if (widget.pickupLocation != null &&
         widget.dropOffLocation != null &&
         widget.pickupLocation!.coordinates.latitude != 0.0 &&
         widget.pickupLocation!.coordinates.longitude != 0.0 &&
@@ -117,6 +213,203 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
 
     // Note: Bounds fitting will happen in onMapCreated callback
     // after the map controller is available
+  }
+
+  Future<void> _loadDriverIcon() async {
+    await _createIconFromPng('assets/images/png/bus-stop.png', 110);
+  }
+
+  Future<void> _createIconFromPng(String assetPath, double size) async {
+    try {
+      final ByteData data = await rootBundle.load(assetPath);
+      final Uint8List bytes = data.buffer.asUint8List();
+
+      final codec = await ui.instantiateImageCodec(
+        bytes,
+        targetWidth: size.toInt(),
+      );
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.png,
+      );
+      if (byteData == null) throw Exception('ByteData null after resize');
+      final Uint8List resizedBytes = byteData.buffer.asUint8List();
+
+      if (mounted) {
+        setState(() {
+          _driverIcon = BitmapDescriptor.fromBytes(resizedBytes);
+        });
+        _initializeMap(); // refresh markers with custom icon
+      }
+    } catch (e) {
+      // Fallback: try direct bytes (no resize)
+      try {
+        final ByteData data = await rootBundle.load(assetPath);
+        final Uint8List bytes = data.buffer.asUint8List();
+        if (mounted) {
+          setState(() {
+            _driverIcon = BitmapDescriptor.fromBytes(bytes);
+          });
+          _initializeMap(); // refresh markers with custom icon
+        }
+      } catch (_) {
+        // keep default marker if everything fails
+      }
+    }
+  }
+
+  void _zoomCamera(double delta) {
+    if (_mapController == null) return;
+    _mapController?.animateCamera(CameraUpdate.zoomBy(delta));
+  }
+
+  void _recenterCamera() {
+    if (_mapController == null) return;
+    if (_markers.length >= 2) {
+      _fitBounds();
+      return;
+    }
+    if (_markers.isNotEmpty) {
+      final marker = _markers.first;
+      _mapController?.animateCamera(
+        CameraUpdate.newLatLngZoom(marker.position, 15),
+      );
+      return;
+    }
+    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_getCenter(), 13));
+  }
+
+  Widget _controlButton({required IconData icon, required VoidCallback onTap}) {
+    final double size = 42.w;
+    return Material(
+      color: Colors.white,
+      elevation: 3,
+      borderRadius: BorderRadius.circular(10.r),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10.r),
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: Icon(icon, size: 22.sp, color: Colors.black87),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _loadRoutePolyline() async {
+    if (widget.dropOffLocation == null ||
+        (widget.driverLocation == null && widget.pickupLocation == null)) {
+      if (mounted) {
+        setState(() {
+          _routePolylinePoints = [];
+          _isFetchingRoute = false;
+        });
+      }
+      return;
+    }
+
+    final origin =
+        widget.driverLocation ??
+        LatLng(
+          widget.pickupLocation!.coordinates.latitude,
+          widget.pickupLocation!.coordinates.longitude,
+        );
+    final destination = LatLng(
+      widget.dropOffLocation!.coordinates.latitude,
+      widget.dropOffLocation!.coordinates.longitude,
+    );
+
+    try {
+      if (mounted) {
+        setState(() {
+          _isFetchingRoute = true;
+        });
+      }
+      final resp = await Dio().get(
+        'https://maps.googleapis.com/maps/api/directions/json',
+        queryParameters: {
+          'origin': '${origin.latitude},${origin.longitude}',
+          'destination': '${destination.latitude},${destination.longitude}',
+          'mode': 'driving',
+          'alternatives': 'false',
+          'key': AppConstants.googlePlacesApiKey,
+        },
+      );
+
+      final routes = resp.data?['routes'] as List?;
+      List<LatLng> decoded = [];
+      if (routes != null && routes.isNotEmpty) {
+        final overview =
+            routes.first['overview_polyline']?['points'] as String? ?? '';
+        if (overview.isNotEmpty) {
+          decoded = _decodePolyline(overview);
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _routePolylinePoints = decoded;
+        });
+        _initializeMap(); // rebuild polylines with the new route
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _routePolylinePoints = [];
+        });
+        _initializeMap(); // fall back to straight line if directions fail
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isFetchingRoute = false;
+        });
+      }
+    }
+  }
+
+  List<LatLng> _decodePolyline(String encoded) {
+    final List<LatLng> poly = [];
+    int index = 0;
+    int len = encoded.length;
+    int lat = 0;
+    int lng = 0;
+
+    while (index < len) {
+      int b;
+      int shift = 0;
+      int result = 0;
+
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      int dlat = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+
+      do {
+        b = encoded.codeUnitAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      } while (b >= 0x20);
+
+      int dlng = ((result & 1) != 0 ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      final latD = lat / 1e5;
+      final lngD = lng / 1e5;
+      poly.add(LatLng(latD, lngD));
+    }
+
+    return poly;
   }
 
   void _fitBounds() {
@@ -197,6 +490,69 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       );
     }
 
+    final map = GoogleMap(
+      initialCameraPosition: CameraPosition(target: _getCenter(), zoom: 13),
+      markers: _markers,
+      polylines: _polylines,
+      mapType: MapType.normal,
+      trafficEnabled: true,
+      buildingsEnabled: false,
+      indoorViewEnabled: false,
+      myLocationEnabled: false,
+      compassEnabled: false,
+      zoomControlsEnabled: false,
+      zoomGesturesEnabled: true,
+      scrollGesturesEnabled: true,
+      tiltGesturesEnabled: true,
+      rotateGesturesEnabled: true,
+      myLocationButtonEnabled: false,
+      mapToolbarEnabled: false,
+      liteModeEnabled: false,
+      onMapCreated: (GoogleMapController controller) {
+        _mapController = controller;
+        if (!_mapIdCompleter.isCompleted) {
+          _mapIdCompleter.complete(controller.mapId);
+        }
+        controller.setMapStyle(_mapStyle);
+        Future.delayed(const Duration(milliseconds: 800), () {
+          if (_markers.length >= 2) {
+            _fitBounds();
+          } else if (_markers.isNotEmpty) {
+            final marker = _markers.first;
+            _mapController?.animateCamera(
+              CameraUpdate.newLatLngZoom(marker.position, 15),
+            );
+          }
+        });
+      },
+    );
+
+    // If directions are still loading and no polyline is ready, show loader only.
+    if (_isFetchingRoute && _routePolylinePoints.isEmpty) {
+      return Container(
+        width: widget.width,
+        height: widget.height,
+        decoration: BoxDecoration(
+          color: const Color(0xffECF4E9),
+          border: Border.all(color: Colors.green.shade300),
+          borderRadius: BorderRadius.circular(8.r),
+        ),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              CircularProgressIndicator(color: AppColor.primary),
+              SizedBox(height: 8.h),
+              Text(
+                'Fetching route...',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14.sp),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
     return Container(
       width: widget.width,
       height: widget.height,
@@ -205,43 +561,36 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
         border: Border.all(color: Colors.green.shade300),
         borderRadius: BorderRadius.circular(8.r),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8.r),
-        child: GoogleMap(
-          initialCameraPosition: CameraPosition(target: _getCenter(), zoom: 13),
-          markers: _markers,
-          polylines: _polylines,
-          mapType: MapType.normal,
-          // Zoom controls (buttons)
-          zoomControlsEnabled: true,
-          // Pinch-to-zoom gestures: pinch fingers together = zoom in, spread apart = zoom out
-          zoomGesturesEnabled: true,
-          // Swipe/drag to move map
-          scrollGesturesEnabled: true,
-          // Tilt gesture
-          tiltGesturesEnabled: true,
-          // Rotate gesture
-          rotateGesturesEnabled: true,
-          myLocationButtonEnabled: false,
-          compassEnabled: true,
-          mapToolbarEnabled: true,
-          liteModeEnabled: false,
-          onMapCreated: (GoogleMapController controller) {
-            _mapController = controller;
-            // Fit bounds after map is created - increased delay for smoother animation
-            Future.delayed(const Duration(milliseconds: 800), () {
-              if (_markers.length >= 2) {
-                _fitBounds();
-              } else if (_markers.isNotEmpty) {
-                // If only one marker, center on it with smooth animation
-                final marker = _markers.first;
-                _mapController?.animateCamera(
-                  CameraUpdate.newLatLngZoom(marker.position, 15),
-                );
-              }
-            });
-          },
-        ),
+      child: Stack(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8.r),
+            child: Animarker(
+              mapId: _mapIdCompleter.future,
+              duration: const Duration(milliseconds: 900),
+              shouldAnimateCamera: false,
+              markers: _markers,
+              child: map,
+            ),
+          ),
+          Positioned(
+            bottom: 12.h,
+            right: 12.w,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _controlButton(icon: Icons.my_location, onTap: _recenterCamera),
+                SizedBox(height: 8.h),
+                _controlButton(icon: Icons.add, onTap: () => _zoomCamera(1)),
+                SizedBox(height: 8.h),
+                _controlButton(
+                  icon: Icons.remove,
+                  onTap: () => _zoomCamera(-1),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

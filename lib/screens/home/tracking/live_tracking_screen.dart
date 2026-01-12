@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:scholarwheels/controllers/live_tracking_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
@@ -12,9 +14,31 @@ import 'package:scholarwheels/models/dashboard_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart'
     as location_model;
 
-class LiveTrackingScreen extends StatelessWidget {
+class LiveTrackingScreen extends StatefulWidget {
   static const String route = '/live-tracking-screen';
   const LiveTrackingScreen({super.key});
+
+  @override
+  State<LiveTrackingScreen> createState() => _LiveTrackingScreenState();
+}
+
+class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
+  late final LiveTrackingController controller;
+  NextTrip? initialTrip;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = Get.find<LiveTrackingController>();
+    initialTrip = Get.arguments as NextTrip?;
+    controller.configureWithArguments(initialTrip, forceRefresh: true);
+  }
+
+  @override
+  void dispose() {
+    controller.leaveTrip();
+    super.dispose();
+  }
 
   String _formatTime(String? time) {
     if (time == null || time.isEmpty) return 'N/A';
@@ -149,11 +173,136 @@ class LiveTrackingScreen extends StatelessWidget {
     return '45 Mints';
   }
 
+  Widget _buildDriverLocationChip(Map<String, dynamic>? driverLoc) {
+    if (driverLoc == null) return const SizedBox.shrink();
+
+    final lat = (driverLoc['latitude'] as num?)?.toDouble();
+    final lng = (driverLoc['longitude'] as num?)?.toDouble();
+    final speed = (driverLoc['speed'] as num?)?.toDouble();
+
+    if (lat == null || lng == null) return const SizedBox.shrink();
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12.r),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'Driver is live',
+            style: poppinFonts(
+              fontSize: sm,
+              fontWeight: FontWeight.w600,
+              color: AppColor.headingFontColor,
+            ),
+          ),
+          SpaceHelper(h: 4.h),
+          Text(
+            'Lat ${lat.toStringAsFixed(4)}, Lng ${lng.toStringAsFixed(4)}',
+            style: poppinFonts(
+              fontSize: sm,
+              color: AppColor.textLightBlackColor4A4A4A,
+            ),
+          ),
+          if (speed != null)
+            Text(
+              'Speed ${(speed).toStringAsFixed(1)} km/h',
+              style: poppinFonts(
+                fontSize: sm,
+                color: AppColor.textLightBlackColor4A4A4A,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final trip = Get.arguments as NextTrip?;
+    return Obx(() {
+      final trip = controller.trip ?? initialTrip ?? Get.arguments as NextTrip?;
+      final driverLoc = controller.driverLocation.value;
+      final LatLng? driverLatLng =
+          driverLoc != null &&
+              driverLoc['latitude'] != null &&
+              driverLoc['longitude'] != null
+          ? LatLng(
+              (driverLoc['latitude'] as num).toDouble(),
+              (driverLoc['longitude'] as num).toDouble(),
+            )
+          : null;
 
-    if (trip == null) {
+      if (trip == null) {
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppColor.white,
+            surfaceTintColor: AppColor.white,
+            elevation: 1,
+            shadowColor: Colors.grey,
+            centerTitle: false,
+            leading: backButton(
+              onTap: () {
+                Get.back();
+              },
+            ),
+            title: Text(
+              'Live Tracking',
+              style: poppinFonts(
+                fontSize: lg,
+                color: AppColor.headingFontColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          body: Center(
+            child: Text(
+              'No trip data available',
+              style: poppinFonts(
+                fontSize: base,
+                color: AppColor.textLightBlackColor4A4A4A,
+              ),
+            ),
+          ),
+        );
+      }
+
+      final pickupLocation = _convertPickupAddressToLocationData(
+        trip.assignedChildren?.isNotEmpty == true
+            ? trip.assignedChildren!.first.pickupAddress
+            : null,
+      );
+
+      final dropOffLocation =
+          trip.assignedChildren?.isNotEmpty == true &&
+              trip.assignedChildren!.first.child?.dropOffAddress != null
+          ? _convertPickupAddressToLocationData(
+              trip.assignedChildren!.first.child!.dropOffAddress,
+            )
+          : null;
+
+      final hasPickupCoords =
+          pickupLocation != null &&
+          pickupLocation.coordinates.latitude != 0.0 &&
+          pickupLocation.coordinates.longitude != 0.0;
+      final hasDropCoords =
+          dropOffLocation != null &&
+          dropOffLocation.coordinates.latitude != 0.0 &&
+          dropOffLocation.coordinates.longitude != 0.0;
+      final mapReady =
+          (hasPickupCoords || hasDropCoords) &&
+          (driverLatLng != null || (hasPickupCoords && hasDropCoords));
+
       return Scaffold(
         appBar: AppBar(
           backgroundColor: AppColor.white,
@@ -167,7 +316,7 @@ class LiveTrackingScreen extends StatelessWidget {
             },
           ),
           title: Text(
-            'Live Tracking',
+            trip.tripId ?? 'Live Tracking',
             style: poppinFonts(
               fontSize: lg,
               color: AppColor.headingFontColor,
@@ -175,349 +324,330 @@ class LiveTrackingScreen extends StatelessWidget {
             ),
           ),
         ),
-        body: Center(
-          child: Text(
-            'No trip data available',
-            style: poppinFonts(
-              fontSize: base,
-              color: AppColor.textLightBlackColor4A4A4A,
-            ),
-          ),
-        ),
-      );
-    }
-
-    final pickupLocation = _convertPickupAddressToLocationData(
-      trip.assignedChildren?.isNotEmpty == true
-          ? trip.assignedChildren!.first.pickupAddress
-          : null,
-    );
-
-    final dropOffLocation =
-        trip.assignedChildren?.isNotEmpty == true &&
-            trip.assignedChildren!.first.child?.dropOffAddress != null
-        ? _convertPickupAddressToLocationData(
-            trip.assignedChildren!.first.child!.dropOffAddress,
-          )
-        : null;
-
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: AppColor.white,
-        surfaceTintColor: AppColor.white,
-        elevation: 1,
-        shadowColor: Colors.grey,
-        centerTitle: false,
-        leading: backButton(
-          onTap: () {
-            Get.back();
-          },
-        ),
-        title: Text(
-          trip.tripId ?? 'Live Tracking',
-          style: poppinFonts(
-            fontSize: lg,
-            color: AppColor.headingFontColor,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ),
-      body: Stack(
-        children: [
-          // Map View - Top 40% of screen
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.4,
-              width: double.infinity,
-              child: pickupLocation != null || dropOffLocation != null
-                  ? RouteMapWidget(
-                      pickupLocation: pickupLocation,
-                      dropOffLocation: dropOffLocation,
-                      height: MediaQuery.of(context).size.height * 0.4,
-                      width: double.infinity,
-                    )
-                  : Container(
-                      color: Colors.grey.shade200,
-                      child: Center(
-                        child: Text(
-                          'No location data available',
-                          style: poppinFonts(
-                            fontSize: base,
-                            color: AppColor.textLightBlackColor4A4A4A,
+        body: Stack(
+          children: [
+            // Map View - Top 40% of screen
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.78,
+                width: double.infinity,
+                child: mapReady
+                    ? RouteMapWidget(
+                        pickupLocation: pickupLocation,
+                        dropOffLocation: dropOffLocation,
+                        driverLocation: driverLatLng,
+                        coveredPath: controller.driverPath.isNotEmpty
+                            ? controller.driverPath.toList()
+                            : null,
+                        remainingPath: controller.buildRemainingPath(),
+                        height: MediaQuery.of(context).size.height * 0.78,
+                        width: double.infinity,
+                      )
+                    : Container(
+                        color: Colors.grey.shade200,
+                        child: Center(
+                          child: Text(
+                            'Map will appear when route is ready',
+                            style: poppinFonts(
+                              fontSize: base,
+                              color: AppColor.textLightBlackColor4A4A4A,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-            ),
-          ),
-          // Trip Details Card - Bottom Sheet Style
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            child: Container(
-              height: MediaQuery.of(context).size.height * 0.6,
-              decoration: BoxDecoration(
-                color: const Color(0xffECF4E9),
-                borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(24.r),
-                  topRight: Radius.circular(24.r),
-                ),
-                border: Border.all(color: AppColor.darkPrimary),
               ),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Drag Handle
-                    Container(
-                      margin: EdgeInsets.only(top: 12.h),
-                      width: 40.w,
-                      height: 4.h,
-                      decoration: BoxDecoration(
-                        color: AppColor.darkPrimary,
-                        borderRadius: BorderRadius.circular(2.r),
-                      ),
+            ),
+            // if (driverLoc != null)
+            //   Positioned(
+            //     top: 12.h,
+            //     right: 12.w,
+            //     child: _buildDriverLocationChip(driverLoc),
+            //   ),
+            // Trip Details Card - Bottom Sheet Style
+            DraggableScrollableSheet(
+              initialChildSize: 0.125,
+              minChildSize: 0.125,
+              maxChildSize: 0.8,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: BoxDecoration(
+                    color: AppColor.cardBgColor,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(20.r),
+                      topRight: Radius.circular(20.r),
                     ),
-                    Padding(
-                      padding: EdgeInsets.all(16.w),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Vehicle Name
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    _getVehicleName(trip),
-                                    style: poppinFonts(
-                                      fontSize: base,
-                                      color: AppColor.black,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  SpaceHelper(h: 4.h),
-                                  // Vehicle Details
-                                  Text(
-                                    _getVehicleDetails(trip),
-                                    style: poppinFonts(
-                                      fontSize: sm,
-                                      color: AppColor.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                          SpaceHelper(h: 16.h),
-                          // Driver and Child Info - Two Columns
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Left Column
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Driver',
-                                      style: poppinFonts(
-                                        fontSize: sm,
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 4.h),
-                                    Text(
-                                      _getDriverName(trip),
-                                      style: poppinFonts(
-                                        fontSize: base,
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 12.h),
-                                    Text(
-                                      'Pickup Order',
-                                      style: poppinFonts(
-                                        fontSize: sm,
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 4.h),
-                                    Text(
-                                      _getPickupOrder(trip),
-                                      style: poppinFonts(
-                                        fontSize: base,
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 12.h),
-                                    Text(
-                                      'Pickup Time',
-                                      style: poppinFonts(
-                                        fontSize: sm,
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 4.h),
-                                    Text(
-                                      _formatTime(_getPickupTime(trip)),
-                                      style: poppinFonts(
-                                        fontSize: base,
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              SpaceHelper(w: 24.w),
-                              // Right Column
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Child',
-                                      style: poppinFonts(
-                                        fontSize: sm,
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 4.h),
-                                    Text(
-                                      _getChildName(trip),
-                                      style: poppinFonts(
-                                        fontSize: base,
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 12.h),
-                                    Text(
-                                      'Pickup Area',
-                                      style: poppinFonts(
-                                        fontSize: sm,
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 4.h),
-                                    Text(
-                                      _getPickupAddress(trip),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: poppinFonts(
-                                        fontSize: base,
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 12.h),
-                                    Text(
-                                      'Drop-off Time',
-                                      style: poppinFonts(
-                                        fontSize: sm,
-                                        color:
-                                            AppColor.textLightBlackColor4A4A4A,
-                                      ),
-                                    ),
-                                    SpaceHelper(h: 4.h),
-                                    Text(
-                                      _formatTime(_getDropOffTime(trip)),
-                                      style: poppinFonts(
-                                        fontSize: base,
-                                        color: AppColor.black,
-                                        fontWeight: FontWeight.w500,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                          SpaceHelper(h: 16.h),
-                          // Route Details Card
-                          RouteEntryWidget(
-                            pickupAddress: _getPickupAddress(trip),
-                            schoolName: _getDropOffAddress(trip),
-                            isLast: true,
-                          ),
-
-                          SpaceHelper(h: 12.h),
-                          // Distance and Estimated Time
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Column(
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag Handle
+                      Container(
+                        margin: EdgeInsets.only(top: 12.h),
+                        width: 40.w,
+                        height: 4.h,
+                        decoration: BoxDecoration(
+                          color: AppColor.darkPrimary,
+                          borderRadius: BorderRadius.circular(2.r),
+                        ),
+                      ),
+                      Expanded(
+                        child: ListView(
+                          controller: scrollController,
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.all(16.w),
+                              child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  Text(
-                                    'Distance',
-                                    style: poppinFonts(
-                                      fontSize: sm,
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                    ),
+                                  // Vehicle Name
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.center,
+                                        children: [
+                                          Text(
+                                            _getVehicleName(trip),
+                                            style: poppinFonts(
+                                              fontSize: base,
+                                              color: AppColor.black,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                          ),
+                                          SpaceHelper(h: 4.h),
+                                          // Vehicle Details
+                                          Text(
+                                            _getVehicleDetails(trip),
+                                            style: poppinFonts(
+                                              fontSize: sm,
+                                              color: AppColor.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
                                   ),
-                                  SpaceHelper(h: 4.h),
-                                  Text(
-                                    _getDistance(trip),
-                                    style: poppinFonts(
-                                      fontSize: base,
-                                      color: AppColor.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
+                                  SpaceHelper(h: 16.h),
+                                  // Driver and Child Info - Two Columns
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Left Column
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Driver',
+                                              style: poppinFonts(
+                                                fontSize: sm,
+                                                color: AppColor
+                                                    .textLightBlackColor4A4A4A,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 4.h),
+                                            Text(
+                                              _getDriverName(trip),
+                                              style: poppinFonts(
+                                                fontSize: base,
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 12.h),
+                                            Text(
+                                              'Pickup Order',
+                                              style: poppinFonts(
+                                                fontSize: sm,
+                                                color: AppColor
+                                                    .textLightBlackColor4A4A4A,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 4.h),
+                                            Text(
+                                              _getPickupOrder(trip),
+                                              style: poppinFonts(
+                                                fontSize: base,
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 12.h),
+                                            Text(
+                                              'Pickup Time',
+                                              style: poppinFonts(
+                                                fontSize: sm,
+                                                color: AppColor
+                                                    .textLightBlackColor4A4A4A,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 4.h),
+                                            Text(
+                                              _formatTime(_getPickupTime(trip)),
+                                              style: poppinFonts(
+                                                fontSize: base,
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                      SpaceHelper(w: 24.w),
+                                      // Right Column
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              'Child',
+                                              style: poppinFonts(
+                                                fontSize: sm,
+                                                color: AppColor
+                                                    .textLightBlackColor4A4A4A,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 4.h),
+                                            Text(
+                                              _getChildName(trip),
+                                              style: poppinFonts(
+                                                fontSize: base,
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 12.h),
+                                            Text(
+                                              'Pickup Area',
+                                              style: poppinFonts(
+                                                fontSize: sm,
+                                                color: AppColor
+                                                    .textLightBlackColor4A4A4A,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 4.h),
+                                            Text(
+                                              _getPickupAddress(trip),
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: poppinFonts(
+                                                fontSize: base,
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 12.h),
+                                            Text(
+                                              'Drop-off Time',
+                                              style: poppinFonts(
+                                                fontSize: sm,
+                                                color: AppColor
+                                                    .textLightBlackColor4A4A4A,
+                                              ),
+                                            ),
+                                            SpaceHelper(h: 4.h),
+                                            Text(
+                                              _formatTime(
+                                                _getDropOffTime(trip),
+                                              ),
+                                              style: poppinFonts(
+                                                fontSize: base,
+                                                color: AppColor.black,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ],
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  Text(
-                                    'Estimated Time',
-                                    style: poppinFonts(
-                                      fontSize: sm,
-                                      color: AppColor.textLightBlackColor4A4A4A,
-                                    ),
+                                  SpaceHelper(h: 16.h),
+                                  // Route Details Card
+                                  RouteEntryWidget(
+                                    pickupAddress: _getPickupAddress(trip),
+                                    schoolName: _getDropOffAddress(trip),
+                                    isLast: true,
                                   ),
-                                  SpaceHelper(h: 4.h),
-                                  Text(
-                                    _getEstimatedTime(trip),
-                                    style: poppinFonts(
-                                      fontSize: base,
-                                      color: AppColor.black,
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
 
-                          SpaceHelper(h: 20.h),
-                        ],
+                                  SpaceHelper(h: 12.h),
+                                  // Distance and Estimated Time
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            'Distance',
+                                            style: poppinFonts(
+                                              fontSize: sm,
+                                              color: AppColor
+                                                  .textLightBlackColor4A4A4A,
+                                            ),
+                                          ),
+                                          SpaceHelper(h: 4.h),
+                                          Text(
+                                            _getDistance(trip),
+                                            style: poppinFonts(
+                                              fontSize: base,
+                                              color: AppColor.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.end,
+                                        children: [
+                                          Text(
+                                            'Estimated Time',
+                                            style: poppinFonts(
+                                              fontSize: sm,
+                                              color: AppColor
+                                                  .textLightBlackColor4A4A4A,
+                                            ),
+                                          ),
+                                          SpaceHelper(h: 4.h),
+                                          Text(
+                                            _getEstimatedTime(trip),
+                                            style: poppinFonts(
+                                              fontSize: base,
+                                              color: AppColor.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+
+                                  SpaceHelper(h: 20.h),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                    ],
+                  ),
+                );
+              },
             ),
-          ),
-        ],
-      ),
-    );
+          ],
+        ),
+      );
+    });
   }
 }

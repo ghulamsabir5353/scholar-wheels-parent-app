@@ -103,9 +103,9 @@ class AppDrawer extends StatelessWidget {
                     Expanded(
                       child: CustomButton(
                         height: 36.h,
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(context).pop();
-                          BaseHelper.signOut();
+                          await BaseHelper.signOut();
                         },
                         title: 'Logout',
                       ),

@@ -16,13 +16,13 @@ class FCMNotificationService {
   static Future<void> initialize() async {
     try {
       // Request notification permissions
-      NotificationSettings settings = await _firebaseMessaging
-          .requestPermission(
-            alert: true,
-            badge: true,
-            sound: true,
-            provisional: false,
-          );
+      NotificationSettings settings =
+          await _firebaseMessaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        provisional: false,
+      );
 
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         log('User granted notification permission');
@@ -33,6 +33,13 @@ class FCMNotificationService {
         log('User declined or has not accepted notification permission');
         return;
       }
+
+      // Ensure foreground notifications are displayed as alerts/banners on iOS
+      await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
 
       // Get FCM token
       await _getFCMToken();
@@ -209,14 +216,25 @@ class FCMNotificationService {
         return;
       }
 
-      // Get the current token before deleting
-      final tokenToRemove = _fcmToken ?? 'any';
+      // Get the current token - try to get it if not already stored
+      String? tokenToRemove = _fcmToken;
+      if (tokenToRemove == null || tokenToRemove.isEmpty) {
+        // Try to get the token from Firebase
+        try {
+          tokenToRemove = await _firebaseMessaging.getToken();
+        } catch (e) {
+          log('Error getting FCM token: $e');
+        }
+      }
+
+      // Use actual token or fallback to 'any' if token is still null
+      final token = tokenToRemove ?? 'any';
 
       // Remove token from backend - POST /user/fcm-token/remove
       final endpoint = 'user/fcm-token/remove';
       try {
         final response = await _apiService.createData(endpoint, {
-          'fcmToken': tokenToRemove,
+          'fcmToken': token,
         });
 
         if (response.statusCode == 200 || response.statusCode == 201) {
@@ -226,14 +244,20 @@ class FCMNotificationService {
         }
       } catch (e) {
         log('Error removing FCM token from backend: $e');
+        // Don't throw - continue with logout even if API call fails
       }
 
       // Also delete token from Firebase
+      try {
       await _firebaseMessaging.deleteToken();
       _fcmToken = null;
       log('FCM token deleted locally');
+      } catch (e) {
+        log('Error deleting FCM token from Firebase: $e');
+      }
     } catch (e) {
       log('Error deleting FCM token: $e');
+      // Don't throw - continue with logout even if token deletion fails
     }
   }
 }

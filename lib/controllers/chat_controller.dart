@@ -124,7 +124,6 @@ class ChatController extends GetxController {
       }
     } catch (e) {
       messagesState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Failed to load messages', color: Colors.red);
       log('error loading messages: $e');
     } finally {
       isLoadingMessages.value = false;
@@ -280,7 +279,6 @@ class ChatController extends GetxController {
     // authenticated - Confirmation that socket is successfully authenticated
     socketService!.onAuthenticated = (data) {
       log('Socket authenticated successfully');
-      customToaster('Connected to chat server', color: Colors.green);
     };
 
     // receiveMessage - New message received from another user
@@ -439,10 +437,10 @@ class ChatController extends GetxController {
     // error - Handle connection or authentication errors
     socketService!.onError = (error) {
       log('Socket error: $error');
-      final errorMessage = error is Map
-          ? (error['message'] ?? error.toString())
-          : error.toString();
-      customToaster('Connection error: $errorMessage', color: Colors.red);
+      // final errorMessage = error is Map
+      //     ? (error['message'] ?? error.toString())
+      //     : error.toString();
+      // // customToaster('Connection error: $errorMessage', color: Colors.red);
     };
   }
 
