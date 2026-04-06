@@ -12,6 +12,7 @@ import '../../controllers/image_upload_controller.dart';
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/font_sized.dart';
 import '../../core/helper.constants/textStyle.dart';
+import '../../core/helper.constants/validators.dart';
 import '../../core/helper.widgets/back_button.dart';
 import '../../core/helper.widgets/custom_button.dart';
 import '../../core/helper.widgets/custom_network_image.dart';
@@ -157,6 +158,7 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
           shadowColor: Colors.grey,
           centerTitle: false,
           leading: backButton(onTap: () => Get.back()),
+          titleSpacing: 0,
           title: Text(
             'Personal Profile',
             style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
@@ -187,7 +189,8 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                     // Profile picture
                     Card(
                       color: Colors.white,
-                      elevation: 1,
+                      elevation: 2,
+                      shadowColor: AppColor.cardShadowColor,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
                         child: Row(
@@ -196,8 +199,9 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                             Stack(
                               children: [
                                 Container(
-                                  width: 84,
-                                  height: 84,
+                                  width: 82.w,
+                                  height: 82.w,
+
                                   decoration: BoxDecoration(
                                     shape: BoxShape.circle,
                                     color:
@@ -211,8 +215,8 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                                       ? ClipOval(
                                           child: Image.file(
                                             _selectedImageFile!,
-                                            width: 84,
-                                            height: 84,
+                                            width: 82.w,
+                                            height: 82.w,
                                             fit: BoxFit.cover,
                                           ),
                                         )
@@ -221,13 +225,13 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                                       ? ClipOval(
                                           child: CustomNetworkImageWidget(
                                             imageUrl: displayImageUrl,
-                                            width: 84,
-                                            height: 84,
-                                            borderRadius: 42,
+                                            width: 82.w,
+                                            height: 82.w,
+                                            borderRadius: 42.r,
                                             fit: BoxFit.cover,
                                             errorWidget: Container(
-                                              width: 84,
-                                              height: 84,
+                                              width: 82.w,
+                                              height: 82.w,
                                               decoration: BoxDecoration(
                                                 shape: BoxShape.circle,
                                                 color: AppColor.darkPrimary,
@@ -276,7 +280,47 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                                   ),
                               ],
                             ),
-                            SpaceHelper(w: 6.w),
+
+                            // show name ,email and phone number here
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.only(left: 6.w),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      fullName,
+                                      style: poppinFonts(
+                                        fontSize: base,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SpaceHelper(h: 4.h),
+                                    Text(
+                                      user.email ?? '',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: poppinFonts(
+                                        fontSize: sm,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SpaceHelper(h: 4.h),
+                                    Text(
+                                      user.phone ?? '',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: poppinFonts(
+                                        fontSize: sm,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+
                             Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
@@ -358,15 +402,11 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                     CustomTextField(
                       controller: authController.phoneController,
                       label: "Phone",
-                      hintText: "Enter Phone",
+                      hintText: "e.g. 0821234567",
                       isNumericKeyboard: true,
                       keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Phone is required';
-                        }
-                        return null;
-                      },
+                      maxLength: Validators.southAfricaPhoneMaxLength,
+                      validator: Validators.validateSouthAfricaPhone,
                     ),
                     SpaceHelper(h: 16.h),
                     // Buttons

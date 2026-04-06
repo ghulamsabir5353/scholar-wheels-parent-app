@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:pinput/pinput.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/controllers/forgot_password_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
@@ -21,86 +22,60 @@ class VerifyOTPScreen extends StatefulWidget {
 
 class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
   late final ForgotPasswordController controller;
-  final List<TextEditingController> _otpControllers = [];
-  final List<FocusNode> _focusNodes = [];
+  final TextEditingController _pinController = TextEditingController();
   bool _hasError = false;
 
   @override
   void initState() {
     super.initState();
-    // Get or create controller - use find with put fallback to reuse existing instance
     try {
       controller = Get.find<ForgotPasswordController>();
     } catch (e) {
       controller = Get.put(ForgotPasswordController());
     }
-
-    // Initialize 6 OTP input fields
-    for (int i = 0; i < 6; i++) {
-      _otpControllers.add(TextEditingController());
-      _focusNodes.add(FocusNode());
-    }
   }
 
   @override
   void dispose() {
-    for (var controller in _otpControllers) {
-      controller.dispose();
-    }
-    for (var node in _focusNodes) {
-      node.dispose();
-    }
+    _pinController.dispose();
     super.dispose();
   }
 
-  void _onOTPChanged(int index, String value) {
-    // Clear error when user starts typing
+  void _onPinChanged(String value) {
     if (_hasError || controller.hasOTPError.value) {
-      setState(() {
-        _hasError = false;
-      });
+      setState(() => _hasError = false);
       controller.hasOTPError.value = false;
       controller.otpErrorMessage.value = '';
     }
-
-    if (value.length == 1 && index < _focusNodes.length - 1) {
-      _focusNodes[index + 1].requestFocus();
-    } else if (value.isEmpty && index > 0) {
-      _focusNodes[index - 1].requestFocus();
-    }
-
-    // Update the combined OTP in controller
-    final otp = _otpControllers.map((c) => c.text).join();
-    controller.otpController.text = otp;
-
-    // Auto verify when all 6 digits are entered
-    if (otp.length == 6) {
-      _verifyOTP();
-    }
+    controller.otpController.text = value;
   }
 
   void _verifyOTP() async {
-    final otp = _otpControllers.map((c) => c.text).join();
+    final otp = _pinController.text.trim();
     if (otp.length == 6) {
       controller.otpController.text = otp;
       final success = await controller.verifyOTP();
 
-      // If verification failed, show error
       if (!success && mounted) {
-        setState(() {
-          _hasError = true;
-        });
-        // Clear OTP fields
-        for (var controller in _otpControllers) {
-          controller.clear();
-        }
-        _focusNodes[0].requestFocus();
+        setState(() => _hasError = true);
+        _pinController.clear();
+        controller.otpController.clear();
       }
     } else {
-      setState(() {
-        _hasError = true;
-      });
+      setState(() => _hasError = true);
     }
+  }
+
+  PinTheme _pinTheme(Color borderColor, {double borderWidth = 1}) {
+    return PinTheme(
+      width: 44.w,
+      height: 44.w,
+      textStyle: poppinFonts(fontSize: 18, fontWeight: FontWeight.w600),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8.r),
+        border: Border.all(color: borderColor, width: borderWidth),
+      ),
+    );
   }
 
   @override
@@ -113,6 +88,7 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
           elevation: 1,
           shadowColor: Colors.grey,
           centerTitle: false,
+          titleSpacing: 0,
           leading: backButton(onTap: () => Get.back()),
           title: Text(
             'Verify OTP',
@@ -129,7 +105,6 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
             child: Column(
               children: [
                 BaseHelper.getLogo(width: 160, height: 80),
-
                 Text(
                   'Verify OTP',
                   style: poppinFonts(fontWeight: FontWeight.w600, fontSize: 26),
@@ -163,77 +138,28 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                 SpaceHelper(h: 12),
                 Obx(() {
                   final hasError = _hasError || controller.hasOTPError.value;
-                  return Row(
-                    children: List.generate(6, (index) {
-                      return Expanded(
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 3.w),
-                          child: AspectRatio(
-                            aspectRatio: 1, // width == height
-                            child: TextField(
-                              controller: _otpControllers[index],
-                              focusNode: _focusNodes[index],
-                              textAlign: TextAlign.center,
-                              textAlignVertical: TextAlignVertical.center,
-                              keyboardType: TextInputType.number,
-                              maxLength: 1,
-                              style: poppinFonts(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              decoration: InputDecoration(
-                                counterText: '',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  borderSide: BorderSide(
-                                    color: hasError
-                                        ? Colors.red
-                                        : AppColor.textFieldBorderColor,
-                                    width: hasError ? 2 : 1,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  borderSide: BorderSide(
-                                    color: hasError
-                                        ? Colors.red
-                                        : AppColor.textFieldBorderColor,
-                                    width: hasError ? 2 : 1,
-                                  ),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  borderSide: BorderSide(
-                                    color: hasError
-                                        ? Colors.red
-                                        : AppColor.primary,
-                                    width: 2,
-                                  ),
-                                ),
-                                errorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                                focusedErrorBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(8.r),
-                                  borderSide: const BorderSide(
-                                    color: Colors.red,
-                                    width: 2,
-                                  ),
-                                ),
-                              ),
-                              onChanged: (value) => _onOTPChanged(index, value),
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                            ),
-                          ),
-                        ),
-                      );
-                    }),
+                  return Pinput(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    length: 6,
+                    controller: _pinController,
+                    onChanged: _onPinChanged,
+                    onCompleted: (pin) {
+                      controller.otpController.text = pin;
+                      _verifyOTP();
+                    },
+                    defaultPinTheme: _pinTheme(
+                      hasError ? Colors.red : AppColor.textFieldBorderColor,
+                      borderWidth: hasError ? 2 : 1,
+                    ),
+                    focusedPinTheme: _pinTheme(
+                      hasError ? Colors.red : AppColor.primary,
+                      borderWidth: 2,
+                    ),
+                    submittedPinTheme: _pinTheme(AppColor.primary),
+                    errorPinTheme: _pinTheme(Colors.red, borderWidth: 2),
+                    forceErrorState: hasError,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   );
                 }),
                 SpaceHelper(h: 8),
@@ -270,7 +196,10 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                     );
                   }
                   return GestureDetector(
-                    onTap: () => controller.resendOTP(),
+                    onTap: () {
+                      _pinController.clear();
+                      controller.resendOTP();
+                    },
                     child: Text(
                       'Resend',
                       style: poppinFonts(
@@ -288,15 +217,11 @@ class _VerifyOTPScreenState extends State<VerifyOTPScreen> {
                     onPressed: controller.isVerifyingOTP.value
                         ? null
                         : () {
-                            final otp = _otpControllers
-                                .map((c) => c.text)
-                                .join();
+                            final otp = _pinController.text.trim();
                             if (otp.length == 6) {
                               _verifyOTP();
                             } else {
-                              setState(() {
-                                _hasError = true;
-                              });
+                              setState(() => _hasError = true);
                             }
                           },
                     title: 'Verify OTP',

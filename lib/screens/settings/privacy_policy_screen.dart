@@ -24,6 +24,7 @@ class PrivacyPolicyScreen extends StatelessWidget {
             Get.back();
           },
         ),
+        titleSpacing: 0,
         centerTitle: false,
         title: Text(
           'Privacy Policy',

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/controllers/child_controller.dart';
+import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/models/child_model.dart';
 import 'package:scholarwheels/services/api_state.dart';
 import 'package:scholarwheels/screens/childrens/add_children_screen.dart';
@@ -38,10 +40,16 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
-
+        leading: backButton(
+          onTap: () {
+            // hit bottom nav index 0 here and show the home screen
+            Get.find<BottomTabController>().setTabIndex(0);
+          },
+        ),
+        titleSpacing: 0,
         title: Text(
           'Children',
-          style: poppinFonts(fontSize: xl, fontWeight: FontWeight.w500),
+          style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
         ),
         actions: [
           InkWell(

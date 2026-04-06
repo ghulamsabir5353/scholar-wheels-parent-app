@@ -65,6 +65,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
           surfaceTintColor: AppColor.white,
           elevation: 1,
           shadowColor: Colors.grey,
+          titleSpacing: 0,
           leading: backButton(onTap: () => Get.back()),
           centerTitle: false,
           title: Text(

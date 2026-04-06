@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/semantics.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
+import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 
 // ignore: must_be_immutable
 class CustomTextField extends StatelessWidget {
@@ -34,6 +37,7 @@ class CustomTextField extends StatelessWidget {
     this.label,
     this.semanticLabel,
     this.semanticHint,
+    this.maxLength,
   }) : assert(
          isObsecure == null || hasSuffixIcon != null,
          'isObsecure or hasSuffixIcon must be provided',
@@ -65,6 +69,7 @@ class CustomTextField extends StatelessWidget {
   TextInputType? keyboardType;
   String? semanticLabel;
   String? semanticHint;
+  int? maxLength;
 
   @override
   Widget build(BuildContext context) {
@@ -87,107 +92,135 @@ class CustomTextField extends StatelessWidget {
                 child: Text(
                   label!,
                   style: poppinFonts(
-                    color: labelColor ?? Color(0xff212529),
-                    fontSize: 16,
+                    color: labelColor ?? AppColor.black,
+                    fontSize: md,
                     fontWeight: FontWeight.w400,
                   ),
                 ),
               ),
             ),
-          SizedBox(
-            height: height ?? 72,
-            child: TextFormField(
-              initialValue: initialValue,
-              focusNode: focusNode,
-              controller: controller,
-              onChanged: onChanged,
-              onTap: onTap,
-              enableInteractiveSelection: true,
-              cursorColor: cursorColor ?? Colors.black26,
-              cursorHeight: 12,
-              obscureText: isObsecure ?? false,
-              readOnly: isReadOnly ?? false,
-              maxLines: maxLines ?? 1,
-              onFieldSubmitted: onFieldSubmit,
-              textInputAction: textInputAction ?? TextInputAction.next,
-              keyboardType: isNumericKeyboard
-                  ? const TextInputType.numberWithOptions(
-                      decimal: false,
-                      signed: true,
-                    )
-                  : keyboardType,
-              inputFormatters:
-                  (isNumericKeyboard ||
-                      keyboardType == TextInputType.phone ||
-                      keyboardType == TextInputType.number)
-                  ? [FilteringTextInputFormatter.digitsOnly]
-                  : null,
-              style: TextStyle(
-                color: cursorColor ?? Colors.black,
-                fontSize: 16,
-              ),
-              validator:
-                  validator ??
-                  (value) {
-                    if (value!.isEmpty) {
-                      return "Field Required*";
-                    }
-                    return null;
-                  },
-              decoration: InputDecoration(
-                prefixIcon: hasPrefixIcon != null
-                    ? Padding(
-                        padding: const EdgeInsets.all(15),
-                        child: Image.asset(hasPrefixIcon!, height: 20),
-                      )
-                    : null,
-                suffixIcon: hasSuffixIcon,
-                // ? GestureDetector(
-                //     onTap: hasSuffixOnTap,
-                //     child: Padding(
-                //       padding: const EdgeInsets.all(15),
-                //       child: Image.asset(
-                //         hasSuffixIcon!,
-                //         height: 20,
-                //       ),
-                //     ),
-                //   )
-                // : null,
-                hintText: hintText,
-                hintStyle:
-                    hintStyle ??
-                    const TextStyle(color: Color(0xffADA4A5), fontSize: 16),
-                filled: true,
-                fillColor: fillColor ?? AppColor.appColorWhite,
-                errorStyle: const TextStyle(color: Colors.red, fontSize: 12),
-                errorBorder: const OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.red, width: 1),
-                  borderRadius: BorderRadius.all(Radius.circular(12)),
-                ),
-                border: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: borderColor ?? AppColor.textFieldBorderColor,
-                    width: 1,
+          FormField<String>(
+            initialValue: controller?.text ?? initialValue,
+            validator:
+                validator ??
+                (value) {
+                  if (value == null || value.isEmpty) {
+                    return "Field Required*";
+                  }
+                  return null;
+                },
+            builder: (field) {
+              final hasError =
+                  field.errorText != null && field.errorText!.isNotEmpty;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    height: height ?? 48.h,
+                    child: TextField(
+                      focusNode: focusNode,
+                      controller: controller,
+                      onChanged: (value) {
+                        field.didChange(value);
+                        if (onChanged != null) {
+                          onChanged!(value);
+                        }
+                      },
+                      onTap: onTap,
+                      enableInteractiveSelection: true,
+                      cursorColor: cursorColor ?? Colors.black26,
+                      cursorHeight: 18.h,
+                      obscureText: isObsecure ?? false,
+                      readOnly: isReadOnly ?? false,
+                      maxLines: maxLines ?? 1,
+                      maxLength: maxLength,
+                      onSubmitted: onFieldSubmit,
+                      textInputAction: textInputAction ?? TextInputAction.next,
+                      keyboardType: isNumericKeyboard
+                          ? const TextInputType.numberWithOptions(
+                              decimal: false,
+                              signed: true,
+                            )
+                          : keyboardType,
+                      inputFormatters:
+                          (isNumericKeyboard ||
+                              keyboardType == TextInputType.phone ||
+                              keyboardType == TextInputType.number)
+                          ? [FilteringTextInputFormatter.digitsOnly]
+                          : null,
+                      style: TextStyle(
+                        color: cursorColor ?? Colors.black,
+                        fontSize: 14.sp,
+                      ),
+                      decoration: InputDecoration(
+                        prefixIcon: hasPrefixIcon != null
+                            ? Padding(
+                                padding: const EdgeInsets.all(15.0),
+                                child: Image.asset(
+                                  hasPrefixIcon!,
+                                  height: 20.h,
+                                ),
+                              )
+                            : null,
+                        suffixIcon: hasSuffixIcon,
+                        isDense: true,
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 14.w,
+                          vertical: 12.h,
+                        ),
+                        hintText: hintText,
+                        hintStyle:
+                            hintStyle ??
+                            TextStyle(color: AppColor.gray, fontSize: 14.sp),
+                        filled: true,
+                        fillColor: fillColor ?? AppColor.appColorWhite,
+                        // Hide the built-in error text, we render it manually below
+                        errorText: null,
+                        counterText: maxLength != null ? '' : null,
+                        border: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: borderColor ?? AppColor.textFieldBorderColor,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: borderColor ?? AppColor.textFieldBorderColor,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderSide: BorderSide(
+                            color: borderColor ?? AppColor.textFieldBorderColor,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderSide: const BorderSide(
+                            color: Colors.red,
+                            width: 1,
+                          ),
+                          borderRadius: BorderRadius.circular(12.r),
+                        ),
+                      ),
+                    ),
                   ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: borderColor ?? AppColor.textFieldBorderColor,
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(
-                    color: borderColor ?? AppColor.textFieldBorderColor,
-                    width: 1,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+                  if (hasError) ...[
+                    SpaceHelper(h: 4.h),
+                    Text(
+                      field.errorText!,
+                      style: TextStyle(color: Colors.red, fontSize: 12.sp),
+                    ),
+                  ],
+                ],
+              );
+            },
           ),
+          SpaceHelper(h: 8.h),
         ],
       ),
     );

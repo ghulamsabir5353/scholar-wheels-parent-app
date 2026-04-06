@@ -216,16 +216,14 @@ class _ManageRideModalState extends State<ManageRideModal> {
     // Always refresh dashboard
     mainController.getDashboardData();
 
-    // If on schedule screen, also refresh trips with current filter and status
+    // If on schedule screen, also refresh trips with the same filter (daily/weekly/monthly) and status
     if (isOnScheduleScreen) {
-      // Get status from arguments (passed when navigating to schedule screen)
       final status = Get.arguments as String? ?? 'scheduled';
-      // Refresh trips - the schedule screen will show updated data
-      // We use 'daily' as default, but the screen will refresh with its own filter when it rebuilds
+      final filterType =
+          mainController.scheduleRideFilter.value.toLowerCase();
       Future.delayed(Duration(milliseconds: 500), () {
         mainController.getTrips(
-          filterType:
-              'daily', // Default, schedule screen will refresh with its own filter
+          filterType: filterType,
           status: status,
         );
       });
@@ -256,7 +254,7 @@ class _ManageRideModalState extends State<ManageRideModal> {
                   'Manage Ride',
                   style: poppinFonts(
                     color: AppColor.primary,
-                    fontSize: xl,
+                    fontSize: lg,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -349,7 +347,7 @@ class _ManageRideModalState extends State<ManageRideModal> {
               borderRadius: BorderRadius.circular(8),
               border: selectedAction == ManageRideState.changePickupTime
                   ? null
-                  : Border.all(color: Color(0xffE7E7E7), width: 1),
+                  : Border.all(color: AppColor.cardBorderColorGrey, width: 1),
             ),
             child: Center(
               child: Text(
@@ -377,7 +375,7 @@ class _ManageRideModalState extends State<ManageRideModal> {
               borderRadius: BorderRadius.circular(8),
               border: selectedAction == ManageRideState.childNotGoing
                   ? null
-                  : Border.all(color: Color(0xffE7E7E7), width: 1),
+                  : Border.all(color: AppColor.cardBorderColorGrey, width: 1),
             ),
             child: Center(
               child: Text(
@@ -406,7 +404,7 @@ class _ManageRideModalState extends State<ManageRideModal> {
               borderRadius: BorderRadius.circular(8),
               border: selectedAction == ManageRideState.changeDropoffTime
                   ? null
-                  : Border.all(color: Color(0xffE7E7E7), width: 1),
+                  : Border.all(color: AppColor.cardBorderColorGrey, width: 1),
             ),
             child: Center(
               child: Text(
@@ -434,7 +432,7 @@ class _ManageRideModalState extends State<ManageRideModal> {
               borderRadius: BorderRadius.circular(8),
               border: selectedAction == ManageRideState.contactOwner
                   ? null
-                  : Border.all(color: Color(0xffE7E7E7), width: 1),
+                  : Border.all(color: AppColor.cardBorderColorGrey, width: 1),
             ),
             child: Center(
               child: Text(

@@ -4,6 +4,7 @@ import 'package:scholarwheels/core/helper.constants/color.dart';
 void showRemoveFoodDialog(BuildContext context, VoidCallback onConfirm) {
   showDialog(
     context: context,
+    barrierDismissible: true,
     builder: (context) => Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Padding(

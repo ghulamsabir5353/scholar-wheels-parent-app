@@ -24,7 +24,7 @@ class AppDrawer extends StatelessWidget {
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -32,7 +32,12 @@ class AppDrawer extends StatelessWidget {
           ),
           backgroundColor: AppColor.white,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.w),
+            padding: EdgeInsets.only(
+              left: 14.w,
+              right: 12.w,
+              top: 10.w,
+              bottom: 10.w,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,11 +54,11 @@ class AppDrawer extends StatelessWidget {
                         color: AppColor.black,
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.close, size: 24.w),
-                      onPressed: () {
+                    InkWell(
+                      onTap: () {
                         Navigator.of(context).pop();
                       },
+                      child: Icon(Icons.close, size: 24.w),
                     ),
                   ],
                 ),
@@ -67,7 +72,7 @@ class AppDrawer extends StatelessWidget {
                     color: AppColor.black,
                   ),
                 ),
-                SpaceHelper(h: 20.w),
+                SpaceHelper(h: 16.w),
                 // Action Buttons
                 Row(
                   children: [
@@ -82,7 +87,7 @@ class AppDrawer extends StatelessWidget {
                             color: AppColor.white,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppColor.bgGrayD9D8D8,
+                              color: AppColor.cardBorderColorGrey,
                               width: 1,
                             ),
                           ),
@@ -112,6 +117,7 @@ class AppDrawer extends StatelessWidget {
                     ),
                   ],
                 ),
+                SpaceHelper(h: 12.w),
               ],
             ),
           ),

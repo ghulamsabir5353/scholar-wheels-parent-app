@@ -229,6 +229,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             // Leave chat room when navigating back
@@ -238,6 +239,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             Get.back();
           },
         ),
+
         title: Text(
           _getChatTitle(),
           style: poppinFonts(
@@ -262,12 +264,33 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   (messagesState is DataState<List<MessageModel>> &&
                       messagesState.data.isEmpty)) {
                 return Center(
-                  child: Text(
-                    'No messages yet',
-                    style: poppinFonts(
-                      fontSize: base,
-                      color: AppColor.textLightBlackColor4A4A4A,
-                    ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Icon(
+                      //   Icons.chat_bubble_outline_rounded,
+                      //   size: 64.w,
+                      //   color: AppColor.textLightBlackColor4A4A4A.withOpacity(0.5),
+                      // ),
+                      SpaceHelper(h: 16.h),
+                      Text(
+                        'No message found',
+                        style: poppinFonts(
+                          fontSize: base,
+                          color: AppColor.textLightBlackColor4A4A4A,
+                        ),
+                      ),
+                      SpaceHelper(h: 4.h),
+                      Text(
+                        'Start the conversation by sending a message',
+                        style: poppinFonts(
+                          fontSize: sm,
+                          color: AppColor.textLightBlackColor4A4A4A.withOpacity(
+                            0.8,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 );
               }
@@ -366,35 +389,54 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Container(
-                    padding: EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: AppColor.bgGray979797,
-                        width: 1,
-                      ),
-                    ),
-                    child: SvgPicture.asset('assets/images/svg/attachment.svg'),
-                  ),
                   Expanded(
                     child: Padding(
                       padding: EdgeInsets.symmetric(horizontal: 6.w),
-                      child: CustomTextField(
-                        controller: _messageController,
-                        hintText: 'Type a message...',
-                        height: 47,
-                        onFieldSubmit: (_) => _sendMessage(),
-                        textInputAction: TextInputAction.send,
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 16.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColor.white,
+                          borderRadius: BorderRadius.circular(12.r),
+                          border: Border.all(
+                            color: AppColor.cardBorderColorGrey,
+                            width: 1,
+                          ),
+                        ),
+                        child: TextField(
+                          controller: _messageController,
+                          onChanged: (_) => _onMessageTextChanged(),
+                          onSubmitted: (_) => _sendMessage(),
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          minLines: 1,
+                          maxLines: 4,
+                          decoration: InputDecoration(
+                            isDense: true,
+                            border: InputBorder.none,
+                            hintText: 'Type a message...',
+                            hintStyle: poppinFonts(
+                              fontSize: sm,
+                              color: AppColor.gray,
+                            ),
+                            contentPadding: EdgeInsets.zero,
+                          ),
+                          style: poppinFonts(
+                            fontSize: sm,
+                            color: AppColor.black,
+                          ),
+                        ),
                       ),
                     ),
                   ),
                   GestureDetector(
                     onTap: _sendMessage,
                     child: Container(
-                      padding: EdgeInsets.all(12),
+                      padding: EdgeInsets.all(16.w),
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
+                        borderRadius: BorderRadius.circular(6.r),
                         color: AppColor.primary,
                       ),
                       child: SvgPicture.asset('assets/images/svg/send.svg'),

@@ -6,6 +6,7 @@ import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/models/child_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 import 'package:scholarwheels/services/api_state.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
@@ -94,8 +95,7 @@ class ChildController extends GetxController {
         customToaster('Failed to add child', color: Colors.red);
       }
     } catch (e) {
-      customToaster('Something went wrong', color: Colors.red);
-      log('error: $e');
+      showApiError(e, logLabel: 'addChild');
     } finally {
       isLoading.value = false;
     }
@@ -155,8 +155,7 @@ class ChildController extends GetxController {
         customToaster('Failed to update child', color: Colors.red);
       }
     } catch (e) {
-      customToaster('Something went wrong', color: Colors.red);
-      log('error: $e');
+      showApiError(e, logLabel: 'updateChild');
     } finally {
       isLoading.value = false;
     }
@@ -196,8 +195,7 @@ class ChildController extends GetxController {
         customToaster('Failed to delete child', color: Colors.red);
       }
     } catch (e) {
-      customToaster('Something went wrong', color: Colors.red);
-      log('error: $e');
+      showApiError(e, logLabel: 'deleteChild');
     } finally {
       isLoading.value = false;
     }
@@ -250,8 +248,7 @@ class ChildController extends GetxController {
       }
     } catch (e) {
       childrenState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error: $e');
+      showApiError(e, logLabel: 'getChildrenList');
     }
   }
 }

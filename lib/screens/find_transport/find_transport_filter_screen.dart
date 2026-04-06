@@ -106,6 +106,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();
@@ -134,7 +135,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                   fontWeight: FontWeight.w500,
                 ),
               ),
-              SpaceHelper(h: 12.w),
+              SpaceHelper(h: 12.h),
               LocationField(
                 label: "Pickup Location",
                 hintText: 'Enter Pickup Location',
@@ -145,7 +146,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                   });
                 },
               ),
-              SpaceHelper(h: 12.w),
+
               LocationField(
                 label: "School/Drop-off",
                 hintText: 'Enter School/Drop-off',
@@ -156,7 +157,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                   });
                 },
               ),
-              SpaceHelper(h: 12.w),
+
               Row(
                 children: [
                   Expanded(
@@ -168,8 +169,8 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                           child: Text(
                             'Vehicle Type',
                             style: poppinFonts(
-                              color: Color(0xff212529),
-                              fontSize: 16,
+                              color: AppColor.black,
+                              fontSize: md,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -186,7 +187,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                             fillColor: AppColor.appColorWhite,
                             filled: true,
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 16.h,
+                              vertical: 12.h,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.r),
@@ -211,10 +212,10 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                             ),
                           ),
                           hint: Text(
-                            'Select Vehicle Type',
+                            'Select',
                             style: TextStyle(
-                              fontSize: sm,
-                              color: const Color(0xffADA4A5),
+                              fontSize: md,
+                              color: AppColor.gray,
                               fontFamily: 'Poppins',
                             ),
                           ),
@@ -226,7 +227,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                                     item,
                                     style: poppinFonts(
                                       color: AppColor.appBlackColor,
-                                      fontSize: base,
+                                      fontSize: sm,
                                     ),
                                   ),
                                 ),
@@ -273,8 +274,8 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                           child: Text(
                             'Capacity',
                             style: poppinFonts(
-                              color: const Color(0xff212529),
-                              fontSize: base,
+                              color: AppColor.black,
+                              fontSize: md,
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -292,7 +293,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                             filled: true,
 
                             contentPadding: EdgeInsets.symmetric(
-                              vertical: 16.h,
+                              vertical: 12.h,
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12.r),
@@ -317,10 +318,10 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                             ),
                           ),
                           hint: Text(
-                            'Select Capacity',
+                            'Select',
                             style: TextStyle(
-                              fontSize: base,
-                              color: const Color(0xffADA4A5),
+                              fontSize: md,
+                              color: AppColor.gray,
                               fontFamily: 'Poppins',
                             ),
                           ),
@@ -371,7 +372,7 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                   ),
                 ],
               ),
-              SpaceHelper(h: 12.w),
+              SpaceHelper(h: 24.h),
               Obx(() {
                 final routeController = Get.find<RouteController>();
                 return CustomButton(

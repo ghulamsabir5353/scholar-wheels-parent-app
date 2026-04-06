@@ -10,10 +10,12 @@ import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_outline_button.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/core/helper.widgets/focus_manager.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_network_image.dart';
+import 'package:scholarwheels/models/contract_model.dart';
 import 'package:scholarwheels/screens/home/notification_screen.dart';
 import 'package:scholarwheels/screens/home/schedule_ride_screen.dart';
 import 'package:scholarwheels/controllers/notification_controller.dart';
@@ -24,9 +26,33 @@ import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/models/dashboard_model.dart';
 import 'package:scholarwheels/services/api_state.dart';
 
-class HomeScreen extends StatelessWidget {
+Color? getStatusColor(String? status) {
+  switch (status) {
+    case 'scheduled':
+    case 'active':
+      return AppColor.primary;
+    case 'cancelled':
+      return AppColor.notCompletedStatusColor;
+    default:
+      return AppColor.yellowText;
+  }
+}
+
+class HomeScreen extends StatefulWidget {
   static const route = '/home';
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    final mainController = Get.find<MainController>();
+    mainController.getDashboardData();
+  }
 
   /// Get greeting based on time of day
   String _getGreeting() {
@@ -117,14 +143,21 @@ class HomeScreen extends StatelessWidget {
           elevation: 1,
           shadowColor: Colors.grey,
           centerTitle: false,
-          leadingWidth: 25,
-          leading: IconButton(
-            padding: EdgeInsets.symmetric(horizontal: 12.w),
-            icon: const Icon(Icons.menu),
-            color: AppColor.headingFontColor,
-            onPressed: () =>
+          titleSpacing: 0,
+
+          leading: InkWell(
+            onTap: () =>
                 bottomController.rootScaffoldKey.currentState?.openDrawer(),
+            child: Padding(
+              padding: EdgeInsets.all(12.w),
+              child: Icon(
+                Icons.menu,
+                color: AppColor.headingFontColor,
+                size: 32.w,
+              ),
+            ),
           ),
+
           title: Row(
             children: [
               Semantics(
@@ -204,7 +237,9 @@ class HomeScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
               SpaceHelper(w: 6.w),
+
               Expanded(
                 child: Semantics(
                   label: 'Welcome message and dashboard title',
@@ -213,19 +248,12 @@ class HomeScreen extends StatelessWidget {
                     children: [
                       Obx(
                         () => Text(
-                          '${_getGreeting()}, ${_getFullName()} 👋',
+                          'Hi, ${_getFullName()} 👋',
                           style: poppinFonts(
                             color: AppColor.black,
-                            fontSize: 14,
+                            fontSize: md,
                             fontWeight: FontWeight.w500,
                           ),
-                        ),
-                      ),
-                      Text(
-                        'Parent Dashboard',
-                        style: poppinFonts(
-                          color: AppColor.textLightBlackColor4A4A4A,
-                          fontSize: 12,
                         ),
                       ),
                     ],
@@ -330,6 +358,18 @@ class HomeScreen extends StatelessWidget {
 
           if (state is DataState<DashboardModel>) {
             final dashboard = state.data;
+            final hasActiveRideToday = _hasActiveRideToday(
+              dashboard.activeRides,
+            );
+            final hasUpcomingRides =
+                dashboard.nextTrip != null &&
+                dashboard.nextTrip!.isNotEmpty &&
+                _hasUpcomingRidesAfterFilter(dashboard);
+            final hasAnyRides = hasActiveRideToday || hasUpcomingRides;
+            final hasContracts =
+                dashboard.recentContracts != null &&
+                dashboard.recentContracts!.isNotEmpty;
+
             return RefreshIndicator(
               onRefresh: () async {
                 await mainController.getDashboardData();
@@ -365,12 +405,16 @@ class HomeScreen extends StatelessWidget {
                       if (dashboard.activeRides != null)
                         _buildTodayActiveRidesSection(dashboard.activeRides!),
 
-                      // Upcoming Rides Section
-                      if (dashboard.nextTrip != null)
+                      // Upcoming Rides Section (list of cards)
+                      if (dashboard.nextTrip != null &&
+                          dashboard.nextTrip!.isNotEmpty)
                         _buildUpcomingRidesSection(
                           context,
                           dashboard.nextTrip!,
                         ),
+
+                      // Empty state when no rides (new parent / no bookings)
+                      if (!hasAnyRides) _buildDashboardEmptyState(context),
 
                       // Active Contracts Section
                       if (dashboard.recentContracts != null &&
@@ -378,6 +422,10 @@ class HomeScreen extends StatelessWidget {
                         _buildActiveContractsSection(
                           dashboard.recentContracts!,
                         ),
+
+                      // Empty state for no contracts (if no rides and no contracts)
+                      if (!hasAnyRides && !hasContracts)
+                        _buildNoContractMessage(context),
                     ],
                   ),
                 ),
@@ -391,12 +439,119 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  bool _hasActiveRideToday(NextTrip? activeRides) {
+    if (activeRides == null || activeRides.serviceDate == null) return false;
+    if (activeRides.status?.toLowerCase() != 'active') return false;
+    final today = DateTime.now();
+    final tripDate = DateTime(
+      activeRides.serviceDate!.year,
+      activeRides.serviceDate!.month,
+      activeRides.serviceDate!.day,
+    );
+    final todayDate = DateTime(today.year, today.month, today.day);
+    return tripDate == todayDate;
+  }
+
+  bool _hasUpcomingRidesAfterFilter(DashboardModel dashboard) {
+    final nextTrips = dashboard.nextTrip;
+    if (nextTrips == null || nextTrips.isEmpty) return false;
+    final today = DateTime.now();
+    final todayDate = DateTime(today.year, today.month, today.day);
+    final hasAny = nextTrips.any((trip) {
+      if (trip.serviceDate == null) return true;
+      final tripDate = DateTime(
+        trip.serviceDate!.year,
+        trip.serviceDate!.month,
+        trip.serviceDate!.day,
+      );
+      if (tripDate == todayDate && trip.status?.toLowerCase() == 'active') {
+        return false;
+      }
+      return true;
+    });
+    return hasAny;
+  }
+
+  Widget _buildDashboardEmptyState(BuildContext context) {
+    final bottomController = Get.find<BottomTabController>();
+    return Padding(
+      padding: EdgeInsets.only(bottom: 24.h),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 24.h),
+        decoration: BoxDecoration(
+          color: AppColor.cardBgColor,
+          borderRadius: BorderRadius.circular(12.r),
+          border: Border.all(color: AppColor.borderGreen, width: 1),
+        ),
+        child: Column(
+          children: [
+            // Icon(
+            //   Icons.directions_car_outlined,
+            //   size: 48.w,
+            //   color: AppColor.textLightBlackColor4A4A4A,
+            // ),
+            SpaceHelper(h: 16.h),
+            Text(
+              'No ride is scheduled today.',
+              textAlign: TextAlign.center,
+              style: poppinFonts(
+                fontSize: base,
+                fontWeight: FontWeight.w600,
+                color: AppColor.headingFontColor,
+              ),
+            ),
+            SpaceHelper(h: 6.h),
+            Text(
+              'No upcoming rides.',
+              textAlign: TextAlign.center,
+              style: poppinFonts(
+                fontSize: sm,
+                color: AppColor.textLightBlackColor4A4A4A,
+              ),
+            ),
+            SpaceHelper(h: 20.h),
+            CustomButton(
+              title: 'Request a booking for your child',
+              onPressed: () {
+                bottomController.setTabIndex(2);
+                Get.until((route) => route.settings.name == '/tab_screen');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNoContractMessage(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 24.h),
+      child: Center(
+        child: Text(
+          'No active contract.',
+          style: poppinFonts(
+            fontSize: sm,
+            color: AppColor.textLightBlackColor4A4A4A,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSummaryCard(String title, int count) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 16.h),
       decoration: BoxDecoration(
-        border: Border.all(color: Color(0xffE7E7E7)),
+        border: Border.all(color: AppColor.cardBorderColorGrey),
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.cardShadowColor.withOpacity(0.1),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -464,20 +619,28 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildUpcomingRidesSection(BuildContext context, NextTrip nextTrip) {
-    // Check if it's not today's active ride
+  Widget _buildUpcomingRidesSection(
+    BuildContext context,
+    List<NextTrip> nextTrips,
+  ) {
     final today = DateTime.now();
-    if (nextTrip.serviceDate != null) {
+    final todayDate = DateTime(today.year, today.month, today.day);
+
+    // Filter out trips that are already shown in Today's Active Rides
+    final filtered = nextTrips.where((trip) {
+      if (trip.serviceDate == null) return true;
       final tripDate = DateTime(
-        nextTrip.serviceDate!.year,
-        nextTrip.serviceDate!.month,
-        nextTrip.serviceDate!.day,
+        trip.serviceDate!.year,
+        trip.serviceDate!.month,
+        trip.serviceDate!.day,
       );
-      final todayDate = DateTime(today.year, today.month, today.day);
-      if (tripDate == todayDate && nextTrip.status?.toLowerCase() == 'active') {
-        return SizedBox.shrink(); // Already shown in active rides
+      if (tripDate == todayDate && trip.status?.toLowerCase() == 'active') {
+        return false; // Already shown in active rides
       }
-    }
+      return true;
+    }).toList();
+
+    if (filtered.isEmpty) return SizedBox.shrink();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -490,7 +653,12 @@ class HomeScreen extends StatelessWidget {
           },
         ),
         SpaceHelper(h: 12.h),
-        _buildUpcomingRideCard(context, nextTrip),
+        ...filtered.map(
+          (trip) => Padding(
+            padding: EdgeInsets.only(bottom: 12.h),
+            child: _buildUpcomingRideCard(context, trip),
+          ),
+        ),
         SpaceHelper(h: 24.h),
       ],
     );
@@ -584,12 +752,18 @@ class HomeScreen extends StatelessWidget {
     final dropoffTime = firstChild?.dropOffTime ?? trip.dropOffTime ?? 'N/A';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Color(0xffECF4E9),
+        color: AppColor.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColor.secondary, width: 1),
+        border: Border.all(color: AppColor.cardBorderColorGrey, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.cardShadowColorGreen.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -623,11 +797,11 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
                 decoration: BoxDecoration(
-                  color: AppColor.primary,
+                  color: getStatusColor(trip.status),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
-                  'Active',
+                  trip.status?.capitalizeFirst ?? 'Active',
                   style: poppinFonts(
                     color: AppColor.white,
                     fontSize: sm,
@@ -640,114 +814,146 @@ class HomeScreen extends StatelessWidget {
           SpaceHelper(h: 12.h),
 
           // Vehicle & Driver
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          Container(
+            margin: EdgeInsets.only(bottom: 2.h),
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Color(0xffECF4E9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColor.borderGreen, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColor.cardShadowColorGreen.withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
                   children: [
-                    Text(
-                      vehicleName,
-                      style: poppinFonts(
-                        color: AppColor.black,
-                        fontSize: base,
-                        fontWeight: FontWeight.w500,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            vehicleName,
+                            style: poppinFonts(
+                              color: AppColor.black,
+                              fontSize: base,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            vehicleDetails,
+                            style: poppinFonts(
+                              color: AppColor.textLightBlackColor4A4A4A,
+                              fontSize: sm,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Text(
-                      vehicleDetails,
-                      style: poppinFonts(
-                        color: AppColor.textLightBlackColor4A4A4A,
-                        fontSize: sm,
-                      ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Driver',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        Text(
+                          driverName,
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: base,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Driver',
-                    style: poppinFonts(
-                      color: AppColor.textLightBlackColor4A4A4A,
-                      fontSize: sm,
-                    ),
-                  ),
-                  Text(
-                    driverName,
-                    style: poppinFonts(
-                      color: AppColor.black,
-                      fontSize: base,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SpaceHelper(h: 16.h),
+                SpaceHelper(h: 16.h),
 
-          // Route Details
-          RouteEntryWidget(
-            pickupAddress: pickupAddress,
-            schoolName: schoolName,
-          ),
-          SpaceHelper(h: 8.h),
+                // Route Details
+                RouteEntryWidget(
+                  pickupAddress: pickupAddress,
+                  schoolName: schoolName,
+                ),
+                SpaceHelper(h: 8.h),
 
-          // Times
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Pickup Time: ',
-                    style: poppinFonts(
-                      color: AppColor.textLightBlackColor4A4A4A,
-                      fontSize: sm,
+                // Times
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Pickup Time: ',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        Text(
+                          _formatTime(pickupTime.toString()),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: sm,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  Text(
-                    _formatTime(pickupTime.toString()),
-                    style: poppinFonts(
-                      color: AppColor.black,
-                      fontSize: sm,
-                      fontWeight: FontWeight.w500,
+                    Row(
+                      children: [
+                        Text(
+                          'Dropoff Time: ',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        Text(
+                          _formatTime(dropoffTime.toString()),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: sm,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    'Dropoff Time: ',
-                    style: poppinFonts(
-                      color: AppColor.textLightBlackColor4A4A4A,
-                      fontSize: sm,
-                    ),
-                  ),
-                  Text(
-                    _formatTime(dropoffTime.toString()),
-                    style: poppinFonts(
-                      color: AppColor.black,
-                      fontSize: sm,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SpaceHelper(h: 12.h),
+                  ],
+                ),
+                SpaceHelper(h: 12.h),
 
-          // Live Tracking Button
-          CustomButton(
-            width: double.infinity,
-            title: 'Live Tracking',
-            onPressed: () {
-              Get.toNamed(LiveTrackingScreen.route, arguments: trip);
-            },
+                // Live Tracking Button - disabled if ride is not scheduled for today
+                CustomButton(
+                  width: double.infinity,
+                  title: 'Live Tracking',
+                  onPressed: trip.isScheduledForToday
+                      ? () {
+                          Get.toNamed(
+                            LiveTrackingScreen.route,
+                            arguments: trip,
+                          );
+                        }
+                      : null,
+                  gradient: trip.isScheduledForToday
+                      ? null
+                      : const LinearGradient(
+                          colors: [Colors.grey, Colors.grey],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -779,12 +985,18 @@ class HomeScreen extends StatelessWidget {
     final dropoffTime = firstChild?.dropOffTime ?? trip.dropOffTime ?? 'N/A';
 
     return Container(
-      margin: EdgeInsets.only(bottom: 12.h),
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(12.w),
       decoration: BoxDecoration(
-        color: Color(0xffECF4E9),
+        color: AppColor.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColor.secondary, width: 1),
+        border: Border.all(color: AppColor.cardBorderColorGrey, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.cardShadowColorGreen.withOpacity(0.4),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -818,11 +1030,11 @@ class HomeScreen extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
-                  color: AppColor.primary,
+                  color: getStatusColor(trip.status),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
-                  trip.status ?? 'Scheduled',
+                  trip.status?.capitalizeFirst ?? 'Scheduled',
                   style: poppinFonts(
                     color: AppColor.white,
                     fontSize: sm,
@@ -835,147 +1047,173 @@ class HomeScreen extends StatelessWidget {
           SpaceHelper(h: 12.h),
 
           // Vehicle & Driver
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      vehicleName,
-                      style: poppinFonts(
-                        color: AppColor.black,
-                        fontSize: base,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    Text(
-                      vehicleDetails,
-                      style: poppinFonts(
-                        color: AppColor.textLightBlackColor4A4A4A,
-                        fontSize: sm,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Driver',
-                    style: poppinFonts(
-                      color: AppColor.textLightBlackColor4A4A4A,
-                      fontSize: sm,
-                    ),
-                  ),
-                  Text(
-                    driverName,
-                    style: poppinFonts(
-                      color: AppColor.black,
-                      fontSize: base,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SpaceHelper(h: 16.h),
-
-          // Route Details
-          RouteEntryWidget(
-            pickupAddress: pickupAddress,
-            schoolName: schoolName,
-          ),
-          SpaceHelper(h: 12.h),
-
-          // Schedule Date
-          if (trip.serviceDate != null)
-            Row(
-              children: [
-                Text('Schedule Date: '),
-                Text(
-                  ' ${_formatDate(trip.serviceDate)}',
-                  style: poppinFonts(
-                    color: AppColor.black,
-                    fontSize: sm,
-                    fontWeight: FontWeight.w500,
-                  ),
+          Container(
+            margin: EdgeInsets.only(bottom: 2.h),
+            padding: EdgeInsets.all(16.w),
+            decoration: BoxDecoration(
+              color: Color(0xffECF4E9),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColor.borderGreen, width: 1),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColor.cardShadowColorGreen.withOpacity(0.4),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
-
-          SpaceHelper(h: 8.h),
-
-          // Times
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Text(
-                    'Pickup Time: ',
-                    style: poppinFonts(
-                      color: AppColor.textLightBlackColor4A4A4A,
-                      fontSize: sm,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            vehicleName,
+                            style: poppinFonts(
+                              color: AppColor.black,
+                              fontSize: base,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            vehicleDetails,
+                            style: poppinFonts(
+                              color: AppColor.textLightBlackColor4A4A4A,
+                              fontSize: sm,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  Text(
-                    _formatTime(pickupTime.toString()),
-                    style: poppinFonts(
-                      color: AppColor.black,
-                      fontSize: sm,
-                      fontWeight: FontWeight.w500,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(
+                          'Driver',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        Text(
+                          driverName,
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: base,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-              Row(
-                children: [
-                  Text(
-                    'Dropoff Time: ',
-                    style: poppinFonts(
-                      color: AppColor.textLightBlackColor4A4A4A,
-                      fontSize: sm,
-                    ),
-                  ),
-
-                  Text(
-                    _formatTime(dropoffTime.toString()),
-                    style: poppinFonts(
-                      color: AppColor.black,
-                      fontSize: sm,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SpaceHelper(h: 12.h),
-
-          // Manage Ride Button
-          Container(
-            height: 36.h,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: AppColor.white,
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColor.secondary, width: 1),
-            ),
-            child: TextButton(
-              onPressed: () {
-                _showManageRideModal(context, trip);
-              },
-              child: Text(
-                'Manage Ride',
-                style: poppinFonts(
-                  color: AppColor.primary,
-                  fontSize: sm,
-                  fontWeight: FontWeight.w500,
+                  ],
                 ),
-              ),
+                SpaceHelper(h: 16.h),
+
+                // Route Details
+                RouteEntryWidget(
+                  pickupAddress: pickupAddress,
+                  schoolName: schoolName,
+                ),
+                SpaceHelper(h: 12.h),
+
+                // Schedule Date
+                if (trip.serviceDate != null)
+                  Row(
+                    children: [
+                      Text('Schedule Date: '),
+                      Text(
+                        ' ${_formatDate(trip.serviceDate)}',
+                        style: poppinFonts(
+                          color: AppColor.black,
+                          fontSize: sm,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+
+                SpaceHelper(h: 8.h),
+
+                // Times
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Pickup Time: ',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+                        Text(
+                          _formatTime(pickupTime.toString()),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: sm,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Text(
+                          'Dropoff Time: ',
+                          style: poppinFonts(
+                            color: AppColor.textLightBlackColor4A4A4A,
+                            fontSize: sm,
+                          ),
+                        ),
+
+                        Text(
+                          _formatTime(dropoffTime.toString()),
+                          style: poppinFonts(
+                            color: AppColor.black,
+                            fontSize: sm,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                SpaceHelper(h: 12.h),
+
+                // Manage Ride Button
+                // Container(
+                //   height: 50.h,
+                //   width: double.infinity,
+                //   decoration: BoxDecoration(
+                //     color: AppColor.white,
+                //     borderRadius: BorderRadius.circular(8),
+                //     border: Border.all(color: AppColor.secondary, width: 1),
+                //   ),
+                //   child: TextButton(
+                // onPressed: () {
+                //   _showManageRideModal(context, trip);
+                // },
+                //     child: Text(
+                //       'Manage Ride',
+                //       style: poppinFonts(
+                //         color: AppColor.primary,
+                //         fontSize: md,
+                //         fontWeight: FontWeight.w500,
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                CustomOutlineButton(
+                  title: "Manage Ride",
+                  onPressed: () {
+                    _showManageRideModal(context, trip);
+                  },
+                ),
+              ],
             ),
           ),
         ],
@@ -983,7 +1221,7 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildContractCard(dynamic contract) {
+  Widget _buildContractCard(ContractModel contract) {
     final bottomController = Get.find<BottomTabController>();
     // Handle both ContractModel and Map
     String? contractId;
@@ -991,22 +1229,10 @@ class HomeScreen extends StatelessWidget {
     String? monthlyFee;
     String? status;
 
-    if (contract is Map<String, dynamic>) {
-      contractId = contract['contractId'] ?? contract['_id'];
-      contractDuration = contract['contractDuration'];
-      monthlyFee = contract['monthlyPayment']?.toString();
-      status = contract['status'];
-    } else {
-      // Assume it's ContractModel
-      try {
-        contractId = contract.contractId ?? contract.id;
-        contractDuration = contract.contractDuration;
-        monthlyFee = contract.monthlyPayment?.toString();
-        status = contract.status;
-      } catch (e) {
-        // Fallback
-      }
-    }
+    contractId = contract.contractId ?? contract.id;
+    contractDuration = contract.contractDuration;
+    monthlyFee = contract.monthlyPayment?.toString();
+    status = contract.status;
 
     return GestureDetector(
       onTap: () {
@@ -1021,7 +1247,14 @@ class HomeScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColor.cardBgColor,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColor.secondary),
+          border: Border.all(color: AppColor.borderGreen),
+          boxShadow: [
+            BoxShadow(
+              color: AppColor.cardShadowColorGreen.withOpacity(0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Row(
           children: [
@@ -1030,7 +1263,7 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'School Transport',
+                    '${contract.transportOwner?.businessName}',
                     style: poppinFonts(
                       color: AppColor.black,
                       fontSize: base,

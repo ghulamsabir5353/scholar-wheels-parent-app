@@ -8,9 +8,8 @@ class LiveTrackingBinding extends Bindings {
     if (!Get.isRegistered<LiveTrackingController>()) {
       Get.put<LiveTrackingController>(
         LiveTrackingController(),
-        permanent: true,
+        permanent: false,
       );
     }
   }
 }
-

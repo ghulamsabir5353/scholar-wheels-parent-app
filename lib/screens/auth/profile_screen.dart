@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/controllers/auth_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/validators.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
@@ -141,15 +142,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 CustomTextField(
                   controller: authController.phoneController,
                   label: 'Phone Number',
-                  hintText: 'Enter your phone',
+                  hintText: 'e.g. 0821234567',
                   isNumericKeyboard: true,
                   keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Phone is required';
-                    }
-                    return null;
-                  },
+                  maxLength: Validators.southAfricaPhoneMaxLength,
+                  validator: Validators.validateSouthAfricaPhone,
                 ),
                 Row(
                   children: [

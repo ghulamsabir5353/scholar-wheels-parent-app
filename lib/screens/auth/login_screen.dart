@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/auth_controller.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
@@ -25,6 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthController authController = Get.find<AuthController>();
   final List<FocusNode> _focusNodes = [];
   bool passwordVisible = true;
+  bool rememberMe = false;
 
   @override
   void initState() {
@@ -49,6 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
         email: authController.emailController.text.trim(),
         password: authController.passwordController.text,
         role: "parent",
+        rememberMe: rememberMe,
       );
     }
   }
@@ -83,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                           Text(
-                            'Welcome, Please create your account ',
+                            'Welcome, Please sign in or create an account',
                             textAlign: TextAlign.center,
                             style: poppinFonts(
                               fontWeight: FontWeight.normal,
@@ -132,24 +135,42 @@ class _LoginScreenState extends State<LoginScreen> {
                             passwordVisible = !passwordVisible;
                           });
                         },
-                        child: Icon(
-                          passwordVisible
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                          color: AppColor.textLightBlackColor4A4A4A,
+                        child: Container(
+                          padding: EdgeInsets.all(12.w),
+                          width: 12.w,
+                          height: 12.h,
+                          child: SvgPicture.asset(
+                            passwordVisible
+                                ? 'assets/images/svg/visible_eye.svg'
+                                : 'assets/images/svg/visible_eye_off.svg',
+                          ),
                         ),
                       ),
                     ),
-                    SpaceHelper(h: 12),
-                    // Forgot Password Button
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          Get.toNamed('/forgot-password');
-                        },
-                        child: Padding(
-                          padding: EdgeInsets.only(bottom: 8.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        CheckboxMenuButton(
+                          value: rememberMe,
+                          onChanged: (value) {
+                            setState(() {
+                              rememberMe = value ?? false;
+                            });
+                          },
+                          style: ButtonStyle(),
+                          child: Text(
+                            'Remember Me',
+                            style: poppinFonts(
+                              fontSize: 14,
+
+                              color: AppColor.textLightBlackColor4A4A4A,
+                            ),
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Get.toNamed('/forgot-password');
+                          },
                           child: Text(
                             'Forgot Password?',
                             style: poppinFonts(
@@ -159,8 +180,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
+                    SpaceHelper(h: 8.h),
                     Obx(
                       () => CustomButton(
                         isLoading: authController.isLoading.value,

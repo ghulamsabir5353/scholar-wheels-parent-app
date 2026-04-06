@@ -8,6 +8,7 @@ import 'package:scholarwheels/controllers/child_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
+import 'package:scholarwheels/core/helper.constants/validators.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
@@ -230,10 +231,10 @@ class _EditChildScreenState extends State<EditChildScreen> {
           },
         ),
         centerTitle: false,
-
+        titleSpacing: 0,
         title: Text(
           'Edit Details',
-          style: poppinFonts(fontSize: xl, fontWeight: FontWeight.w500),
+          style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
         ),
       ),
       body: SingleChildScrollView(
@@ -301,27 +302,26 @@ class _EditChildScreenState extends State<EditChildScreen> {
                 CustomTextField(
                   controller: childController.primaryContactNumberController,
                   label: "Primary Contact",
-                  hintText: "Enter Primary Contact",
+                  hintText: "e.g. 0821234567",
                   isNumericKeyboard: true,
+                  keyboardType: TextInputType.phone,
+                  maxLength: Validators.southAfricaPhoneMaxLength,
                   validator: (value) {
-                    if (value == null || value.isEmpty) {
+                    if (value == null || value.trim().isEmpty) {
                       return 'Primary contact is required';
                     }
-                    return null;
+                    return Validators.validateSouthAfricaPhone(value);
                   },
                 ),
 
                 CustomTextField(
                   controller: childController.secondaryContactNumberController,
                   label: "Secondary Contact",
-                  hintText: "Enter Secondary Contact",
+                  hintText: "e.g. 0821234567 (optional)",
                   isNumericKeyboard: true,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Secondary contact is required';
-                    }
-                    return null;
-                  },
+                  keyboardType: TextInputType.phone,
+                  maxLength: Validators.southAfricaPhoneMaxLength,
+                  validator: Validators.validateSouthAfricaPhoneOptional,
                 ),
 
                 LocationField(
@@ -563,6 +563,7 @@ class _EditChildScreenState extends State<EditChildScreen> {
                         final isDisabled = isSaving || isUploading;
 
                         return CustomButton(
+                          height: 36.h.toDouble(),
                           title: "Save",
                           isLoading: isSaving,
                           onPressed: isDisabled ? null : _handleSave,

@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "8Z99B3DSQ9.co.za.scholarwheels.app.parent",
+        "paths": [
+          "/payment/*"
+        ]
+      }
+    ]
+  }
+}

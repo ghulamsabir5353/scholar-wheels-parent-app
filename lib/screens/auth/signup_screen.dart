@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/controllers/auth_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/validators.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
+import 'package:scholarwheels/screens/settings/terms_and_conditions_screen.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/helper.constants/textStyle.dart';
 
@@ -23,8 +27,21 @@ class _SignupScreenState extends State<SignupScreen> {
   final AuthController authController = Get.put(AuthController());
   bool passwordVisible = true;
   bool reEnterPasswordVisible = true;
+  bool hasAcceptedTerms = false;
 
   void _handleSignup() async {
+    // User must accept terms & subscription before signing up
+    if (!hasAcceptedTerms) {
+      Get.snackbar(
+        'Terms required',
+        'Please accept the Terms & Conditions and subscription policy to continue.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
     if (_formKey.currentState?.validate() ?? false) {
       await authController.registerParent();
     }
@@ -61,7 +78,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     ),
                   ],
                 ),
-                SpaceHelper(h: 16),
+                SpaceHelper(h: 20.h),
                 CustomTextField(
                   controller: authController.firstNameController,
                   label: 'First Name',
@@ -75,11 +92,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
                 CustomTextField(
                   controller: authController.surNameController,
-                  label: 'Surname',
-                  hintText: 'Enter your surname',
+                  label: 'Sur Name',
+                  hintText: 'Enter your Sur Name',
                   validator: (value) {
                     if (value == null || value.isEmpty) {
-                      return 'Surname is required';
+                      return 'Sur Name is required';
                     }
                     return null;
                   },
@@ -98,15 +115,11 @@ class _SignupScreenState extends State<SignupScreen> {
                 CustomTextField(
                   controller: authController.phoneController,
                   label: 'Phone Number',
-                  hintText: 'Enter your phone',
+                  hintText: 'e.g. 0821234567',
                   isNumericKeyboard: true,
                   keyboardType: TextInputType.phone,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Phone is required';
-                    }
-                    return null;
-                  },
+                  maxLength: Validators.southAfricaPhoneMaxLength,
+                  validator: Validators.validateSouthAfricaPhone,
                 ),
                 CustomTextField(
                   controller: authController.passwordController,
@@ -128,9 +141,15 @@ class _SignupScreenState extends State<SignupScreen> {
                         passwordVisible = !passwordVisible;
                       });
                     },
-                    child: Icon(
-                      passwordVisible ? Icons.visibility_off : Icons.visibility,
-                      color: AppColor.textLightBlackColor4A4A4A,
+                    child: Container(
+                      padding: EdgeInsets.all(12.w),
+                      width: 12.w,
+                      height: 12.h,
+                      child: SvgPicture.asset(
+                        passwordVisible
+                            ? 'assets/images/svg/visible_eye.svg'
+                            : 'assets/images/svg/visible_eye_off.svg',
+                      ),
                     ),
                   ),
                 ),
@@ -154,13 +173,69 @@ class _SignupScreenState extends State<SignupScreen> {
                         reEnterPasswordVisible = !reEnterPasswordVisible;
                       });
                     },
-                    child: Icon(
-                      reEnterPasswordVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: AppColor.textLightBlackColor4A4A4A,
+                    child: Container(
+                      padding: EdgeInsets.all(12.w),
+                      width: 12.w,
+                      height: 12.h,
+                      child: SvgPicture.asset(
+                        reEnterPasswordVisible
+                            ? 'assets/images/svg/visible_eye.svg'
+                            : 'assets/images/svg/visible_eye_off.svg',
+                      ),
                     ),
                   ),
+                ),
+                SpaceHelper(h: 8),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    Checkbox(
+                      value: hasAcceptedTerms,
+                      activeColor: AppColor.primary,
+                      onChanged: (value) {
+                        setState(() {
+                          hasAcceptedTerms = value ?? false;
+                        });
+                      },
+                    ),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: () async {
+                          // Get.toNamed(TermsAndConditionsScreen.route);
+                          // https://scholarwheels.co.za/terms-condition
+                          launchUrl(
+                            Uri.parse(
+                              'https://scholarwheels.co.za/terms-condition',
+                            ),
+                            mode: LaunchMode.externalApplication,
+                          );
+                        },
+                        child: RichText(
+                          text: TextSpan(
+                            style: poppinFonts(
+                              fontSize: 12.sp,
+                              color: AppColor.textLightBlackColor4A4A4A,
+                            ),
+                            children: [
+                              const TextSpan(
+                                text: 'By signing up, you agree to our ',
+                              ),
+                              TextSpan(
+                                text: 'Terms & Conditions',
+                                style: poppinFonts(
+                                  fontSize: 12.sp,
+                                  color: AppColor.primary,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              const TextSpan(text: ' and subscription policy.'),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 SpaceHelper(h: 12),
                 Obx(

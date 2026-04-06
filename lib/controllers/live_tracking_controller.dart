@@ -9,6 +9,7 @@ import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/models/dashboard_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
 import 'package:scholarwheels/services/api_state.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 enum SocketAuthStatus {
@@ -146,13 +147,14 @@ class LiveTrackingController extends GetxController
       if (incomingTrip != null) {
         currentTrip.value = incomingTrip;
         tripDetailState.value = DataState(data: incomingTrip);
+        _seedDriverPathFromTripIfEmpty(incomingTrip);
         _initializeSocket();
       } else {
         // Fetch trip details from API
         _fetchTripDetails();
       }
     } catch (e) {
-      log('Error initializing from arguments: $e');
+      showApiError(e, logLabel: 'initializeFromArguments');
       tripDetailState.value = ErrorState(
         'Failed to initialize: ${e.toString()}',
       );
@@ -179,7 +181,8 @@ class LiveTrackingController extends GetxController
     final trip = currentTrip.value;
     if (trip == null) return null;
     if (trip.assignedChildren?.isNotEmpty == true) {
-      final drop = trip.assignedChildren!.first.child?.dropOffAddress;
+      // Match live map: route ends at the last assigned child's drop-off
+      final drop = trip.assignedChildren!.last.child?.dropOffAddress;
       if (drop != null &&
           drop.coordinates != null &&
           drop.coordinates!.coordinates != null &&
@@ -189,6 +192,21 @@ class LiveTrackingController extends GetxController
       }
     }
     return null;
+  }
+
+  /// Last known driver position from trip REST payload (before / without socket).
+  LatLng? _driverLatLngFromTripSnapshot() {
+    final p = currentTrip.value?.currentLocationLatLng;
+    if (p == null) return null;
+    return LatLng(p.latitude, p.longitude);
+  }
+
+  /// Seed path from dashboard/API so the map has a starting point until socket fires.
+  void _seedDriverPathFromTripIfEmpty(NextTrip? trip) {
+    final p = trip?.currentLocationLatLng;
+    if (p == null) return;
+    if (driverPath.isNotEmpty) return;
+    driverPath.add(LatLng(p.latitude, p.longitude));
   }
 
   List<LatLng> buildRemainingPath() {
@@ -202,6 +220,7 @@ class LiveTrackingController extends GetxController
         );
       }
     }
+    current ??= _driverLatLngFromTripSnapshot();
     final drop = getDropOffLatLng();
     if (current == null || drop == null) return [];
     return [current, drop];
@@ -231,6 +250,7 @@ class LiveTrackingController extends GetxController
         if (trip != null) {
           currentTrip.value = trip;
           tripDetailState.value = DataState(data: trip);
+          _seedDriverPathFromTripIfEmpty(trip);
 
           // Initialize socket after trip is loaded
           _initializeSocket();
@@ -245,8 +265,8 @@ class LiveTrackingController extends GetxController
         );
       }
     } catch (e) {
-      log('Error loading trip detail: $e');
       tripDetailState.value = ExceptionState(Exception(e.toString()));
+      showApiError(e, logLabel: 'fetchTripDetails');
     }
   }
 

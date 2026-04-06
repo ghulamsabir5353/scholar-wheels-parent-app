@@ -153,7 +153,8 @@ class RoomCard extends StatelessWidget {
           Get.toNamed(ChatRoomScreen.route, arguments: room);
         },
         child: Card(
-          elevation: 1,
+          elevation: 2,
+          shadowColor: AppColor.cardShadowColor,
           color: Colors.white,
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.w),
@@ -191,16 +192,16 @@ class RoomCard extends StatelessWidget {
                             color: AppColor.textLightBlackColor4A4A4A,
                           ),
                         ),
-                      if (room.lastMessage != null)
-                        Text(
-                          room.lastMessage ?? '',
-                          style: poppinFonts(
-                            fontSize: sm,
-                            color: AppColor.textLightBlackColor4A4A4A,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
+
+                      Text(
+                        room.lastMessage ?? 'No message yet',
+                        style: poppinFonts(
+                          fontSize: sm,
+                          color: AppColor.textLightBlackColor4A4A4A,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ],
                   ),
                 ),

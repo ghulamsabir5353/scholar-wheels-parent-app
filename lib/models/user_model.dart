@@ -4,6 +4,8 @@
 
 import 'dart:convert';
 
+import 'package:scholarwheels/models/subscription_model.dart';
+
 UserDetail userDetailFromJson(String str) =>
     UserDetail.fromJson(json.decode(str));
 
@@ -26,6 +28,10 @@ class UserDetail {
   String? userDetailId;
   String? profileImagePresignedUrl;
   RoleData? roleData;
+  bool? activeSubscription;
+  Subscription? subscription;
+  DateTime? currentPeriodStart;
+  DateTime? currentPeriodEnd;
 
   UserDetail({
     this.id,
@@ -44,6 +50,10 @@ class UserDetail {
     this.userDetailId,
     this.profileImagePresignedUrl,
     this.roleData,
+    this.activeSubscription,
+    this.subscription,
+    this.currentPeriodStart,
+    this.currentPeriodEnd,
   });
 
   UserDetail copyWith({
@@ -63,6 +73,10 @@ class UserDetail {
     String? userDetailId,
     String? profileImagePresignedUrl,
     RoleData? roleData,
+    bool? activeSubscription,
+    Subscription? subscription,
+    DateTime? currentPeriodStart,
+    DateTime? currentPeriodEnd,
   }) => UserDetail(
     id: id ?? this.id,
     email: email ?? this.email,
@@ -81,6 +95,10 @@ class UserDetail {
     profileImagePresignedUrl:
         profileImagePresignedUrl ?? this.profileImagePresignedUrl,
     roleData: roleData ?? this.roleData,
+    activeSubscription: activeSubscription ?? this.activeSubscription,
+    subscription: subscription ?? this.subscription,
+    currentPeriodStart: currentPeriodStart ?? this.currentPeriodStart,
+    currentPeriodEnd: currentPeriodEnd ?? this.currentPeriodEnd,
   );
 
   factory UserDetail.fromJson(Map<String, dynamic> json) => UserDetail(
@@ -106,6 +124,16 @@ class UserDetail {
     roleData: json["roleData"] == null
         ? null
         : RoleData.fromJson(json["roleData"]),
+    activeSubscription: json["activeSubscription"],
+    subscription: json["subscription"] == null
+        ? null
+        : Subscription.fromJson(json["subscription"]),
+    currentPeriodStart: json["currentPeriodStart"] == null
+        ? null
+        : DateTime.parse(json["currentPeriodStart"]),
+    currentPeriodEnd: json["currentPeriodEnd"] == null
+        ? null
+        : DateTime.parse(json["currentPeriodEnd"]),
   );
 
   Map<String, dynamic> toJson() => {
@@ -125,6 +153,10 @@ class UserDetail {
     "id": userDetailId,
     "profileImagePresignedUrl": profileImagePresignedUrl,
     "roleData": roleData?.toJson(),
+    "activeSubscription": activeSubscription,
+    "subscription": subscription?.toJson(),
+    "currentPeriodStart": currentPeriodStart?.toIso8601String(),
+    "currentPeriodEnd": currentPeriodEnd?.toIso8601String(),
   };
 }
 
@@ -201,3 +233,37 @@ class RoleData {
     "__v": v,
   };
 }
+
+// "subscription": {
+
+//         "plan": {
+//           "_id": "6992ebb2e05f83db4dfa794c",
+//           "name": "Plan 1",
+//           "price": 10,
+//           "currency": "ZAR",
+//           "billingType": "monthly",
+//           "durationInDays": 30,
+//           "limits": {
+//             "parent": {
+//               "children": 2,
+//               "bookings": 3
+//             },
+//             "transportOwner": {
+//               "drivers": null,
+//               "vehicles": null,
+//               "routes": null,
+//               "rides": null,
+//               "contracts": null
+//             }
+//           },
+//           "features": [
+//             {
+//               "text": "Can request booking",
+//               "_id": "6992ebb2e05f83db4dfa794d"
+//             },
+//             {
+//               "text": "Access chat",
+//               "_id": "6992ebb2e05f83db4dfa794e"
+//             }
+//           ]
+//         },

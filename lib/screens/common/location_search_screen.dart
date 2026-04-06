@@ -213,7 +213,10 @@ class _LocationSearchScreenState extends State<LocationSearchScreen> {
       backgroundColor: AppColor.white,
       appBar: AppBar(
         backgroundColor: AppColor.white,
-        elevation: 0,
+        surfaceTintColor: AppColor.white,
+        elevation: 1,
+        shadowColor: Colors.grey,
+        titleSpacing: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: AppColor.black),
           onPressed: () => Get.back(),

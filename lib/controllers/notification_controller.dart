@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/models/notification_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 import 'package:scholarwheels/services/api_state.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
@@ -39,7 +40,6 @@ class NotificationController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    getNotifications();
     _setupScrollListener();
     getUnreadCount();
     _startUnreadCountTimer();
@@ -113,15 +113,18 @@ class NotificationController extends GetxController {
         log(
           'Loaded ${notificationsList.length} notifications. Has more: $hasMore',
         );
+        // After list is loaded, mark all as read (silent when auto-called)
+        if (notificationsList.isNotEmpty) {
+          markAllAsRead(silent: true);
+        }
       } else {
         notificationsState.value = ExceptionState(
           Exception(response.data['message'] ?? 'Failed to load notifications'),
         );
       }
     } catch (e) {
-      log('Error loading notifications: $e');
       notificationsState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
+      showApiError(e, logLabel: 'getNotifications');
     } finally {
       isLoading.value = false;
     }
@@ -169,15 +172,16 @@ class NotificationController extends GetxController {
         );
       }
     } catch (e) {
-      log('Error loading more notifications: $e');
       currentPage--; // Revert page increment on error
+      showApiError(e, logLabel: 'loadMoreNotifications');
     } finally {
       isLoadingMore.value = false;
     }
   }
 
   /// Mark all notifications as read
-  Future<void> markAllAsRead() async {
+  /// [silent] when true (e.g. auto-call on screen open), skip success toaster
+  Future<void> markAllAsRead({bool silent = false}) async {
     try {
       final endpoint = '${AppConstants.notification}/read-all';
       final response = await apiService.patchData(endpoint, {});
@@ -193,17 +197,20 @@ class NotificationController extends GetxController {
           notificationsState.value = DataState(data: updatedNotifications);
         }
         unreadCount.value = 0; // Update unread count
-        customToaster('All notifications marked as read', color: Colors.green);
+        if (!silent) {
+          customToaster('All notifications marked as read', color: Colors.green);
+        }
         log('All notifications marked as read successfully');
       } else {
-        customToaster(
-          response.data['message'] ?? 'Failed to mark all as read',
-          color: Colors.red,
-        );
+        if (!silent) {
+          customToaster(
+            response.data['message'] ?? 'Failed to mark all as read',
+            color: Colors.red,
+          );
+        }
       }
     } catch (e) {
-      log('Error marking all as read: $e');
-      customToaster('Failed to mark all as read', color: Colors.red);
+      showApiError(e, logLabel: 'markAllAsRead');
     }
   }
 
@@ -282,15 +289,15 @@ class NotificationController extends GetxController {
         );
       }
     } catch (e) {
-      log('Error deleting notification: $e');
       // Revert UI on error
       await getNotifications(refresh: true);
-      customToaster('Failed to delete notification', color: Colors.red);
+      showApiError(e, logLabel: 'deleteNotification');
     }
   }
 
-  /// Get unread notification count
+  /// Get unread notification count (only when user is logged in)
   Future<void> getUnreadCount() async {
+    if (!BaseHelper.isLogin.value) return;
     try {
       final endpoint = '${AppConstants.notification}/unread-count';
       final response = await apiService.fetchData(endpoint);
@@ -304,8 +311,7 @@ class NotificationController extends GetxController {
         log('Unread count: ${unreadCount.value}');
       }
     } catch (e) {
-      log('Error fetching unread count: $e');
-      // Don't show error to user for background count updates
+      showApiError(e, logLabel: 'getUnreadCount');
     }
   }
 

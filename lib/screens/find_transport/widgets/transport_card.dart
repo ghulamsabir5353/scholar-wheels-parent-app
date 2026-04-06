@@ -11,6 +11,7 @@ import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/screens/find_transport/request_booking_screen.dart';
+import 'package:scholarwheels/screens/common/full_screen_image_screen.dart';
 
 class TransportCard extends StatelessWidget {
   final RouteModel? route;
@@ -41,10 +42,46 @@ class TransportCard extends StatelessWidget {
     return 'T';
   }
 
+  /// Build list of full vehicle image URLs (for full-screen viewer).
+  List<String> _buildVehicleImageUrls() {
+    if (route?.vehicle?.pictures == null || route!.vehicle!.pictures!.isEmpty) {
+      return [];
+    }
+    return route!.vehicle!.pictures!
+        .map((p) {
+          final u = p.presignedUrl ?? p.url;
+          if (u == null || u.isEmpty) return null;
+          if (u.startsWith('http://') || u.startsWith('https://')) {
+            return u;
+          }
+          final clean = u.startsWith('/') ? u.substring(1) : u;
+          return '${AppConstants.imageBaseUrl}$clean';
+        })
+        .whereType<String>()
+        .toList();
+  }
+
+  /// Index in the filtered URL list for the given picture index.
+  int _urlIndexForPictureIndex(int pictureIndex) {
+    if (route?.vehicle?.pictures == null) return 0;
+    int urlIndex = 0;
+    for (
+      int i = 0;
+      i < pictureIndex && i < route!.vehicle!.pictures!.length;
+      i++
+    ) {
+      final u =
+          route!.vehicle!.pictures![i].presignedUrl ??
+          route!.vehicle!.pictures![i].url;
+      if (u != null && u.isNotEmpty) urlIndex++;
+    }
+    return urlIndex;
+  }
+
   /// Get route display text
   String _getRouteDisplay() {
-    final suburb = route?.suburb?.description ?? '';
-    final dropOff = route?.dropOffPoint?.description ?? '';
+    final suburb = route?.suburbName ?? '';
+    final dropOff = route?.dropOffPointName ?? '';
     return '$suburb → $dropOff';
   }
 
@@ -123,7 +160,8 @@ class TransportCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
+      elevation: 2,
+      shadowColor: AppColor.cardShadowColor,
       color: Colors.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.r)),
       child: Padding(
@@ -344,26 +382,40 @@ class TransportCard extends StatelessWidget {
                         imageUrl.startsWith('https://')) {
                       fullImageUrl = imageUrl;
                     } else {
-                      // Remove leading slash if present
                       final cleanUrl = imageUrl.startsWith('/')
                           ? imageUrl.substring(1)
                           : imageUrl;
                       fullImageUrl = '${AppConstants.imageBaseUrl}$cleanUrl';
                     }
 
-                    return Container(
-                      margin: EdgeInsets.only(right: 8.w),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8.r),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8.r),
-                        child: CustomNetworkImageWidget(
-                          imageUrl: fullImageUrl,
-                          width: 100.w,
-                          height: 100.h,
-                          borderRadius: 8.r,
-                          fit: BoxFit.cover,
+                    final urls = _buildVehicleImageUrls();
+                    final urlIndex = _urlIndexForPictureIndex(index);
+                    return GestureDetector(
+                      onTap: () {
+                        if (urls.isNotEmpty && urlIndex >= 0) {
+                          Get.to(
+                            () => FullScreenImageScreen(
+                              imageUrls: urls,
+                              initialIndex: urlIndex.clamp(0, urls.length - 1),
+                            ),
+                            fullscreenDialog: true,
+                          );
+                        }
+                      },
+                      child: Container(
+                        margin: EdgeInsets.only(right: 8.w),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8.r),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8.r),
+                          child: CustomNetworkImageWidget(
+                            imageUrl: fullImageUrl,
+                            width: 100.w,
+                            height: 100.h,
+                            borderRadius: 8.r,
+                            fit: BoxFit.cover,
+                          ),
                         ),
                       ),
                     );

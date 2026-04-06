@@ -2,7 +2,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:scholarwheels/models/trip_model.dart';
 import '../services/api_services.dart';
+import '../services/api_exception.dart';
 import '../services/api_state.dart';
 import '../models/dashboard_model.dart';
 import '../controllers/base.helper.controller.dart';
@@ -15,6 +17,15 @@ class MainController extends GetxController with WidgetsBindingObserver {
   final Rx<ViewState<DashboardModel>> dashboardState =
       Rx<ViewState<DashboardModel>>(LoadingState());
 
+  /// Holds the list of logbook trips (history) for the driver
+  final Rx<ViewState<List<TripModel>>> logbookTripsState =
+      Rx<ViewState<List<TripModel>>>(LoadingState());
+  final RxString selectedFilter = 'Daily'.obs;
+
+  /// Holds a single trip detail for logbook detail screen
+  final Rx<ViewState<TripModel>> tripDetailState = Rx<ViewState<TripModel>>(
+    LoadingState(),
+  );
   @override
   void onInit() {
     super.onInit();
@@ -75,8 +86,7 @@ class MainController extends GetxController with WidgetsBindingObserver {
       }
     } catch (e, stackTrace) {
       dashboardState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error loading dashboard data: $e');
+      showApiError(e, logLabel: 'getDashboardData');
       log('Stack trace: $stackTrace');
     } finally {
       isLoading.value = false;
@@ -92,6 +102,9 @@ class MainController extends GetxController with WidgetsBindingObserver {
   final RxBool isLoadingTrips = false.obs;
   final Rx<ViewState<List<NextTrip>>> tripsState =
       Rx<ViewState<List<NextTrip>>>(LoadingState());
+
+  /// Current schedule-ride screen filter (daily, weekly, monthly). Used when refreshing after manage-ride.
+  final RxString scheduleRideFilter = 'daily'.obs;
 
   /// Get trips based on filter type and status
   /// filterType: daily, weekly, monthly
@@ -159,8 +172,7 @@ class MainController extends GetxController with WidgetsBindingObserver {
       }
     } catch (e, stackTrace) {
       tripsState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error loading trips: $e');
+      showApiError(e, logLabel: 'getTrips');
       log('Stack trace: $stackTrace');
     } finally {
       isLoadingTrips.value = false;
@@ -220,11 +232,142 @@ class MainController extends GetxController with WidgetsBindingObserver {
         return false;
       }
     } catch (e) {
-      customToaster('Failed to update ride', color: Colors.red);
-      log('error managing ride: $e');
+      showApiError(e, logLabel: 'manageRide');
       return false;
     } finally {
       isLoading.value = false;
+    }
+  }
+
+  /// Refresh logbook trips with current filter
+  Future<void> refreshLogbookTrips({String? filter}) async {
+    // Use provided filter or current selected filter
+    final filterToUse = filter ?? selectedFilter.value;
+    await getLogbookTrips(filter: filterToUse);
+  }
+
+  /// Fetch logbook trips (history) for the logged-in driver
+  Future<void> getLogbookTrips({String? filter}) async {
+    try {
+      final parentId = BaseHelper.currentUser.value.roleData?.id;
+
+      if (parentId == null) {
+        logbookTripsState.value = ErrorState('Parent ID not found');
+        return;
+      }
+
+      logbookTripsState.value = LoadingState();
+
+      // Update selected filter if provided
+      if (filter != null && filter.isNotEmpty) {
+        selectedFilter.value = filter;
+      }
+
+      final queryParams = <String, dynamic>{'parentId': parentId};
+
+      // Use selectedFilter from controller (or provided filter)
+      final filterToUse = filter ?? selectedFilter.value;
+      if (filterToUse.isNotEmpty) {
+        queryParams['filterType'] = filterToUse.toLowerCase();
+        queryParams['presigned'] = true;
+      }
+
+      final response = await apiService.fetchData(
+        '/trips/history',
+        query: queryParams,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        log('Logbook trips response: $data');
+
+        List<TripModel> tripsList = [];
+
+        if (data is Map<String, dynamic>) {
+          // Handle different response formats
+          if (data['data'] != null) {
+            if (data['data'] is List) {
+              tripsList = (data['data'] as List)
+                  .map(
+                    (item) => TripModel.fromJson(item as Map<String, dynamic>),
+                  )
+                  .toList();
+            } else if (data['data'] is Map<String, dynamic> &&
+                (data['data'] as Map<String, dynamic>)['data'] != null) {
+              final nestedData = (data['data'] as Map<String, dynamic>)['data'];
+              if (nestedData is List) {
+                tripsList = nestedData
+                    .map(
+                      (item) =>
+                          TripModel.fromJson(item as Map<String, dynamic>),
+                    )
+                    .toList();
+              }
+            }
+          } else if (data is List) {
+            tripsList = (data as List<dynamic>)
+                .map((item) => TripModel.fromJson(item as Map<String, dynamic>))
+                .toList();
+          }
+        }
+
+        logbookTripsState.value = tripsList.isEmpty
+            ? EmptyState(message: 'No trips found in logbook')
+            : DataState(data: tripsList);
+      } else {
+        logbookTripsState.value = ErrorState(
+          response.data['message'] ?? 'Failed to load logbook trips',
+        );
+        customToaster('Failed to load logbook trips', color: Colors.red);
+      }
+    } catch (e) {
+      logbookTripsState.value = ExceptionState(Exception(e.toString()));
+      showApiError(e, logLabel: 'getLogbookTrips');
+    }
+  }
+
+  /// Fetch single trip detail by id for logbook detail screen
+  Future<void> getTripDetail(String tripId) async {
+    try {
+      tripDetailState.value = LoadingState();
+      final response = await apiService.fetchData('/trips/$tripId');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        log('Trip detail response: $data');
+
+        TripModel? trip;
+
+        if (data is Map<String, dynamic>) {
+          // Handle different response formats
+          if (data['trip'] != null) {
+            trip = TripModel.fromJson(data['trip'] as Map<String, dynamic>);
+          } else if (data['data'] != null) {
+            if (data['data'] is Map<String, dynamic>) {
+              trip = TripModel.fromJson(data['data'] as Map<String, dynamic>);
+            }
+          } else {
+            // Try parsing the whole response as a trip
+            trip = TripModel.fromJson(data);
+          }
+        }
+
+        if (trip != null) {
+          tripDetailState.value = DataState(data: trip);
+        } else {
+          tripDetailState.value = ErrorState(
+            'Invalid trip detail format from server',
+          );
+        }
+      } else {
+        tripDetailState.value = ErrorState(
+          response.data['message'] ?? 'Failed to load trip detail',
+        );
+        customToaster('Failed to load trip detail', color: Colors.red);
+      }
+    } catch (e) {
+      tripDetailState.value = ExceptionState(Exception(e.toString()));
+      showApiError(e, logLabel: 'getTripDetail');
     }
   }
 }

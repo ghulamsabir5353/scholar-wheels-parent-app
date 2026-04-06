@@ -6,6 +6,7 @@ import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_outline_button.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
 import 'package:scholarwheels/models/dashboard_model.dart';
 import 'package:scholarwheels/screens/home/widgets/manage_ride_modal.dart';
@@ -81,6 +82,7 @@ class SchduleCard extends StatelessWidget {
 
     return Card(
       elevation: 1,
+      shadowColor: AppColor.cardShadowColor,
       color: AppColor.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -197,7 +199,7 @@ class SchduleCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: AppColor.cardBgColor,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: AppColor.secondary),
+                border: Border.all(color: AppColor.borderGreen),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,8 +260,8 @@ class SchduleCard extends StatelessWidget {
                   RouteEntryWidget(
                     pickupAddress: pickupAddress,
                     schoolName: schoolName,
-                    backgroundColor: AppColor.cardBgColor,
-                    padding: EdgeInsets.zero,
+                    backgroundColor: AppColor.white,
+
                     isLast: true,
                   ),
                   SpaceHelper(h: 12.h),
@@ -315,39 +317,21 @@ class SchduleCard extends StatelessWidget {
 
             // Manage Ride Button
             if (status == 'scheduled')
-              Container(
-                width: double.infinity,
-                height: 36.h,
-                decoration: BoxDecoration(
-                  color: AppColor.white,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColor.secondary, width: 1),
-                ),
-                child: TextButton(
-                  onPressed: () {
-                    _showManageRideModal(context);
-                  },
-                  child: Text(
-                    'Manage Ride',
-                    style: poppinFonts(
-                      color: AppColor.primary,
-                      fontSize: sm,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
+              CustomOutlineButton(
+                title: 'Manage Ride',
+                onPressed: () {
+                  _showManageRideModal(context);
+                },
               )
             else
-              CustomButton(
-                onPressed: () {
-                  Get.toNamed(LiveTrackingScreen.route, arguments: trip);
-                },
+              CustomOutlineButton(
                 title: 'Live Tracking',
-                style: poppinFonts(
-                  color: AppColor.white,
-                  fontSize: sm,
-                  fontWeight: FontWeight.w500,
-                ),
+                onPressed: trip.isScheduledForToday
+                    ? () {
+                        Get.toNamed(LiveTrackingScreen.route, arguments: trip);
+                      }
+                    : null,
+                isDisabled: !trip.isScheduledForToday,
               ),
           ],
         ),

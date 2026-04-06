@@ -8,6 +8,7 @@ import 'package:scholarwheels/controllers/network_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.widgets/focus_manager.dart';
 import 'package:scholarwheels/screens/common/app_drawer.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../controllers/bottom_tab_controller.dart';
 
@@ -32,9 +33,13 @@ class _TabScreenState extends State<TabScreen> {
     super.initState();
     // Update the controller's key reference after the first frame
     // This ensures the Scaffold is built and the key is valid
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
         controller.rootScaffoldKey = _scaffoldKey;
+        final status = await Permission.locationWhenInUse.status;
+        if (!status.isGranted) {
+          await Permission.locationWhenInUse.request();
+        }
       }
     });
   }

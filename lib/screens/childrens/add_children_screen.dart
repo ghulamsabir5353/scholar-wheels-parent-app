@@ -7,6 +7,7 @@ import 'package:scholarwheels/controllers/child_controller.dart';
 import 'package:scholarwheels/controllers/image_upload_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
+import 'package:scholarwheels/core/helper.constants/validators.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_textfield.dart';
@@ -123,8 +124,9 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
         appBar: AppBar(
           backgroundColor: AppColor.white,
           surfaceTintColor: AppColor.white,
-          elevation: 1,
+          elevation: 0.5,
           shadowColor: Colors.grey,
+          titleSpacing: 0,
           leading: backButton(
             onTap: () {
               _clearAllFields();
@@ -134,7 +136,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
           centerTitle: false,
           title: Text(
             'Add Children',
-            style: poppinFonts(fontSize: xl, fontWeight: FontWeight.w500),
+            style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
           ),
         ),
         body: SingleChildScrollView(
@@ -267,14 +269,15 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                   CustomTextField(
                     controller: childController.primaryContactNumberController,
                     label: "Primary Contact Number",
-                    hintText: "Enter Primary Contact Number",
+                    hintText: "e.g. 0821234567",
                     isNumericKeyboard: true,
                     keyboardType: TextInputType.phone,
+                    maxLength: Validators.southAfricaPhoneMaxLength,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return 'Primary contact is required';
                       }
-                      return null;
+                      return Validators.validateSouthAfricaPhone(value);
                     },
                   ),
 
@@ -282,9 +285,11 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                     controller:
                         childController.secondaryContactNumberController,
                     label: "Secondary Contact Number",
-                    hintText: "Enter Secondary Contact Number",
+                    hintText: "e.g. 0821234567 (optional)",
                     isNumericKeyboard: true,
                     keyboardType: TextInputType.phone,
+                    maxLength: Validators.southAfricaPhoneMaxLength,
+                    validator: Validators.validateSouthAfricaPhoneOptional,
                   ),
 
                   LocationField(
@@ -336,11 +341,18 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                         height: 70.h,
                         decoration: BoxDecoration(
                           border: Border.all(
-                            color: AppColor.textFieldBorderColor,
+                            color: AppColor.cardBorderColorGrey,
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(12),
                           color: AppColor.appColorWhite,
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColor.cardShadowColor.withOpacity(0.5),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         padding: EdgeInsets.symmetric(horizontal: 12.w),
                         child: Row(
@@ -410,7 +422,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                           },
                           child: Container(
                             width: double.infinity,
-                            height: 36.h,
+                            height: 36.h.toDouble(),
                             decoration: BoxDecoration(
                               border: Border.all(color: AppColor.secondary),
                               borderRadius: BorderRadius.circular(8),
@@ -437,7 +449,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                           final isDisabled = isSaving || isUploading;
 
                           return CustomButton(
-                            height: 36.h,
+                            height: 36.h.toDouble(),
                             width: double.infinity,
                             title: "Save",
                             isLoading: isSaving,

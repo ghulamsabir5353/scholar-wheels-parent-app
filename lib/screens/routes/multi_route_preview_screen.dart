@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.widgets/location_permission_map_gate.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mt;
 import 'package:dio/dio.dart';
 
@@ -386,30 +388,34 @@ class _MultiRoutePreviewScreenState extends State<MultiRoutePreviewScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: widget.start,
-                zoom: 13,
+            Positioned.fill(
+              child: LocationPermissionMapGate(
+                child: GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: widget.start,
+                    zoom: 13,
+                  ),
+                  mapType: MapType.normal,
+                  trafficEnabled: true,
+                  indoorViewEnabled: false,
+                  buildingsEnabled: false,
+                  myLocationEnabled: false,
+                  compassEnabled: false,
+                  zoomControlsEnabled: false,
+                  zoomGesturesEnabled: true,
+                  scrollGesturesEnabled: true,
+                  tiltGesturesEnabled: true,
+                  rotateGesturesEnabled: true,
+                  markers: _markers.values.toSet(),
+                  polylines: _polylines.values.toSet(),
+                  onMapCreated: (c) async {
+                    _mapController.complete(c);
+                    await c.setMapStyle('[$_mapStyle]');
+                    await _fitToAllRoutes();
+                  },
+                  onCameraMoveStarted: () => {},
+                ),
               ),
-              mapType: MapType.normal,
-              trafficEnabled: true,
-              indoorViewEnabled: false,
-              buildingsEnabled: false,
-              myLocationEnabled: false,
-              compassEnabled: false,
-              zoomControlsEnabled: false,
-              zoomGesturesEnabled: true,
-              scrollGesturesEnabled: true,
-              tiltGesturesEnabled: true,
-              rotateGesturesEnabled: true,
-              markers: _markers.values.toSet(),
-              polylines: _polylines.values.toSet(),
-              onMapCreated: (c) async {
-                _mapController.complete(c);
-                await c.setMapStyle('[$_mapStyle]');
-                await _fitToAllRoutes();
-              },
-              onCameraMoveStarted: () => {},
             ),
 
             if (_isLoadingRoutes)
@@ -431,6 +437,7 @@ class _MultiRoutePreviewScreenState extends State<MultiRoutePreviewScreen> {
               right: 16,
               child: Card(
                 elevation: 6,
+                shadowColor: AppColor.cardShadowColor,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),

@@ -9,8 +9,10 @@ import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
+import 'package:scholarwheels/core/helper.widgets/location_permission_map_gate.dart';
 import 'package:scholarwheels/core/helper.widgets/route_map_widget.dart';
 import 'package:scholarwheels/models/contract_model.dart';
+import 'package:scholarwheels/screens/contracts/widgets/booking_contract_rating_review_section.dart';
 import 'package:scholarwheels/services/api_state.dart';
 
 import '../../core/helper.constants/color.dart';
@@ -28,6 +30,10 @@ class ContractDetailScreen extends StatefulWidget {
 class _ContractDetailScreenState extends State<ContractDetailScreen> {
   final ContractController contractController = Get.find<ContractController>();
   String? contractId;
+
+  /// When true, scroll is disabled so map can handle two-finger zoom/pan.
+  bool _isInteractingWithMap = false;
+  int _mapPointerCount = 0;
 
   @override
   void initState() {
@@ -133,7 +139,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
   }
 
   String _getVehicleType(ContractModel? contract) {
-    return contract?.route?.vehicle?.vehicleType ?? 'N/A';
+    return contract?.route?.vehicle?.vehicleType?.capitalizeFirst ?? 'N/A';
   }
 
   String _getVehicleModel(ContractModel? contract) {
@@ -306,6 +312,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           elevation: 1,
           shadowColor: Colors.grey,
           centerTitle: false,
+          titleSpacing: 0,
           leading: backButton(
             onTap: () {
               Get.back();
@@ -348,7 +355,6 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
             ),
             SpaceHelper(h: 16.h),
             CustomButton(
-              height: 36.h,
               onPressed: () {
                 if (contractId != null) {
                   contractController.getContractById(contractId!);
@@ -403,6 +409,9 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
     }
 
     return SingleChildScrollView(
+      physics: _isInteractingWithMap
+          ? const NeverScrollableScrollPhysics()
+          : null,
       child: Padding(
         padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
         child: Column(
@@ -429,14 +438,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                 decoration: BoxDecoration(
                   color: const Color(0xffF3F9F3),
                   borderRadius: BorderRadius.circular(16.r),
-                  border: Border.all(
-                    color: const Color(0xff8FE79B),
-                    width: 1.2,
-                  ),
+                  border: Border.all(color: AppColor.borderGreen, width: 1.2),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.02),
-                      blurRadius: 6,
+                      color: AppColor.cardShadowColorGreen.withOpacity(0.2),
+                      blurRadius: 8,
                       offset: const Offset(0, 2),
                     ),
                   ],
@@ -516,10 +522,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                   ),
                   SpaceHelper(h: 8.h),
                   Card(
-                    elevation: 1,
+                    elevation: 2,
+                    shadowColor: AppColor.cardShadowColor,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12.r),
-                      side: BorderSide(color: AppColor.textFieldBorderColor),
+                      side: BorderSide(color: AppColor.cardBorderColorGrey),
                     ),
                     color: Colors.white,
                     child: Padding(
@@ -544,7 +551,6 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                           ),
                           SpaceHelper(h: 16.h),
                           CustomButton(
-                            height: 36.h,
                             onPressed: () {
                               // Navigate to invoices screen
                             },
@@ -573,10 +579,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
             SpaceHelper(h: 8.h),
             Card(
-              elevation: 1,
+              elevation: 2,
+              shadowColor: AppColor.cardShadowColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
-                side: BorderSide(color: AppColor.textFieldBorderColor),
+                side: BorderSide(color: AppColor.cardBorderColorGrey),
               ),
               color: Colors.white,
               child: Padding(
@@ -689,7 +696,6 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                     SpaceHelper(h: 16.h),
                     // Chat Button
                     CustomButton(
-                      height: 32.h,
                       onPressed: () {
                         // Navigate to chat
                         Get.find<BottomTabController>().setTabIndex(4);
@@ -698,17 +704,19 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                         );
                       },
                       title: "Chat",
-                      style: poppinFonts(
-                        fontSize: sm,
-                        fontWeight: FontWeight.w500,
-                        color: AppColor.white,
-                      ),
                     ),
                   ],
                 ),
               ),
             ),
 
+            SpaceHelper(h: 8.h),
+            BookingContractRatingReviewSection(
+              key: ValueKey(
+                'contract_review_${contract.id ?? contract.contractId}',
+              ),
+              contract: contract,
+            ),
             SpaceHelper(h: 8.h),
             // Driver & Vehicle Info Section
             Text(
@@ -721,10 +729,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
             ),
             SpaceHelper(h: 8.h),
             Card(
-              elevation: 1,
+              elevation: 2,
+              shadowColor: AppColor.cardShadowColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
-                side: BorderSide(color: AppColor.textFieldBorderColor),
+                side: BorderSide(color: AppColor.cardBorderColorGrey),
               ),
               color: Colors.white,
               child: Padding(
@@ -785,10 +794,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
             ),
             SpaceHelper(h: 8.h),
             Card(
-              elevation: 1,
+              elevation: 2,
+              shadowColor: AppColor.cardShadowColor,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
-                side: BorderSide(color: AppColor.textFieldBorderColor),
+                side: BorderSide(color: AppColor.cardBorderColorGrey),
               ),
               color: Colors.white,
               child: Padding(
@@ -801,7 +811,7 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                         contract!.children!.isNotEmpty)
                       ...contract.children!.map((child) {
                         return Padding(
-                          padding: EdgeInsets.only(bottom: 12.h),
+                          padding: EdgeInsets.only(bottom: 0.h),
                           child: Row(
                             children: [
                               CircleAvatar(
@@ -868,7 +878,8 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
             ),
             SpaceHelper(h: 8.h),
             Card(
-              elevation: 1,
+              elevation: 2,
+              shadowColor: AppColor.cardShadowColor,
 
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12.r),
@@ -934,10 +945,8 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
                     SpaceHelper(h: 12.h),
                     RouteEntryWidget(
-                      pickupAddress:
-                          contract?.route?.suburb?.description ?? 'N/A',
-                      schoolName:
-                          contract?.route?.dropOffPoint?.description ?? 'N/A',
+                      pickupAddress: contract?.route?.suburbName ?? 'N/A',
+                      schoolName: contract?.route?.dropOffPointName ?? 'N/A',
                       isLast: true,
                     ),
                   ],
@@ -956,48 +965,55 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
               ),
             ),
             SpaceHelper(h: 12.h),
-            Card(
-              elevation: 1,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12.r),
-                side: BorderSide(color: AppColor.textFieldBorderColor),
-              ),
-              color: Colors.white,
-              child: Padding(
-                padding: EdgeInsets.all(0.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RouteMapWidget(
-                      pickupLocation: contract?.route?.suburb,
-                      dropOffLocation: contract?.route?.dropOffPoint,
-                      height: MediaQuery.of(context).size.height * 0.4,
-                      width: double.infinity,
-                      // height: 300.h,
-                      // width: double.infinity,
-                    ),
-                  ],
+            Listener(
+              onPointerDown: (_) {
+                _mapPointerCount++;
+                if (_mapPointerCount >= 2 && !_isInteractingWithMap) {
+                  setState(() => _isInteractingWithMap = true);
+                }
+              },
+              onPointerUp: (_) {
+                _mapPointerCount--;
+                if (_mapPointerCount < 0) _mapPointerCount = 0;
+                if (_mapPointerCount < 2 && _isInteractingWithMap) {
+                  setState(() => _isInteractingWithMap = false);
+                }
+              },
+              onPointerCancel: (_) {
+                _mapPointerCount--;
+                if (_mapPointerCount < 0) _mapPointerCount = 0;
+                if (_mapPointerCount < 2 && _isInteractingWithMap) {
+                  setState(() => _isInteractingWithMap = false);
+                }
+              },
+              child: Card(
+                elevation: 2,
+                shadowColor: AppColor.cardShadowColor,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12.r),
+                  side: BorderSide(color: AppColor.cardBorderColorGrey),
+                ),
+                color: Colors.white,
+                child: Padding(
+                  padding: EdgeInsets.all(0.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      LocationPermissionMapGate(
+                        child: RouteMapWidget(
+                          pickupLocation: contract?.route?.suburb,
+                          dropOffLocation: contract?.route?.dropOffPoint,
+                          height: MediaQuery.of(context).size.height * 0.4,
+                          width: double.infinity,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
             SpaceHelper(h: 20.h),
-
-            // Download Contract Button
-            // CustomButton(
-            //   height: 36.h,
-
-            //   onPressed: () {
-            //     // Download contract PDF
-            //   },
-            //   title: "Download Contract pdf",
-            //   style: poppinFonts(
-            //     fontSize: base,
-            //     fontWeight: FontWeight.w500,
-            //     color: AppColor.white,
-            //   ),
-            // ),
-            // SpaceHelper(h: 8.h),
           ],
         ),
       ),
@@ -1018,18 +1034,17 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
           ),
         ),
         Expanded(
-          child: Row(
-            children: [
-              Text(
-                value,
-                textAlign: TextAlign.right,
-                style: poppinFonts(
-                  fontSize: sm,
-                  fontWeight: FontWeight.w500,
-                  color: AppColor.black,
-                ),
-              ),
-            ],
+          flex: 2,
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+            style: poppinFonts(
+              fontSize: sm,
+              fontWeight: FontWeight.w500,
+              color: AppColor.black,
+            ),
           ),
         ),
       ],

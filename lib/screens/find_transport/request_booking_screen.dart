@@ -92,13 +92,13 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
 
   String _getRouteDisplay() {
     if (routeModel != null) {
-      final suburb = routeModel?.suburb?.description ?? '';
-      final dropOff = routeModel?.dropOffPoint?.description ?? '';
+      final suburb = routeModel?.suburbName ?? '';
+      final dropOff = routeModel?.dropOffPointName ?? '';
       if (suburb.isNotEmpty && dropOff.isNotEmpty) {
         return '$suburb → $dropOff';
       }
     }
-    return 'Noordwyk → Midrand High School'; // Default as shown in image
+    return ''; // Default as shown in image
   }
 
   String _getVehicleDisplay() {
@@ -226,6 +226,7 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();
@@ -236,7 +237,7 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
           style: poppinFonts(
             fontSize: lg,
             color: AppColor.headingFontColor,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ),
@@ -255,9 +256,9 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                   border: Border.all(color: AppColor.borderGreen),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColor.borderGreen.withOpacity(0.1),
-                      blurRadius: 10,
-                      offset: Offset(0, 10),
+                      color: AppColor.cardShadowColorGreen.withOpacity(0.4),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
                     ),
                   ],
                 ),
@@ -317,8 +318,8 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                                 colorFilter: ColorFilter.mode(
                                   (routeModel?.transportOwner?.isVerified ??
                                           false)
-                                      ? AppColor.white
-                                      : AppColor.textFieldBorderColor,
+                                      ? AppColor.textFieldBorderColor
+                                      : AppColor.white,
                                   BlendMode.srcIn,
                                 ),
                               ),
@@ -725,7 +726,7 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                         width: double.infinity,
                         height: 36.h,
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColor.secondary),
+                          border: Border.all(color: AppColor.borderGreen),
                           borderRadius: BorderRadius.circular(8.r),
                           color: AppColor.white,
                         ),
@@ -746,6 +747,7 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                   Expanded(
                     child: Obx(
                       () => CustomButton(
+                        height: 36.h,
                         onPressed: routeController.isLoading.value
                             ? null
                             : _handleRequestBooking,

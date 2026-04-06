@@ -51,7 +51,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAqZJsu8xASUgTmQbWh5MyctqL3O6nxzJ8',
-    appId: '1:804830104261:android:965e228f2adb6556bf3eac',
+    appId: '1:804830104261:android:5b2d1388c322c33bbf3eac',
     messagingSenderId: '804830104261',
     projectId: 'scholarwheels-dev',
     storageBucket: 'scholarwheels-dev.firebasestorage.app',
@@ -59,10 +59,10 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyCCa49Mhjaz_1n5nBegsfj5SSSuaQLKNpg',
-    appId: '1:804830104261:ios:63c93f292accf786bf3eac',
+    appId: '1:804830104261:ios:9c06d66c6a25c3e3bf3eac',
     messagingSenderId: '804830104261',
     projectId: 'scholarwheels-dev',
     storageBucket: 'scholarwheels-dev.firebasestorage.app',
-    iosBundleId: 'com.example.scholarwheels',
+    iosBundleId: 'co.za.scholarwheels.app.parent',
   );
 }

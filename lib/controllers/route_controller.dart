@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/models/route_model.dart';
 import 'package:scholarwheels/models/popular_route_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 import 'package:scholarwheels/services/api_state.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
@@ -84,8 +85,7 @@ class RouteController extends GetxController {
       }
     } catch (e) {
       routesState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error loading routes: $e');
+      showApiError(e, logLabel: 'getRoutes');
     } finally {
       isLoading.value = false;
     }
@@ -129,6 +129,7 @@ class RouteController extends GetxController {
       }
     } catch (e) {
       popularRoutesState.value = ExceptionState(Exception(e.toString()));
+      showApiError(e, logLabel: 'fetchPopularRoutes');
     }
   }
 
@@ -180,11 +181,7 @@ class RouteController extends GetxController {
         throw Exception(errorMessage);
       }
     } catch (e) {
-      log('Booking request error: $e');
-      customToaster(
-        'Something went wrong. Please try again.',
-        color: Colors.red,
-      );
+      showApiError(e, logLabel: 'requestBooking');
       throw e;
     } finally {
       isLoading.value = false;

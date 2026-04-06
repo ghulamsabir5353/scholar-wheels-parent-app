@@ -14,11 +14,20 @@ import 'package:scholarwheels/models/booking_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
 import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 
+import 'package:scholarwheels/core/helper.widgets/location_permission_map_gate.dart';
 import '../../core/helper.widgets/route_map_widget.dart';
 
-class BookingDetailScreen extends StatelessWidget {
+class BookingDetailScreen extends StatefulWidget {
   static const String route = '/booking-detail-screen';
   const BookingDetailScreen({super.key});
+
+  @override
+  State<BookingDetailScreen> createState() => _BookingDetailScreenState();
+}
+
+class _BookingDetailScreenState extends State<BookingDetailScreen> {
+  bool _isInteractingWithMap = false;
+  int _mapPointerCount = 0;
 
   String _getRequestId(BookingModel? booking) {
     if (booking?.bookingId != null) return booking!.bookingId!;
@@ -34,11 +43,11 @@ class BookingDetailScreen extends StatelessWidget {
   }
 
   String _getRequestDuration(BookingModel? booking) {
-    if (booking?.startDate != null && booking?.endDate != null) {
-      final difference = booking!.endDate!.difference(booking.startDate!);
-      final months = (difference.inDays / 30).round();
-      return '$months Months';
-    }
+    // if (booking?.startDate != null && booking?.endDate != null) {
+    //   final difference = booking!.endDate!.difference(booking.startDate!);
+    //   final months = (difference.inDays / 30).round();
+    //   return '$months Months';
+    // }
     if (booking?.contractDuration != null) {
       return '${booking!.contractDuration} Days';
     }
@@ -178,20 +187,20 @@ class BookingDetailScreen extends StatelessWidget {
   String _getPickupAddress(BookingModel? booking) {
     if (booking?.children != null && booking!.children!.isNotEmpty) {
       return booking.children!.first.pickUpAddress?.description ??
-          booking.route?.suburb?.description ??
+          booking.route?.suburbName ??
           'N/A';
     }
-    return booking?.route?.suburb?.description ?? 'N/A';
+    return booking?.route?.suburbName ?? 'N/A';
   }
 
   String _getSchoolName(BookingModel? booking) {
     if (booking?.children != null && booking!.children!.isNotEmpty) {
       return booking.children!.first.dropOffAddress?.description ??
           booking.children!.first.school ??
-          booking.route?.suburb?.description ??
+          booking.route?.suburbName ??
           'N/A';
     }
-    return booking?.route?.suburb?.description ?? 'N/A';
+    return booking?.route?.suburbName ?? 'N/A';
   }
 
   String _getDistance(BookingModel? booking) {
@@ -212,12 +221,12 @@ class BookingDetailScreen extends StatelessWidget {
 
   double _getAverageRating(BookingModel? booking) {
     if (booking?.transportOwner?.averageRating != null) {
-      return booking!.transportOwner!.averageRating!.toDouble();
+      return booking!.transportOwner!.averageRating!;
     }
     return 4.9; // Default
   }
 
-  int _getTotalRatings(BookingModel? booking) {
+  double _getTotalRatings(BookingModel? booking) {
     if (booking?.transportOwner?.totalRatings != null) {
       return booking!.transportOwner!.totalRatings!;
     }
@@ -244,6 +253,7 @@ class BookingDetailScreen extends StatelessWidget {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();
@@ -259,6 +269,9 @@ class BookingDetailScreen extends StatelessWidget {
         ),
       ),
       body: SingleChildScrollView(
+        physics: _isInteractingWithMap
+            ? const NeverScrollableScrollPhysics()
+            : null,
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
           child: Column(
@@ -280,10 +293,11 @@ class BookingDetailScreen extends StatelessWidget {
                     ),
                     SpaceHelper(h: 8.h),
                     Card(
-                      elevation: 1,
+                      elevation: 2,
+                      shadowColor: AppColor.cardShadowColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                        side: BorderSide(color: AppColor.cardBorderColorGrey),
                       ),
                       color: Colors.white,
                       child: Padding(
@@ -356,10 +370,11 @@ class BookingDetailScreen extends StatelessWidget {
                     ),
                     SpaceHelper(h: 8.h),
                     Card(
-                      elevation: 1,
+                      elevation: 2,
+                      shadowColor: AppColor.cardShadowColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                        side: BorderSide(color: AppColor.cardBorderColorGrey),
                       ),
                       color: Colors.white,
                       child: Padding(
@@ -494,7 +509,6 @@ class BookingDetailScreen extends StatelessWidget {
                             ),
                             SpaceHelper(h: 12.h),
                             CustomButton(
-                              height: 36.h,
                               onPressed: () {
                                 // Navigate to chat tab (4th tab, index 4)
                                 final bottomController =
@@ -507,11 +521,6 @@ class BookingDetailScreen extends StatelessWidget {
                                 );
                               },
                               title: "Chat",
-                              style: poppinFonts(
-                                fontSize: sm,
-                                fontWeight: FontWeight.w500,
-                                color: AppColor.white,
-                              ),
                             ),
                           ],
                         ),
@@ -535,10 +544,11 @@ class BookingDetailScreen extends StatelessWidget {
                     ),
                     SpaceHelper(h: 12.h),
                     Card(
-                      elevation: 1,
+                      elevation: 2,
+                      shadowColor: AppColor.cardShadowColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                        side: BorderSide(color: AppColor.cardBorderColorGrey),
                       ),
                       color: Colors.white,
                       child: Padding(
@@ -549,7 +559,7 @@ class BookingDetailScreen extends StatelessWidget {
                           children: [
                             ...booking.children!.map((child) {
                               return Padding(
-                                padding: EdgeInsets.only(bottom: 12.h),
+                                padding: EdgeInsets.only(bottom: 0.h),
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -602,7 +612,7 @@ class BookingDetailScreen extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SpaceHelper(h: 20.h),
+                    SpaceHelper(h: 12.h),
                   ],
                 ),
 
@@ -623,10 +633,11 @@ class BookingDetailScreen extends StatelessWidget {
                     ),
                     SpaceHelper(h: 8.h),
                     Card(
-                      elevation: 1,
+                      elevation: 2,
+                      shadowColor: AppColor.cardShadowColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(color: AppColor.textFieldBorderColor),
+                        side: BorderSide(color: AppColor.cardBorderColorGrey),
                       ),
                       color: Colors.white,
                       child: Padding(
@@ -768,26 +779,53 @@ class BookingDetailScreen extends StatelessWidget {
                       ),
                     ),
                     SpaceHelper(h: 12.h),
-                    Card(
-                      elevation: 1,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(color: AppColor.textFieldBorderColor),
-                      ),
-                      color: Colors.white,
-                      child: Padding(
-                        padding: EdgeInsets.all(16.w),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            RouteMapWidget(
-                              pickupLocation: booking.route?.suburb,
-                              dropOffLocation: booking.route?.dropOffPoint,
-                              height: 300.h,
-                              width: double.infinity,
-                            ),
-                          ],
+
+                    Listener(
+                      onPointerDown: (_) {
+                        _mapPointerCount++;
+                        if (_mapPointerCount >= 2 && !_isInteractingWithMap) {
+                          setState(() => _isInteractingWithMap = true);
+                        }
+                      },
+                      onPointerUp: (_) {
+                        _mapPointerCount--;
+                        if (_mapPointerCount < 0) _mapPointerCount = 0;
+                        if (_mapPointerCount < 2 && _isInteractingWithMap) {
+                          setState(() => _isInteractingWithMap = false);
+                        }
+                      },
+                      onPointerCancel: (_) {
+                        _mapPointerCount--;
+                        if (_mapPointerCount < 0) _mapPointerCount = 0;
+                        if (_mapPointerCount < 2 && _isInteractingWithMap) {
+                          setState(() => _isInteractingWithMap = false);
+                        }
+                      },
+                      child: Card(
+                        elevation: 2,
+                        shadowColor: AppColor.cardShadowColor,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.r),
+                          side: BorderSide(color: AppColor.cardBorderColorGrey),
+                        ),
+                        color: Colors.white,
+                        child: Padding(
+                          padding: EdgeInsets.all(0.w),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              LocationPermissionMapGate(
+                                child: RouteMapWidget(
+                                  pickupLocation: booking.route?.suburb,
+                                  dropOffLocation: booking.route?.dropOffPoint,
+                                  height:
+                                      MediaQuery.of(context).size.height * 0.4,
+                                  width: double.infinity,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),

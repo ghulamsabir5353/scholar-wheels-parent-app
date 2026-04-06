@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:804830104261:android:965e228f2adb6556bf3eac",
+        "mobilesdk_app_id": "1:804830104261:android:5b2d1388c322c33bbf3eac",
         "android_client_info": {
-          "package_name": "com.example.scholarwheels"
+          "package_name": "co.za.scholarwheels.app.parent"
         }
       },
       "oauth_client": [],

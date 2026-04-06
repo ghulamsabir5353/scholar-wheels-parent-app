@@ -1,0 +1,13 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "co.za.scholarwheels.app.parent",
+      "sha256_cert_fingerprints": [
+        "5A:79:9F:2F:D2:53:1C:3D:E5:32:40:78:38:D8:2A:2A:7E:4F:D1:64:79:7E:33:1D:88:69:64:EA:89:79:87:BA",
+        "BF:C5:51:16:A3:BF:0D:CF:9A:7C:1B:64:46:83:AF:9D:32:07:C4:6B:43:B9:F2:9F:60:99:76:DA:FA:0A:C5:B4"
+      ]
+    }
+  }
+]

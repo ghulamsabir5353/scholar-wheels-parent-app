@@ -46,6 +46,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
           elevation: 1,
           shadowColor: Colors.grey,
           centerTitle: false,
+          titleSpacing: 0,
           leading: backButton(onTap: () => Get.back()),
           title: Text(
             'Reset Password',

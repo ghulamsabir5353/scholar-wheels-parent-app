@@ -16,6 +16,8 @@ class PopularRouteModel {
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
+  String? suburbName;
+  String? dropOffPointName;
 
   PopularRouteModel({
     this.bookingCount,
@@ -33,12 +35,14 @@ class PopularRouteModel {
     this.createdAt,
     this.updatedAt,
     this.v,
+    this.suburbName,
+    this.dropOffPointName,
   });
 
   // Helper getters to extract description from location data
-  String? get suburbDescription => suburb?.description;
+  String? get suburbDescription => suburbName;
 
-  String? get dropOffPointDescription => dropOffPoint?.description;
+  String? get dropOffPointDescription => dropOffPointName;
 
   // Helper method to parse location data from JSON
   // Returns LocationData if it's a Map, null otherwise (handles String, null, or invalid types)
@@ -67,6 +71,8 @@ class PopularRouteModel {
     String? routeId,
     String? transportOwnerId,
     String? routeName,
+    String? suburbName,
+    String? dropOffPointName,
     LocationData? suburb,
     LocationData? dropOffPoint,
     String? assignedVehicle,
@@ -83,6 +89,8 @@ class PopularRouteModel {
     routeId: routeId ?? this.routeId,
     transportOwnerId: transportOwnerId ?? this.transportOwnerId,
     routeName: routeName ?? this.routeName,
+    suburbName: suburbName ?? this.suburbName,
+    dropOffPointName: dropOffPointName ?? this.dropOffPointName,
     suburb: suburb ?? this.suburb,
     dropOffPoint: dropOffPoint ?? this.dropOffPoint,
     assignedVehicle: assignedVehicle ?? this.assignedVehicle,
@@ -102,6 +110,8 @@ class PopularRouteModel {
         routeId: json["routeId"],
         transportOwnerId: json["transportOwnerId"],
         routeName: json["routeName"],
+        suburbName: json["suburbName"],
+        dropOffPointName: json["dropOffPointName"],
         suburb: _parseLocationData(json["suburb"]),
         dropOffPoint: _parseLocationData(json["dropOffPoint"]),
         assignedVehicle: json["assignedVehicle"],
@@ -134,5 +144,7 @@ class PopularRouteModel {
     "createdAt": createdAt?.toIso8601String(),
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
+    "suburbName": suburbName,
+    "dropOffPointName": dropOffPointName,
   };
 }

@@ -17,8 +17,12 @@ class RouteMapWidget extends StatefulWidget {
   final LatLng? driverLocation;
   final List<LatLng>? coveredPath;
   final List<LatLng>? remainingPath;
+  final List<LocationData>? pickupLocations; // All child pickup locations
   final double height;
   final double width;
+
+  /// When false, hides the default zoom +/- buttons; pinch-to-zoom still works.
+  final bool zoomControlsEnabled;
 
   const RouteMapWidget({
     super.key,
@@ -27,8 +31,10 @@ class RouteMapWidget extends StatefulWidget {
     this.driverLocation,
     this.coveredPath,
     this.remainingPath,
+    this.pickupLocations, // All child pickup locations
     this.height = 200,
     this.width = double.infinity,
+    this.zoomControlsEnabled = false,
   });
 
   @override
@@ -43,15 +49,21 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
   List<LatLng> _routePolylinePoints = [];
   bool _isFetchingRoute = false;
   BitmapDescriptor? _driverIcon;
+  Timer? _autoRecenterTimer;
+  LatLng? _lastRecenterPosition;
+  bool _hasInitializedCamera = false;
+  bool _isMapReady = false;
+  Timer? _markerUpdateDebounce;
+  bool _isUpdatingMarkers = false;
+
   // Hide all third‑party place labels/icons so only our markers are visible.
+  // JSON must not contain comments - they cause MapStyleException on iOS.
   static const _mapStyle = '''
   [
     { "featureType": "poi", "stylers": [{ "visibility": "off" }] },
     { "featureType": "poi.business", "stylers": [{ "visibility": "off" }] },
     { "featureType": "transit", "stylers": [{ "visibility": "off" }] },
     { "featureType": "administrative", "elementType": "labels", "stylers": [{ "visibility": "off" }] },
-    // { "featureType": "road", "elementType": "labels", "stylers": [{ "visibility": "off" }] },
-    // { "featureType": "road", "elementType": "labels.icon", "stylers": [{ "visibility": "off" }] },
     { "featureType": "water", "elementType": "labels", "stylers": [{ "visibility": "off" }] }
   ]
   ''';
@@ -67,14 +79,81 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
   @override
   void didUpdateWidget(covariant RouteMapWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.driverLocation != widget.driverLocation ||
-        oldWidget.coveredPath != widget.coveredPath ||
+    final driverLocChanged = oldWidget.driverLocation != widget.driverLocation;
+
+    // Handle driver location updates separately (more frequent, only update driver marker)
+    if (driverLocChanged && _isMapReady) {
+      _updateDriverMarker();
+      _scheduleAutoRecenter();
+      return; // Don't rebuild everything for driver location updates
+    }
+
+    // For other changes, rebuild everything
+    if (oldWidget.coveredPath != widget.coveredPath ||
         oldWidget.remainingPath != widget.remainingPath ||
         oldWidget.pickupLocation != widget.pickupLocation ||
-        oldWidget.dropOffLocation != widget.dropOffLocation) {
+        oldWidget.dropOffLocation != widget.dropOffLocation ||
+        oldWidget.pickupLocations != widget.pickupLocations) {
       _initializeMap();
       _loadRoutePolyline();
     }
+  }
+
+  /// Update only the driver marker position (more efficient than rebuilding all markers)
+  void _updateDriverMarker() {
+    if (!_isMapReady || _mapController == null || _isUpdatingMarkers) return;
+
+    // Cancel any pending marker updates
+    _markerUpdateDebounce?.cancel();
+
+    // Debounce marker updates more aggressively to avoid platform channel errors
+    // Increased to 500ms to give Animarker time to sync
+    _markerUpdateDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted || !_isMapReady || _isUpdatingMarkers) return;
+
+      try {
+        _isUpdatingMarkers = true;
+        final markers = Set<Marker>.from(_markers);
+
+        // Remove old driver marker
+        markers.removeWhere((m) => m.markerId.value == 'driver');
+
+        // Add updated driver marker
+        if (widget.driverLocation != null) {
+          markers.add(
+            Marker(
+              markerId: const MarkerId('driver'),
+              position: widget.driverLocation!,
+              icon:
+                  _driverIcon ??
+                  BitmapDescriptor.defaultMarkerWithHue(
+                    BitmapDescriptor.hueAzure,
+                  ),
+              infoWindow: const InfoWindow(
+                title: 'Driver',
+                snippet: 'Current position',
+              ),
+              flat: true,
+              zIndex: 100,
+            ),
+          );
+        }
+
+        if (mounted) {
+          setState(() {
+            _markers = markers;
+          });
+        }
+      } catch (e) {
+        // Silently handle errors - map might not be ready
+        debugPrint('Error updating driver marker: $e');
+      } finally {
+        // Reset flag after a delay to allow Animarker to sync
+        Future.delayed(const Duration(milliseconds: 200), () {
+          _isUpdatingMarkers = false;
+        });
+      }
+    });
   }
 
   void _initializeMap() {
@@ -103,8 +182,31 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       );
     }
 
-    // Pickup marker
-    if (widget.pickupLocation != null) {
+    // Pickup markers - show all child pickup locations
+    if (widget.pickupLocations != null && widget.pickupLocations!.isNotEmpty) {
+      for (var i = 0; i < widget.pickupLocations!.length; i++) {
+        final pickupLoc = widget.pickupLocations![i];
+        final pickupLat = pickupLoc.coordinates.latitude;
+        final pickupLng = pickupLoc.coordinates.longitude;
+
+        if (pickupLat != 0.0 && pickupLng != 0.0) {
+          markers.add(
+            Marker(
+              markerId: MarkerId('pickup_$i'),
+              position: LatLng(pickupLat, pickupLng),
+              infoWindow: InfoWindow(
+                title: 'Pickup ${i + 1}',
+                snippet: pickupLoc.description,
+              ),
+              icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueGreen,
+              ),
+            ),
+          );
+        }
+      }
+    } else if (widget.pickupLocation != null) {
+      // Fallback to single pickup location
       final pickupLat = widget.pickupLocation!.coordinates.latitude;
       final pickupLng = widget.pickupLocation!.coordinates.longitude;
 
@@ -166,8 +268,8 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
         Polyline(
           polylineId: const PolylineId('google_route'),
           points: _routePolylinePoints,
-          color: Colors.blue,
-          width: 6,
+          color: AppColor.primary,
+          width: 8,
         ),
       );
     }
@@ -177,7 +279,7 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
         Polyline(
           polylineId: const PolylineId('remaining'),
           points: widget.remainingPath!,
-          color: Colors.blue,
+          color: AppColor.blueText,
           width: 6,
         ),
       );
@@ -206,10 +308,30 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       );
     }
 
-    setState(() {
-      _markers = markers;
-      _polylines = polylines;
-    });
+    // Only update markers if not currently updating to avoid platform channel conflicts
+    if (!_isUpdatingMarkers) {
+      try {
+        setState(() {
+          _markers = markers;
+          _polylines = polylines;
+        });
+      } catch (e) {
+        debugPrint('Error setting markers in _initializeMap: $e');
+        // Retry after a delay
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted && !_isUpdatingMarkers) {
+            try {
+              setState(() {
+                _markers = markers;
+                _polylines = polylines;
+              });
+            } catch (_) {
+              // Ignore retry errors
+            }
+          }
+        });
+      }
+    }
 
     // Note: Bounds fitting will happen in onMapCreated callback
     // after the map controller is available
@@ -267,18 +389,63 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
 
   void _recenterCamera() {
     if (_mapController == null) return;
+
+    // Prioritize driver location if available
+    if (widget.driverLocation != null) {
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(widget.driverLocation!, 16),
+      );
+      _lastRecenterPosition = widget.driverLocation;
+      return;
+    }
+
     if (_markers.length >= 2) {
       _fitBounds();
       return;
     }
+
     if (_markers.isNotEmpty) {
       final marker = _markers.first;
-      _mapController?.animateCamera(
-        CameraUpdate.newLatLngZoom(marker.position, 15),
+      _mapController!.animateCamera(
+        CameraUpdate.newLatLngZoom(marker.position, 16),
       );
       return;
     }
-    _mapController?.animateCamera(CameraUpdate.newLatLngZoom(_getCenter(), 13));
+
+    _mapController!.animateCamera(CameraUpdate.newLatLngZoom(_getCenter(), 16));
+  }
+
+  void _scheduleAutoRecenter() {
+    _autoRecenterTimer?.cancel();
+    // Use 2 seconds delay for more responsive following
+    _autoRecenterTimer = Timer(const Duration(seconds: 2), () {
+      if (widget.driverLocation != null && _mapController != null) {
+        // Check if driver moved significantly (more than ~50 meters)
+        final shouldRecenter =
+            _lastRecenterPosition == null ||
+            _hasDriverMovedSignificantly(
+              _lastRecenterPosition!,
+              widget.driverLocation!,
+            );
+
+        if (shouldRecenter) {
+          // Focus on driver with zoom level 16 (good for following moving vehicle)
+          _mapController!.animateCamera(
+            CameraUpdate.newLatLngZoom(widget.driverLocation!, 16),
+          );
+          _lastRecenterPosition = widget.driverLocation;
+        }
+      }
+    });
+  }
+
+  /// Check if driver has moved significantly (more than ~50 meters)
+  bool _hasDriverMovedSignificantly(LatLng oldPos, LatLng newPos) {
+    // Simple distance calculation (Haversine approximation)
+    const double threshold = 0.0005; // ~50 meters
+    final latDiff = (oldPos.latitude - newPos.latitude).abs();
+    final lngDiff = (oldPos.longitude - newPos.longitude).abs();
+    return latDiff > threshold || lngDiff > threshold;
   }
 
   Widget _controlButton({required IconData icon, required VoidCallback onTap}) {
@@ -301,7 +468,10 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
 
   Future<void> _loadRoutePolyline() async {
     if (widget.dropOffLocation == null ||
-        (widget.driverLocation == null && widget.pickupLocation == null)) {
+        (widget.driverLocation == null &&
+            widget.pickupLocation == null &&
+            (widget.pickupLocations == null ||
+                widget.pickupLocations!.isEmpty))) {
       if (mounted) {
         setState(() {
           _routePolylinePoints = [];
@@ -311,16 +481,45 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       return;
     }
 
-    final origin =
-        widget.driverLocation ??
-        LatLng(
-          widget.pickupLocation!.coordinates.latitude,
-          widget.pickupLocation!.coordinates.longitude,
-        );
+    // Origin: driver location or first pickup
+    LatLng origin;
+    if (widget.driverLocation != null) {
+      origin = widget.driverLocation!;
+    } else if (widget.pickupLocations != null &&
+        widget.pickupLocations!.isNotEmpty) {
+      origin = LatLng(
+        widget.pickupLocations!.first.coordinates.latitude,
+        widget.pickupLocations!.first.coordinates.longitude,
+      );
+    } else {
+      origin = LatLng(
+        widget.pickupLocation!.coordinates.latitude,
+        widget.pickupLocation!.coordinates.longitude,
+      );
+    }
+
+    // Destination: final dropoff location
     final destination = LatLng(
       widget.dropOffLocation!.coordinates.latitude,
       widget.dropOffLocation!.coordinates.longitude,
     );
+
+    // Build waypoints: all pickup locations (excluding origin if it's a pickup)
+    List<LatLng> waypoints = [];
+    if (widget.pickupLocations != null && widget.pickupLocations!.isNotEmpty) {
+      for (var pickupLoc in widget.pickupLocations!) {
+        final waypoint = LatLng(
+          pickupLoc.coordinates.latitude,
+          pickupLoc.coordinates.longitude,
+        );
+        // Only add if it's different from origin (if origin is driver location)
+        if (widget.driverLocation == null ||
+            (waypoint.latitude != origin.latitude ||
+                waypoint.longitude != origin.longitude)) {
+          waypoints.add(waypoint);
+        }
+      }
+    }
 
     try {
       if (mounted) {
@@ -328,15 +527,29 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
           _isFetchingRoute = true;
         });
       }
+
+      // Build query parameters
+      final queryParams = <String, dynamic>{
+        'origin': '${origin.latitude},${origin.longitude}',
+        'destination': '${destination.latitude},${destination.longitude}',
+        'mode': 'driving',
+        'alternatives': 'false',
+        'key': AppConstants.googlePlacesApiKey,
+      };
+
+      // Add waypoints if we have multiple stops
+      if (waypoints.isNotEmpty) {
+        // Format waypoints as: "lat1,lng1|lat2,lng2|lat3,lng3"
+        final waypointStrings = waypoints.map((wp) {
+          return '${wp.latitude},${wp.longitude}';
+        }).toList();
+        queryParams['waypoints'] = waypointStrings.join('|');
+        queryParams['optimize'] = 'false'; // Keep original order
+      }
+
       final resp = await Dio().get(
         'https://maps.googleapis.com/maps/api/directions/json',
-        queryParameters: {
-          'origin': '${origin.latitude},${origin.longitude}',
-          'destination': '${destination.latitude},${destination.longitude}',
-          'mode': 'driving',
-          'alternatives': 'false',
-          'key': AppConstants.googlePlacesApiKey,
-        },
+        queryParameters: queryParams,
       );
 
       final routes = resp.data?['routes'] as List?;
@@ -434,10 +647,15 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
     );
 
     // Use animateCamera for smooth animation with proper padding
-    _mapController?.animateCamera(CameraUpdate.newLatLngBounds(bounds, 120.h));
+    _mapController!.animateCamera(CameraUpdate.newLatLngBounds(bounds, 120.h));
   }
 
   LatLng _getCenter() {
+    // Prioritize driver location for initial camera position
+    if (widget.driverLocation != null) {
+      return widget.driverLocation!;
+    }
+
     if (widget.pickupLocation != null &&
         widget.dropOffLocation != null &&
         widget.pickupLocation!.coordinates.latitude != 0.0 &&
@@ -470,6 +688,15 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
     return const LatLng(-25.7479, 28.2293);
   }
 
+  double _getInitialZoom() {
+    // Use zoom 16 for driver location (good for following moving vehicle)
+    if (widget.driverLocation != null) {
+      return 16;
+    }
+    // Use zoom 13 for general view
+    return 15;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (widget.pickupLocation == null && widget.dropOffLocation == null) {
@@ -491,7 +718,11 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
     }
 
     final map = GoogleMap(
-      initialCameraPosition: CameraPosition(target: _getCenter(), zoom: 13),
+      key: ValueKey('map_zoom_${widget.zoomControlsEnabled}'),
+      initialCameraPosition: CameraPosition(
+        target: _getCenter(),
+        zoom: _getInitialZoom(),
+      ),
       markers: _markers,
       polylines: _polylines,
       mapType: MapType.normal,
@@ -499,8 +730,8 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       buildingsEnabled: false,
       indoorViewEnabled: false,
       myLocationEnabled: false,
-      compassEnabled: false,
-      zoomControlsEnabled: false,
+      compassEnabled: true,
+      zoomControlsEnabled: widget.zoomControlsEnabled,
       zoomGesturesEnabled: true,
       scrollGesturesEnabled: true,
       tiltGesturesEnabled: true,
@@ -508,22 +739,43 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
       myLocationButtonEnabled: false,
       mapToolbarEnabled: false,
       liteModeEnabled: false,
+      minMaxZoomPreference: const MinMaxZoomPreference(1.0, 20.0),
       onMapCreated: (GoogleMapController controller) {
         _mapController = controller;
         if (!_mapIdCompleter.isCompleted) {
           _mapIdCompleter.complete(controller.mapId);
         }
-        controller.setMapStyle(_mapStyle);
-        Future.delayed(const Duration(milliseconds: 800), () {
-          if (_markers.length >= 2) {
-            _fitBounds();
-          } else if (_markers.isNotEmpty) {
-            final marker = _markers.first;
-            _mapController?.animateCamera(
-              CameraUpdate.newLatLngZoom(marker.position, 15),
-            );
+        controller.setMapStyle(_mapStyle).catchError((_) {
+          // If custom style fails (e.g. MapStyleException on iOS), use default map
+        });
+
+        // Mark map as ready after a longer delay to ensure platform channel is fully established
+        // Animarker needs time to initialize its own channel connections
+        Future.delayed(const Duration(milliseconds: 1000), () {
+          if (mounted) {
+            setState(() {
+              _isMapReady = true;
+            });
           }
         });
+
+        // Immediately focus on driver location if available, otherwise fit bounds
+        if (!_hasInitializedCamera) {
+          _hasInitializedCamera = true;
+          if (widget.driverLocation != null) {
+            // Focus on driver immediately with zoom 16
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _mapController?.animateCamera(
+                CameraUpdate.newLatLngZoom(widget.driverLocation!, 16),
+              );
+              _lastRecenterPosition = widget.driverLocation;
+            });
+          } else if (_markers.length >= 2) {
+            Future.delayed(const Duration(milliseconds: 100), () {
+              _fitBounds();
+            });
+          }
+        }
       },
     );
 
@@ -568,7 +820,8 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
             child: Animarker(
               mapId: _mapIdCompleter.future,
               duration: const Duration(milliseconds: 900),
-              shouldAnimateCamera: false,
+              shouldAnimateCamera:
+                  false, // Keep false - we handle camera manually
               markers: _markers,
               child: map,
             ),
@@ -580,13 +833,15 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _controlButton(icon: Icons.my_location, onTap: _recenterCamera),
-                SizedBox(height: 8.h),
-                _controlButton(icon: Icons.add, onTap: () => _zoomCamera(1)),
-                SizedBox(height: 8.h),
-                _controlButton(
-                  icon: Icons.remove,
-                  onTap: () => _zoomCamera(-1),
-                ),
+                if (widget.zoomControlsEnabled) ...[
+                  SizedBox(height: 8.h),
+                  _controlButton(icon: Icons.add, onTap: () => _zoomCamera(1)),
+                  SizedBox(height: 8.h),
+                  _controlButton(
+                    icon: Icons.remove,
+                    onTap: () => _zoomCamera(-1),
+                  ),
+                ],
               ],
             ),
           ),
@@ -597,6 +852,8 @@ class _RouteMapWidgetState extends State<RouteMapWidget> {
 
   @override
   void dispose() {
+    _autoRecenterTimer?.cancel();
+    _markerUpdateDebounce?.cancel();
     _mapController?.dispose();
     super.dispose();
   }

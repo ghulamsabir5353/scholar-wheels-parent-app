@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:maps_toolkit/maps_toolkit.dart' as mtk;
 import 'package:scholarwheels/controllers/live_tracking_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
+import 'package:scholarwheels/core/helper.widgets/location_permission_map_gate.dart';
 import 'package:scholarwheels/core/helper.widgets/route_map_widget.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/models/dashboard_model.dart';
@@ -23,6 +25,10 @@ class LiveTrackingScreen extends StatefulWidget {
 }
 
 class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
+  /// When GPS speed is missing or very low, assume typical urban driving (km/h).
+  static const double _fallbackSpeedKmh = 32.0;
+  static const double _minReportedSpeedKmh = 5.0;
+
   late final LiveTrackingController controller;
   NextTrip? initialTrip;
 
@@ -161,16 +167,103 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     return 'N/A';
   }
 
-  String _getDistance(NextTrip? trip) {
-    // This would need to come from the trip/route data
-    // For now, return a placeholder
-    return '12.5 KM';
+  /// Same drop-off as the map: last assigned child's drop-off coordinates.
+  LatLng? _dropOffLatLng(NextTrip? trip) {
+    if (trip?.assignedChildren == null || trip!.assignedChildren!.isEmpty) {
+      return null;
+    }
+    final dropAddr = trip.assignedChildren!.last.child?.dropOffAddress;
+    final loc = _convertPickupAddressToLocationData(dropAddr);
+    if (loc == null) return null;
+    final lat = loc.coordinates.latitude;
+    final lng = loc.coordinates.longitude;
+    if (lat == 0.0 && lng == 0.0) return null;
+    return LatLng(lat, lng);
   }
 
-  String _getEstimatedTime(NextTrip? trip) {
-    // This would need to come from the trip/route data
-    // For now, return a placeholder
-    return '45 Mints';
+  String _formatStraightLineDistance(num meters) {
+    if (meters < 1000) {
+      return '${meters.round()} m';
+    }
+    return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  String _formatEtaMinutes(double totalMinutes) {
+    if (totalMinutes.isNaN || totalMinutes.isInfinite) return 'N/A';
+    if (totalMinutes < 1) return '< 1 min';
+    final rounded = totalMinutes.round();
+    if (rounded < 60) return '$rounded min';
+    final h = rounded ~/ 60;
+    final m = rounded % 60;
+    if (m == 0) return '${h}h';
+    return '${h}h ${m}m';
+  }
+
+  /// Prefer socket location; fall back to trip `currentLocation` from dashboard/API.
+  Map<String, dynamic>? _effectiveDriverLocation(
+    NextTrip? trip,
+    Map<String, dynamic>? socketLoc,
+  ) {
+    final hasSocket =
+        socketLoc != null &&
+        socketLoc['latitude'] != null &&
+        socketLoc['longitude'] != null;
+    if (hasSocket) return socketLoc;
+
+    final api = trip?.currentLocationLatLng;
+    if (api != null) {
+      return <String, dynamic>{
+        'latitude': api.latitude,
+        'longitude': api.longitude,
+        'speed': null,
+      };
+    }
+    return null;
+  }
+
+  /// Straight-line distance from driver's live position to drop-off (map route end).
+  String _getDistance(NextTrip? trip, Map<String, dynamic>? driverLoc) {
+    final drop = _dropOffLatLng(trip);
+    if (drop == null) return 'N/A';
+    if (driverLoc == null ||
+        driverLoc['latitude'] == null ||
+        driverLoc['longitude'] == null) {
+      return 'N/A';
+    }
+    final dLat = (driverLoc['latitude'] as num).toDouble();
+    final dLng = (driverLoc['longitude'] as num).toDouble();
+    final meters = mtk.SphericalUtil.computeDistanceBetween(
+      mtk.LatLng(dLat, dLng),
+      mtk.LatLng(drop.latitude, drop.longitude),
+    );
+    return _formatStraightLineDistance(meters);
+  }
+
+  /// ETA using distance ÷ speed (driver GPS km/h when reliable, else typical speed).
+  String _getEstimatedTime(NextTrip? trip, Map<String, dynamic>? driverLoc) {
+    final drop = _dropOffLatLng(trip);
+    if (drop == null) return 'N/A';
+    if (driverLoc == null ||
+        driverLoc['latitude'] == null ||
+        driverLoc['longitude'] == null) {
+      return 'N/A';
+    }
+    final dLat = (driverLoc['latitude'] as num).toDouble();
+    final dLng = (driverLoc['longitude'] as num).toDouble();
+    final meters = mtk.SphericalUtil.computeDistanceBetween(
+      mtk.LatLng(dLat, dLng),
+      mtk.LatLng(drop.latitude, drop.longitude),
+    ).toDouble();
+    if (meters <= 0) return '< 1 min';
+
+    final rawSpeed = (driverLoc['speed'] as num?)?.toDouble();
+    final speedKmh = (rawSpeed != null && rawSpeed >= _minReportedSpeedKmh)
+        ? rawSpeed
+        : _fallbackSpeedKmh;
+    final km = meters / 1000.0;
+    final hours = km / speedKmh;
+    final minutes = hours * 60;
+    return _formatEtaMinutes(minutes);
   }
 
   Widget _buildDriverLocationChip(Map<String, dynamic>? driverLoc) {
@@ -232,7 +325,9 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
   Widget build(BuildContext context) {
     return Obx(() {
       final trip = controller.trip ?? initialTrip ?? Get.arguments as NextTrip?;
-      final driverLoc = controller.driverLocation.value;
+      // Socket updates this Rx → distance/ETA refresh; API snapshot used until then.
+      final socketLoc = controller.driverLocation.value;
+      final driverLoc = _effectiveDriverLocation(trip, socketLoc);
       final LatLng? driverLatLng =
           driverLoc != null &&
               driverLoc['latitude'] != null &&
@@ -251,6 +346,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
             elevation: 1,
             shadowColor: Colors.grey,
             centerTitle: false,
+            titleSpacing: 0,
             leading: backButton(
               onTap: () {
                 Get.back();
@@ -277,24 +373,86 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
         );
       }
 
-      final pickupLocation = _convertPickupAddressToLocationData(
-        trip.assignedChildren?.isNotEmpty == true
-            ? trip.assignedChildren!.first.pickupAddress
-            : null,
-      );
+      // Do not show map or allow tracking if ride is not scheduled for today
+      if (!trip.isScheduledForToday) {
+        return Scaffold(
+          appBar: AppBar(
+            backgroundColor: AppColor.white,
+            surfaceTintColor: AppColor.white,
+            elevation: 1,
+            shadowColor: Colors.grey,
+            centerTitle: false,
+            leading: backButton(
+              onTap: () {
+                Get.back();
+              },
+            ),
+            title: Text(
+              trip.tripId ?? 'Live Tracking',
+              style: poppinFonts(
+                fontSize: lg,
+                color: AppColor.headingFontColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: Text(
+                'This ride is not scheduled for today. Live tracking is only available on the day of the ride.',
+                textAlign: TextAlign.center,
+                style: poppinFonts(
+                  fontSize: base,
+                  color: AppColor.textLightBlackColor4A4A4A,
+                ),
+              ),
+            ),
+          ),
+        );
+      }
 
+      // Collect all pickup locations from all assigned children
+      List<location_model.LocationData>? allPickupLocations;
+      if (trip.assignedChildren != null && trip.assignedChildren!.isNotEmpty) {
+        allPickupLocations = <location_model.LocationData>[];
+        for (var assignedChild in trip.assignedChildren!) {
+          if (assignedChild.pickupAddress != null) {
+            final pickupLoc = _convertPickupAddressToLocationData(
+              assignedChild.pickupAddress,
+            );
+            if (pickupLoc != null &&
+                pickupLoc.coordinates.latitude != 0.0 &&
+                pickupLoc.coordinates.longitude != 0.0) {
+              allPickupLocations.add(pickupLoc);
+            }
+          }
+        }
+      }
+
+      // First pickup location (for backward compatibility)
+      final pickupLocation = allPickupLocations?.isNotEmpty == true
+          ? allPickupLocations!.first
+          : _convertPickupAddressToLocationData(
+              trip.assignedChildren?.isNotEmpty == true
+                  ? trip.assignedChildren!.first.pickupAddress
+                  : null,
+            );
+
+      // Final dropoff location (use the last child's dropoff or first if only one)
       final dropOffLocation =
           trip.assignedChildren?.isNotEmpty == true &&
-              trip.assignedChildren!.first.child?.dropOffAddress != null
+              trip.assignedChildren!.last.child?.dropOffAddress != null
           ? _convertPickupAddressToLocationData(
-              trip.assignedChildren!.first.child!.dropOffAddress,
+              trip.assignedChildren!.last.child!.dropOffAddress,
             )
           : null;
 
       final hasPickupCoords =
-          pickupLocation != null &&
-          pickupLocation.coordinates.latitude != 0.0 &&
-          pickupLocation.coordinates.longitude != 0.0;
+          (allPickupLocations != null && allPickupLocations.isNotEmpty) ||
+          (pickupLocation != null &&
+              pickupLocation.coordinates.latitude != 0.0 &&
+              pickupLocation.coordinates.longitude != 0.0);
       final hasDropCoords =
           dropOffLocation != null &&
           dropOffLocation.coordinates.latitude != 0.0 &&
@@ -335,16 +493,19 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                 height: MediaQuery.of(context).size.height * 0.78,
                 width: double.infinity,
                 child: mapReady
-                    ? RouteMapWidget(
-                        pickupLocation: pickupLocation,
-                        dropOffLocation: dropOffLocation,
-                        driverLocation: driverLatLng,
-                        coveredPath: controller.driverPath.isNotEmpty
-                            ? controller.driverPath.toList()
-                            : null,
-                        remainingPath: controller.buildRemainingPath(),
-                        height: MediaQuery.of(context).size.height * 0.78,
-                        width: double.infinity,
+                    ? LocationPermissionMapGate(
+                        child: RouteMapWidget(
+                          pickupLocation: pickupLocation,
+                          dropOffLocation: dropOffLocation,
+                          driverLocation: driverLatLng,
+                          pickupLocations: allPickupLocations,
+                          coveredPath: controller.driverPath.isNotEmpty
+                              ? controller.driverPath.toList()
+                              : null,
+                          remainingPath: controller.buildRemainingPath(),
+                          height: MediaQuery.of(context).size.height * 0.78,
+                          width: double.infinity,
+                        ),
                       )
                     : Container(
                         color: Colors.grey.shade200,
@@ -598,7 +759,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                           ),
                                           SpaceHelper(h: 4.h),
                                           Text(
-                                            _getDistance(trip),
+                                            _getDistance(trip, driverLoc),
                                             style: poppinFonts(
                                               fontSize: base,
                                               color: AppColor.black,
@@ -621,7 +782,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                           ),
                                           SpaceHelper(h: 4.h),
                                           Text(
-                                            _getEstimatedTime(trip),
+                                            _getEstimatedTime(trip, driverLoc),
                                             style: poppinFonts(
                                               fontSize: base,
                                               color: AppColor.black,

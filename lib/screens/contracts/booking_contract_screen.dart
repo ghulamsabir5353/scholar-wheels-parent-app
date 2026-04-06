@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/contract_controller.dart';
+import 'package:scholarwheels/core/helper.widgets/back_button.dart';
+import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/models/contract_model.dart';
 import 'package:scholarwheels/screens/contracts/widgets/booking_contract_card.dart';
 import 'package:scholarwheels/services/api_state.dart';
@@ -56,6 +58,13 @@ class _BookingContractScreenState extends State<BookingContractScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        leading: backButton(
+          onTap: () {
+            // hit bottom nav index 0 here and show the home screen
+            Get.find<BottomTabController>().setTabIndex(0);
+          },
+        ),
+        titleSpacing: 0,
         title: Text(
           'Contracts',
           style: poppinFonts(

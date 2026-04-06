@@ -91,8 +91,7 @@ class ForgotPasswordController extends GetxController {
         customToaster(errorMessage, color: Colors.red);
       }
     } catch (e) {
-      log('Error sending forgot password request: $e');
-      customToaster('Something went wrong', color: Colors.red);
+      showApiError(e, logLabel: 'sendForgotPasswordRequest');
     } finally {
       isLoading.value = false;
     }
@@ -213,8 +212,7 @@ class ForgotPasswordController extends GetxController {
         customToaster(errorMessage, color: Colors.red);
       }
     } catch (e) {
-      log('Error resending OTP: $e');
-      customToaster('Something went wrong', color: Colors.red);
+      showApiError(e, logLabel: 'resendOTP');
     } finally {
       isResendingOTP.value = false;
     }
@@ -273,8 +271,7 @@ class ForgotPasswordController extends GetxController {
         customToaster(errorMessage, color: Colors.red);
       }
     } catch (e) {
-      log('Error resetting password: $e');
-      customToaster('Something went wrong', color: Colors.red);
+      showApiError(e, logLabel: 'resetPassword');
     } finally {
       isResettingPassword.value = false;
     }

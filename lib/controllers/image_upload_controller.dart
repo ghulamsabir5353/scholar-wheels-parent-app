@@ -5,6 +5,7 @@ import 'package:get/get.dart' hide FormData, MultipartFile;
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 
 class ImageUploadController extends GetxController {
   final ApiService apiService = Get.find<ApiService>();
@@ -109,10 +110,7 @@ class ImageUploadController extends GetxController {
         return null;
       }
     } catch (e) {
-      customToaster(
-        'Error uploading image${imageFiles.length > 1 ? 's' : ''}: ${e.toString()}',
-        color: Colors.red,
-      );
+      showApiError(e, logLabel: 'uploadImages');
       return null;
     } finally {
       isUploading.value = false;
@@ -158,10 +156,7 @@ class ImageUploadController extends GetxController {
         return false;
       }
     } catch (e) {
-      customToaster(
-        'Error deleting image${imageUrls.length > 1 ? 's' : ''}: ${e.toString()}',
-        color: Colors.red,
-      );
+      showApiError(e, logLabel: 'deleteImages');
       return false;
     } finally {
       isDeleting.value = false;

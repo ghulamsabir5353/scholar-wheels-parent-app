@@ -16,7 +16,8 @@ class RideCard extends StatelessWidget {
     return Semantics(
       label: 'Ride information card',
       child: Card(
-        elevation: 1,
+        elevation: 2,
+        shadowColor: AppColor.cardShadowColor,
         color: Colors.white,
         child: Padding(
           padding: EdgeInsets.all(14.w),
@@ -63,7 +64,7 @@ class RideCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Color(0xffECF4E9),
-                    border: Border.all(color: AppColor.secondary),
+                    border: Border.all(color: AppColor.borderGreen),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -143,7 +144,7 @@ class RideCard extends StatelessWidget {
                   ),
                   decoration: BoxDecoration(
                     color: Color(0xffECF4E9),
-                    border: Border.all(color: AppColor.secondary),
+                    border: Border.all(color: AppColor.borderGreen),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(

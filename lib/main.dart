@@ -16,6 +16,7 @@ import 'package:scholarwheels/firebase_options.dart';
 import 'package:scholarwheels/routes/app_routes.dart';
 import 'package:scholarwheels/screens/auth/splash_screen.dart';
 import 'package:scholarwheels/services/fcm_notification_service.dart';
+import 'package:scholarwheels/services/deep_link_service.dart';
 
 // Top-level function for background message handling
 @pragma('vm:entry-point')
@@ -79,6 +80,16 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Initialize Deep Link service after the widget tree is built so that
+    // any navigation triggered from deep links happens on a stable tree.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      DeepLinkService().initialize();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     // TextScaler textScaler = MediaQuery.textScalerOf(context).clamp(

@@ -12,9 +12,22 @@ import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/models/notification_model.dart';
 import 'package:scholarwheels/services/api_state.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   static const route = '/notification';
   const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Get.find<NotificationController>().refreshNotifications();
+    });
+  }
 
   void _showDeleteConfirmationDialog(
     BuildContext context,
@@ -23,6 +36,7 @@ class NotificationScreen extends StatelessWidget {
   ) {
     showDialog(
       context: context,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return AlertDialog(
           title: Text(
@@ -68,7 +82,7 @@ class NotificationScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final controller = Get.put(NotificationController());
+    final controller = Get.find<NotificationController>();
 
     return Scaffold(
       appBar: AppBar(
@@ -76,33 +90,17 @@ class NotificationScreen extends StatelessWidget {
         surfaceTintColor: AppColor.white,
         elevation: 1,
         shadowColor: Colors.grey,
+        centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();
           },
         ),
-        centerTitle: false,
         title: Text(
           'Notification',
-          style: poppinFonts(fontSize: xl, fontWeight: FontWeight.w500),
+          style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
         ),
-        actions: [
-          GestureDetector(
-            onTap: () => controller.markAllAsRead(),
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.w),
-              margin: const EdgeInsets.only(right: 12),
-              decoration: BoxDecoration(
-                border: Border.all(color: AppColor.black),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                "Mark All as Read",
-                style: poppinFonts(color: AppColor.black, fontSize: xs),
-              ),
-            ),
-          ),
-        ],
       ),
       body: Obx(() {
         final state = controller.notificationsState.value;
@@ -289,6 +287,8 @@ class _NotificationItem extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Card(
+          elevation: 2,
+          shadowColor: AppColor.cardShadowColor,
           color: isRead ? AppColor.white : AppColor.white,
           shape: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -302,11 +302,18 @@ class _NotificationItem extends StatelessWidget {
               children: [
                 Expanded(
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       CircleAvatar(
-                        backgroundColor: Colors.transparent,
-                        child: Image.asset("assets/images/png/bus-icon.png"),
+                        radius: 24.r,
+                        backgroundColor: AppColor.lightSecondary,
+
+                        child: Icon(
+                          Icons.notifications,
+                          size: 24.w,
+                          color: AppColor.primary,
+                        ),
+                        //  Image.asset("assets/images/png/bus-icon.png"),
                       ),
                       SpaceHelper(w: 12.w),
                       Expanded(
@@ -321,16 +328,16 @@ class _NotificationItem extends StatelessWidget {
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
-                            // SpaceHelper(h: 4.h),
-                            // Text(
-                            //   notification.message ?? '',
-                            //   style: poppinFonts(
-                            //     fontSize: xs,
-                            //     color: AppColor.textLightBlackColor4A4A4A,
-                            //   ),
-                            //   maxLines: 2,
-                            //   overflow: TextOverflow.ellipsis,
-                            // ),
+                            SpaceHelper(h: 4.h),
+                            Text(
+                              notification.message ?? '',
+                              style: poppinFonts(
+                                fontSize: sm,
+                                color: AppColor.textLightBlackColor4A4A4A,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                             SpaceHelper(h: 4.h),
                             Text(
                               _formatTime(notification.createdAt),

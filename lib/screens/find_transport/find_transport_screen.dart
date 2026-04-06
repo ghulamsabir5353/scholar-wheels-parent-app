@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
+import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/controllers/route_controller.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
@@ -49,19 +50,22 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
-        leading: showMainSection
-            ? null
-            : backButton(
-                onTap: () {
-                  setState(() {
-                    showMainSection = true;
-                  });
-                },
-              ),
+        titleSpacing: 0,
+        leading: backButton(
+          onTap: () {
+            if (showMainSection) {
+              Get.find<BottomTabController>().setTabIndex(0);
+            } else {
+              setState(() {
+                showMainSection = true;
+              });
+            }
+          },
+        ),
         title: Text(
           'Find Transport',
           style: poppinFonts(
-            fontSize: xl,
+            fontSize: lg,
             color: AppColor.headingFontColor,
             fontWeight: FontWeight.w500,
           ),
@@ -95,6 +99,8 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
                 padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
                 // add column in card
                 child: Card(
+                  elevation: 2,
+                  shadowColor: AppColor.cardShadowColor,
                   color: AppColor.white,
                   child: Padding(
                     padding: const EdgeInsets.all(12.0),
@@ -224,7 +230,7 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
                                             isLast: idx == list.length - 1,
                                           ),
                                         );
-                                      }).toList(),
+                                      }),
                                     ],
                                   );
                                 }

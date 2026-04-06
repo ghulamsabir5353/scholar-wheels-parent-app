@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
+import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/controllers/chat_controller.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
+import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
 import 'package:scholarwheels/models/room_model.dart';
 import 'package:scholarwheels/screens/chat/widgets/room_card.dart';
@@ -25,6 +27,13 @@ class RoomListScreen extends StatelessWidget {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        leading: backButton(
+          onTap: () {
+            // hit bottom nav index 0 here and show the home screen
+            Get.find<BottomTabController>().setTabIndex(0);
+          },
+        ),
+        titleSpacing: 0,
         title: Text(
           'Chat',
           style: poppinFonts(
@@ -179,7 +188,10 @@ class RoomListScreen extends StatelessWidget {
                     ),
                   )
                 : ListView(
-                    padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 12.w,
+                      vertical: 12.w,
+                    ),
                     children: dataState.data
                         .map(
                           (room) => Padding(

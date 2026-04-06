@@ -3,8 +3,10 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/models/contract_model.dart';
+import 'package:scholarwheels/models/contract_rating_model.dart';
 import 'package:scholarwheels/models/booking_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 import 'package:scholarwheels/services/api_state.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
@@ -21,6 +23,12 @@ class ContractController extends GetxController {
   final RxBool isLoadingContractDetail = false.obs;
   final Rx<ViewState<ContractModel>> contractDetailState =
       Rx<ViewState<ContractModel>>(LoadingState());
+
+  /// Reviews for the contract detail screen (GET /rating?contractId=).
+  final RxList<ContractRatingReview> contractRatings =
+      <ContractRatingReview>[].obs;
+  final RxBool isLoadingRatings = false.obs;
+  final RxBool isSubmittingRating = false.obs;
 
   @override
   void onInit() {
@@ -82,8 +90,7 @@ class ContractController extends GetxController {
       }
     } catch (e) {
       contractsState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error loading contracts: $e');
+      showApiError(e, logLabel: 'getContracts');
     } finally {
       isLoading.value = false;
     }
@@ -157,8 +164,7 @@ class ContractController extends GetxController {
       }
     } catch (e) {
       bookingsState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error loading bookings: $e');
+      showApiError(e, logLabel: 'getBookings');
     } finally {
       isLoadingBookings.value = false;
     }
@@ -169,11 +175,118 @@ class ContractController extends GetxController {
     getBookings();
   }
 
+  List<ContractRatingReview> _parseRatingsResponse(dynamic data) {
+    if (data == null) return [];
+    List<dynamic>? raw;
+    if (data is List) {
+      raw = data;
+    } else if (data is Map<String, dynamic>) {
+      raw =
+          data['ratings'] as List<dynamic>? ??
+          data['data'] as List<dynamic>? ??
+          data['rating'] as List<dynamic>? ??
+          data['reviews'] as List<dynamic>?;
+    }
+    if (raw == null || raw.isEmpty) return [];
+    return raw
+        .map((e) => ContractRatingReview.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  /// GET /rating?contractId=
+  Future<void> fetchRatingsForContract(String contractId) async {
+    if (contractId.isEmpty) return;
+    try {
+      isLoadingRatings.value = true;
+      final response = await apiService.fetchData(
+        AppConstants.rating,
+        query: {
+          'contractId': contractId,
+          'parentId': BaseHelper.currentUser.value.roleData?.id,
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        log('Ratings response: ${response.data}');
+        contractRatings.assignAll(_parseRatingsResponse(response.data));
+      } else {
+        contractRatings.clear();
+      }
+    } catch (e) {
+      contractRatings.clear();
+      showApiError(e, logLabel: 'fetchRatingsForContract');
+    } finally {
+      isLoadingRatings.value = false;
+    }
+  }
+
+  /// POST /rating — body: contractId, rating (string), comment, parentId
+  Future<bool> createContractRating({
+    required String contractId,
+    required int rating,
+    required String comment,
+  }) async {
+    final parentId = BaseHelper.currentUser.value.roleData?.id;
+    if (parentId == null || parentId.isEmpty) {
+      customToaster('Parent ID not found', color: Colors.red);
+      return false;
+    }
+    if (contractId.isEmpty) {
+      customToaster('Contract ID not found', color: Colors.red);
+      return false;
+    }
+    try {
+      isSubmittingRating.value = true;
+      final body = <String, dynamic>{
+        'contractId': contractId,
+        'rating': rating.toString(),
+        'comment': comment,
+        'parentId': parentId,
+      };
+      final response = await apiService.createData(AppConstants.rating, body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final msg = response.data is Map && response.data['message'] != null
+            ? response.data['message'].toString()
+            : 'Review submitted';
+        customToaster(msg, color: Colors.green);
+        await fetchRatingsForContract(contractId);
+        return true;
+      } else {
+        final msg = response.data is Map && response.data['message'] != null
+            ? response.data['message'].toString()
+            : 'Failed to submit review';
+        customToaster(msg, color: Colors.red);
+        return false;
+      }
+    } catch (e) {
+      // Show API message for conflicts like 409 "already rated this month"
+      if (e is ApiException) {
+        String msg = e.message;
+        final details = e.details;
+        if (details is Map && details['errors'] is List && details['errors'].isNotEmpty) {
+          final first = details['errors'].first;
+          if (first != null && first.toString().trim().isNotEmpty) {
+            msg = first.toString();
+          }
+        }
+        customToaster(msg, color: Colors.red);
+        log('createContractRating: $e');
+      } else {
+        showApiError(e, logLabel: 'createContractRating');
+      }
+      return false;
+    } finally {
+      isSubmittingRating.value = false;
+    }
+  }
+
   /// Get single contract by ID
   Future<void> getContractById(String contractId) async {
     try {
       isLoadingContractDetail.value = true;
       contractDetailState.value = LoadingState();
+      contractRatings.clear();
 
       final endpoint = '${AppConstants.contract}/$contractId';
       final response = await apiService.fetchData(
@@ -186,15 +299,19 @@ class ContractController extends GetxController {
 
         // Parse contract from response.data['contract']
         if (response.data != null && response.data['contract'] != null) {
-          final contractJson = response.data['contract'] as Map<String, dynamic>;
+          final contractJson =
+              response.data['contract'] as Map<String, dynamic>;
           final contract = ContractModel.fromJson(contractJson);
 
           contractDetailState.value = DataState(data: contract);
           log('Loaded contract: ${contract.contractId}');
+
+          final idForRating = contract.id ?? contract.contractId ?? contractId;
+          if (idForRating.isNotEmpty) {
+            fetchRatingsForContract(idForRating);
+          }
         } else {
-          contractDetailState.value = EmptyState(
-            message: 'Contract not found',
-          );
+          contractDetailState.value = EmptyState(message: 'Contract not found');
           customToaster('Contract not found', color: Colors.red);
         }
       } else {
@@ -205,8 +322,7 @@ class ContractController extends GetxController {
       }
     } catch (e) {
       contractDetailState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error loading contract detail: $e');
+      showApiError(e, logLabel: 'getContractById');
     } finally {
       isLoadingContractDetail.value = false;
     }

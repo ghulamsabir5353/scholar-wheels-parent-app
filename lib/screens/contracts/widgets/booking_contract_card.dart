@@ -146,7 +146,14 @@ class BookingContractCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12.r),
-          border: Border.all(color: AppColor.textFieldBorderColor),
+          border: Border.all(color: AppColor.cardBorderColorGrey),
+          boxShadow: [
+            BoxShadow(
+              color: AppColor.cardShadowColor.withOpacity(0.5),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: Padding(
           padding: EdgeInsets.all(16.w),
@@ -265,7 +272,7 @@ class BookingContractCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColor.cardBgColor,
                   borderRadius: BorderRadius.circular(12.r),
-                  border: Border.all(color: AppColor.secondary),
+                  border: Border.all(color: AppColor.borderGreen),
                 ),
                 child: Stack(
                   children: [
@@ -311,11 +318,8 @@ class BookingContractCard extends StatelessWidget {
                         SpaceHelper(h: 12.h),
                         // Route Details with Icons and Dotted Line
                         RouteEntryWidget(
-                          pickupAddress:
-                              contract.route?.suburb?.description ?? 'N/A',
-                          schoolName:
-                              contract.route?.dropOffPoint?.description ??
-                              'N/A',
+                          pickupAddress: contract.route?.suburbName ?? 'N/A',
+                          schoolName: contract.route?.dropOffPointName ?? 'N/A',
                         ),
                         SpaceHelper(h: 12.h),
                         // Monthly Pay
@@ -380,9 +384,9 @@ class BookingContractCard extends StatelessWidget {
                         );
                       },
                       child: Container(
-                        height: 32.h,
+                        height: 36.h.toDouble(),
                         decoration: BoxDecoration(
-                          border: Border.all(color: AppColor.secondary),
+                          border: Border.all(color: AppColor.borderGreen),
                           borderRadius: BorderRadius.circular(8.r),
                           color: Colors.white,
                         ),
@@ -402,16 +406,11 @@ class BookingContractCard extends StatelessWidget {
                   SpaceHelper(w: 12.w),
                   Expanded(
                     child: CustomButton(
-                      height: 32.h,
+                      height: 36.h.toDouble(),
                       onPressed: () {
                         Get.find<BottomTabController>().setTabIndex(4);
                       },
                       title: "Chat",
-                      style: poppinFonts(
-                        fontSize: sm,
-                        fontWeight: FontWeight.w500,
-                        color: AppColor.white,
-                      ),
                     ),
                   ),
                 ],

@@ -36,15 +36,16 @@ class ChildCard extends StatelessWidget {
 
     showDialog(
       context: Get.context!,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
+
           backgroundColor: AppColor.white,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.w),
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.w),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,37 +62,32 @@ class ChildCard extends StatelessWidget {
                         color: AppColor.black,
                       ),
                     ),
-                    IconButton(
-                      padding: EdgeInsets.zero,
-                      icon: Icon(Icons.close, size: 24.w),
-                      onPressed: () {
+                    InkWell(
+                      onTap: () {
                         Navigator.of(context).pop();
                       },
+                      child: Icon(Icons.close, size: 24.w),
                     ),
                   ],
                 ),
-                SpaceHelper(h: 12.w),
-                // Child Info
-                Text(
-                  child.name ?? 'Child',
-                  style: poppinFonts(
-                    fontSize: base,
-                    fontWeight: FontWeight.w600,
-                    color: AppColor.black,
-                  ),
-                ),
 
-                SpaceHelper(h: 16.w),
+                // SpaceHelper(h: 12.w),
+                // // Child Info
+                // Text(
+                //   child.name ?? 'Child',
+                //   style: poppinFonts(
+                //     fontSize: base,
+                //     fontWeight: FontWeight.w600,
+                //     color: AppColor.black,
+                //   ),
+                // ),
+                SpaceHelper(h: 12.w),
                 // Confirmation Message
                 Text(
                   'Are you sure? You want to delete this child.',
-                  style: poppinFonts(
-                    fontSize: sm,
-                    fontWeight: FontWeight.w500,
-                    color: AppColor.black,
-                  ),
+                  style: poppinFonts(fontSize: sm, color: AppColor.black),
                 ),
-                SpaceHelper(h: 20.w),
+                SpaceHelper(h: 16.w),
                 // Action Buttons
                 Row(
                   children: [
@@ -152,7 +148,8 @@ class ChildCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      elevation: 1,
+      elevation: 2,
+      shadowColor: AppColor.cardShadowColor,
       color: AppColor.white,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
@@ -313,7 +310,10 @@ class ChildCard extends StatelessWidget {
                       height: 36.h,
                       decoration: BoxDecoration(
                         color: AppColor.white,
-                        border: Border.all(color: AppColor.secondary, width: 1),
+                        border: Border.all(
+                          color: AppColor.borderGreen,
+                          width: 1,
+                        ),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(
@@ -333,6 +333,8 @@ class ChildCard extends StatelessWidget {
                 // Edit Details Button
                 Expanded(
                   child: CustomButton(
+                    height: 36.h,
+                    width: double.infinity,
                     onPressed: () {
                       Get.toNamed(EditChildScreen.route, arguments: child.id);
                     },

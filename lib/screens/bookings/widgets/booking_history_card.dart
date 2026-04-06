@@ -77,20 +77,20 @@ class BookingHistoryCard extends StatelessWidget {
   String _getPickupAddress() {
     if (booking.children != null && booking.children!.isNotEmpty) {
       return booking.children!.first.pickUpAddress?.description ??
-          booking.route?.suburb?.description ??
+          booking.route?.suburbName ??
           'N/A';
     }
-    return booking.route?.suburb?.description ?? 'N/A';
+    return booking.route?.suburbName ?? 'N/A';
   }
 
   String _getSchoolName() {
     if (booking.children != null && booking.children!.isNotEmpty) {
       return booking.children!.first.dropOffAddress?.description ??
           booking.children!.first.school ??
-          booking.route?.dropOffPoint?.description ??
+          booking.route?.dropOffPointName ??
           'N/A';
     }
-    return booking.route?.dropOffPoint?.description ?? 'N/A';
+    return booking.route?.dropOffPointName ?? 'N/A';
   }
 
   String _getRequestId() {
@@ -130,7 +130,14 @@ class BookingHistoryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColor.textFieldBorderColor),
+        border: Border.all(color: AppColor.cardBorderColorGrey),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.cardShadowColor.withOpacity(0.5),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Padding(
         padding: EdgeInsets.all(16.w),
@@ -284,7 +291,7 @@ class BookingHistoryCard extends StatelessWidget {
                       SpaceHelper(h: 8.h),
                       // Request Duration
                       Text(
-                        'Request Duration : ${_getRequestDuration()}',
+                        'Request Duration : ${_getRequestDuration()} Days',
                         style: poppinFonts(
                           fontSize: sm,
                           color: AppColor.textLightBlackColor4A4A4A,
@@ -334,7 +341,7 @@ class BookingHistoryCard extends StatelessWidget {
                 width: double.infinity,
                 height: 40.h,
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppColor.secondary),
+                  border: Border.all(color: AppColor.borderGreen),
                   borderRadius: BorderRadius.circular(8.r),
                   color: Colors.white,
                 ),

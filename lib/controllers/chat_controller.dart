@@ -1,15 +1,14 @@
 import 'dart:developer';
 
-import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/core/helper.constants/socket_initialize.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/models/message_model.dart';
 import 'package:scholarwheels/models/room_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
+import 'package:scholarwheels/services/api_exception.dart';
 import 'package:scholarwheels/services/api_state.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
-import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
 
 class ChatController extends GetxController {
   final ApiService apiService = Get.find<ApiService>();
@@ -77,8 +76,7 @@ class ChatController extends GetxController {
       }
     } catch (e) {
       roomsState.value = ExceptionState(Exception(e.toString()));
-      customToaster('Something went wrong', color: Colors.red);
-      log('error: $e');
+      showApiError(e, logLabel: 'getChatRooms');
     }
   }
 
@@ -124,7 +122,7 @@ class ChatController extends GetxController {
       }
     } catch (e) {
       messagesState.value = ExceptionState(Exception(e.toString()));
-      log('error loading messages: $e');
+      showApiError(e, logLabel: 'getMessages');
     } finally {
       isLoadingMessages.value = false;
     }

@@ -62,6 +62,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();
@@ -180,7 +181,7 @@ class _RequestHistoryScreenState extends State<RequestHistoryScreen> {
                         children: [
                           ...filteredBookings.map((booking) {
                             return BookingHistoryCard(booking: booking);
-                          }).toList(),
+                          }),
                         ],
                       ),
                     ),

@@ -1,9 +1,15 @@
 import 'package:scholarwheels/models/contract_model.dart';
+import 'package:scholarwheels/models/ride_model.dart';
 import 'package:scholarwheels/models/user_model.dart';
+import 'package:scholarwheels/models/vehicle_model.dart';
+
+import 'license_doc_model.dart';
 
 class DashboardModel {
   NextTrip? activeRides;
-  NextTrip? nextTrip;
+
+  /// Upcoming trips (list from API). UI shows a card per item.
+  List<NextTrip>? nextTrip;
   List<ContractModel>? recentContracts;
   Counts? counts;
 
@@ -16,7 +22,7 @@ class DashboardModel {
 
   DashboardModel copyWith({
     NextTrip? activeRides,
-    NextTrip? nextTrip,
+    List<NextTrip>? nextTrip,
     List<ContractModel>? recentContracts,
     Counts? counts,
   }) => DashboardModel(
@@ -31,23 +37,37 @@ class DashboardModel {
         ? null
         : json["activeRides"] is List
         ? (json["activeRides"] as List).isNotEmpty
-              ? NextTrip.fromJson(json["activeRides"][0])
+              ? NextTrip.fromJson(
+                  (json["activeRides"] as List)[0] as Map<String, dynamic>,
+                )
               : null
-        : NextTrip.fromJson(json["activeRides"]),
+        : NextTrip.fromJson(json["activeRides"] as Map<String, dynamic>),
     nextTrip: json["nextTrip"] == null
         ? null
-        : NextTrip.fromJson(json["nextTrip"]),
+        : json["nextTrip"] is List
+        ? List<NextTrip>.from(
+            (json["nextTrip"] as List).map(
+              (x) => NextTrip.fromJson(x as Map<String, dynamic>),
+            ),
+          )
+        : [NextTrip.fromJson(json["nextTrip"] as Map<String, dynamic>)],
     recentContracts: json["recentContracts"] == null
         ? []
         : List<ContractModel>.from(
-            json["recentContracts"]!.map((x) => ContractModel.fromJson(x)),
+            (json["recentContracts"] as List).map(
+              (x) => ContractModel.fromJson(x as Map<String, dynamic>),
+            ),
           ),
-    counts: json["counts"] == null ? null : Counts.fromJson(json["counts"]),
+    counts: json["counts"] == null
+        ? null
+        : Counts.fromJson(json["counts"] as Map<String, dynamic>),
   );
 
   Map<String, dynamic> toJson() => {
     "activeRides": activeRides?.toJson(),
-    "nextTrip": nextTrip?.toJson(),
+    "nextTrip": nextTrip == null
+        ? []
+        : List<dynamic>.from(nextTrip!.map((x) => x.toJson())),
     "recentContracts": recentContracts == null
         ? []
         : List<dynamic>.from(recentContracts!.map((x) => x.toJson())),
@@ -81,11 +101,19 @@ class Counts {
   );
 
   factory Counts.fromJson(Map<String, dynamic> json) => Counts(
-    activeRides: json["activeRides"],
-    requestedBookings: json["requestedBookings"],
-    totalContracts: json["totalContracts"],
-    totalChildren: json["totalChildren"],
+    activeRides: _toInt(json["activeRides"]),
+    requestedBookings: _toInt(json["requestedBookings"]),
+    totalContracts: _toInt(json["totalContracts"]),
+    totalChildren: _toInt(json["totalChildren"]),
   );
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String) return int.tryParse(value);
+    return null;
+  }
 
   Map<String, dynamic> toJson() => {
     "activeRides": activeRides,
@@ -119,7 +147,8 @@ class NextTrip {
   Vehicle? vehicle;
   Driver? driver;
   List<Parent>? parents;
-
+  /// GeoJSON-style snapshot from API; see [NextTripX.currentLocationLatLng].
+  Map<String, dynamic>? currentLocation;
   NextTrip({
     this.id,
     this.tripId,
@@ -144,6 +173,7 @@ class NextTrip {
     this.vehicle,
     this.driver,
     this.parents,
+    this.currentLocation,
   });
 
   NextTrip copyWith({
@@ -170,6 +200,7 @@ class NextTrip {
     Vehicle? vehicle,
     Driver? driver,
     List<Parent>? parents,
+    Map<String, dynamic>? currentLocation,
   }) => NextTrip(
     id: id ?? this.id,
     tripId: tripId ?? this.tripId,
@@ -194,6 +225,7 @@ class NextTrip {
     vehicle: vehicle ?? this.vehicle,
     driver: driver ?? this.driver,
     parents: parents ?? this.parents,
+    currentLocation: currentLocation ?? this.currentLocation,
   );
 
   factory NextTrip.fromJson(Map<String, dynamic> json) => NextTrip(
@@ -238,6 +270,7 @@ class NextTrip {
     parents: json["parents"] == null
         ? []
         : List<Parent>.from(json["parents"]!.map((x) => Parent.fromJson(x))),
+    currentLocation: json["currentLocation"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -272,7 +305,52 @@ class NextTrip {
     "parents": parents == null
         ? []
         : List<dynamic>.from(parents!.map((x) => x.toJson())),
+    "currentLocation": currentLocation,
   };
+}
+
+/// Extension to check if a ride is scheduled for today (local date).
+extension NextTripX on NextTrip {
+  bool get isScheduledForToday {
+    if (serviceDate == null) return false;
+    final sd = serviceDate!.toLocal();
+    final now = DateTime.now();
+    return sd.year == now.year && sd.month == now.month && sd.day == now.day;
+  }
+
+  /// Driver snapshot from REST `currentLocation` (GeoJSON Point, [lng, lat]).
+  ///
+  /// Supported shapes:
+  /// `{ "coordinates": { "type": "Point", "coordinates": [lng, lat] } }`
+  /// `{ "type": "Point", "coordinates": [lng, lat] }`
+  ({double latitude, double longitude})? get currentLocationLatLng {
+    final root = currentLocation;
+    if (root == null || root.isEmpty) return null;
+
+    List<dynamic>? coordList;
+    final inner = root['coordinates'];
+    if (inner is Map) {
+      final nested = inner['coordinates'];
+      if (nested is List && nested.length >= 2) {
+        coordList = nested;
+      }
+    } else if (inner is List && inner.length >= 2) {
+      coordList = inner;
+    }
+    if (coordList == null && root['type'] == 'Point') {
+      final c = root['coordinates'];
+      if (c is List && c.length >= 2) coordList = c;
+    }
+    if (coordList == null || coordList.length < 2) return null;
+    final a = coordList[0];
+    final b = coordList[1];
+    if (a is! num || b is! num) return null;
+    final lng = a.toDouble();
+    final lat = b.toDouble();
+    if (!lat.isFinite || !lng.isFinite) return null;
+    if (lat.abs() > 90 || lng.abs() > 180) return null;
+    return (latitude: lat, longitude: lng);
+  }
 }
 
 class AssignedChild {
@@ -691,44 +769,6 @@ class Driver {
   };
 }
 
-class LicenseDocument {
-  String? url;
-  String? fileName;
-  String? id;
-  DateTime? uploadedAt;
-
-  LicenseDocument({this.url, this.fileName, this.id, this.uploadedAt});
-
-  LicenseDocument copyWith({
-    String? url,
-    String? fileName,
-    String? id,
-    DateTime? uploadedAt,
-  }) => LicenseDocument(
-    url: url ?? this.url,
-    fileName: fileName ?? this.fileName,
-    id: id ?? this.id,
-    uploadedAt: uploadedAt ?? this.uploadedAt,
-  );
-
-  factory LicenseDocument.fromJson(Map<String, dynamic> json) =>
-      LicenseDocument(
-        url: json["url"],
-        fileName: json["fileName"],
-        id: json["_id"],
-        uploadedAt: json["uploadedAt"] == null
-            ? null
-            : DateTime.parse(json["uploadedAt"]),
-      );
-
-  Map<String, dynamic> toJson() => {
-    "url": url,
-    "fileName": fileName,
-    "_id": id,
-    "uploadedAt": uploadedAt?.toIso8601String(),
-  };
-}
-
 class Parent {
   String? id;
   String? userId;
@@ -811,150 +851,6 @@ class Parent {
   };
 }
 
-class Ride {
-  String? id;
-  String? rideId;
-  String? transportOwnerId;
-  List<String>? contractIds;
-  List<String>? parentIds;
-  String? rideType;
-  DateTime? startDate;
-  DateTime? endDate;
-  String? assignedVehicle;
-  String? assignedDriver;
-  String? routeId;
-  List<AssignedChild>? assignedChildren;
-  String? dropOffTime;
-  String? status;
-  bool? isDeleted;
-  DateTime? createdAt;
-  DateTime? updatedAt;
-  int? v;
-
-  Ride({
-    this.id,
-    this.rideId,
-    this.transportOwnerId,
-    this.contractIds,
-    this.parentIds,
-    this.rideType,
-    this.startDate,
-    this.endDate,
-    this.assignedVehicle,
-    this.assignedDriver,
-    this.routeId,
-    this.assignedChildren,
-    this.dropOffTime,
-    this.status,
-    this.isDeleted,
-    this.createdAt,
-    this.updatedAt,
-    this.v,
-  });
-
-  Ride copyWith({
-    String? id,
-    String? rideId,
-    String? transportOwnerId,
-    List<String>? contractIds,
-    List<String>? parentIds,
-    String? rideType,
-    DateTime? startDate,
-    DateTime? endDate,
-    String? assignedVehicle,
-    String? assignedDriver,
-    String? routeId,
-    List<AssignedChild>? assignedChildren,
-    String? dropOffTime,
-    String? status,
-    bool? isDeleted,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    int? v,
-  }) => Ride(
-    id: id ?? this.id,
-    rideId: rideId ?? this.rideId,
-    transportOwnerId: transportOwnerId ?? this.transportOwnerId,
-    contractIds: contractIds ?? this.contractIds,
-    parentIds: parentIds ?? this.parentIds,
-    rideType: rideType ?? this.rideType,
-    startDate: startDate ?? this.startDate,
-    endDate: endDate ?? this.endDate,
-    assignedVehicle: assignedVehicle ?? this.assignedVehicle,
-    assignedDriver: assignedDriver ?? this.assignedDriver,
-    routeId: routeId ?? this.routeId,
-    assignedChildren: assignedChildren ?? this.assignedChildren,
-    dropOffTime: dropOffTime ?? this.dropOffTime,
-    status: status ?? this.status,
-    isDeleted: isDeleted ?? this.isDeleted,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    v: v ?? this.v,
-  );
-
-  factory Ride.fromJson(Map<String, dynamic> json) => Ride(
-    id: json["_id"],
-    rideId: json["rideId"],
-    transportOwnerId: json["transportOwnerId"],
-    contractIds: json["contractIds"] == null
-        ? []
-        : List<String>.from(json["contractIds"]!.map((x) => x)),
-    parentIds: json["parentIds"] == null
-        ? []
-        : List<String>.from(json["parentIds"]!.map((x) => x)),
-    rideType: json["rideType"],
-    startDate: json["startDate"] == null
-        ? null
-        : DateTime.parse(json["startDate"]),
-    endDate: json["endDate"] == null ? null : DateTime.parse(json["endDate"]),
-    assignedVehicle: json["assignedVehicle"],
-    assignedDriver: json["assignedDriver"],
-    routeId: json["routeId"],
-    assignedChildren: json["assignedChildren"] == null
-        ? []
-        : List<AssignedChild>.from(
-            json["assignedChildren"]!.map((x) => AssignedChild.fromJson(x)),
-          ),
-    dropOffTime: json["dropOffTime"],
-    status: json["status"],
-    isDeleted: json["isDeleted"],
-    createdAt: json["createdAt"] == null
-        ? null
-        : DateTime.parse(json["createdAt"]),
-    updatedAt: json["updatedAt"] == null
-        ? null
-        : DateTime.parse(json["updatedAt"]),
-    v: json["__v"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "_id": id,
-    "rideId": rideId,
-    "transportOwnerId": transportOwnerId,
-    "contractIds": contractIds == null
-        ? []
-        : List<dynamic>.from(contractIds!.map((x) => x)),
-    "parentIds": parentIds == null
-        ? []
-        : List<dynamic>.from(parentIds!.map((x) => x)),
-    "rideType": rideType,
-    "startDate": startDate?.toIso8601String(),
-    "endDate": endDate?.toIso8601String(),
-    "assignedVehicle": assignedVehicle,
-    "assignedDriver": assignedDriver,
-    "routeId": routeId,
-    "assignedChildren": assignedChildren == null
-        ? []
-        : List<dynamic>.from(assignedChildren!.map((x) => x.toJson())),
-    "dropOffTime": dropOffTime,
-    "status": status,
-    "isDeleted": isDeleted,
-    "createdAt": createdAt?.toIso8601String(),
-    "updatedAt": updatedAt?.toIso8601String(),
-    "__v": v,
-  };
-}
-
 class TransportOwner {
   String? id;
   String? userId;
@@ -975,8 +871,8 @@ class TransportOwner {
   bool? isIndependent;
   bool? isVerified;
   UserDetail? user; // UserDetail model
-  int? averageRating;
-  int? totalRatings;
+  double? averageRating;
+  double? totalRatings;
 
   TransportOwner({
     this.id,
@@ -1022,8 +918,8 @@ class TransportOwner {
     bool? isIndependent,
     bool? isVerified,
     UserDetail? user,
-    int? averageRating,
-    int? totalRatings,
+    double? averageRating,
+    double? totalRatings,
   }) => TransportOwner(
     id: id ?? this.id,
     userId: userId ?? this.userId,
@@ -1076,8 +972,8 @@ class TransportOwner {
     isIndependent: json["isIndependent"],
     isVerified: json["isVerified"],
     user: json["user"] == null ? null : UserDetail.fromJson(json["user"]),
-    averageRating: json["averageRating"],
-    totalRatings: json["totalRatings"],
+    averageRating: json["averageRating"]?.toDouble() ?? 0,
+    totalRatings: json["totalRatings"]?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -1102,159 +998,7 @@ class TransportOwner {
     "isIndependent": isIndependent,
     "isVerified": isVerified,
     "user": user?.toJson(),
-    "averageRating": averageRating,
-    "totalRatings": totalRatings,
-  };
-}
-
-class Vehicle {
-  String? id;
-  String? transportOwnerId;
-  String? registrationNumber;
-  String? vehicleType;
-  String? make;
-  String? model;
-  String? manufacturingYear;
-  DateTime? registrationExpiry;
-  List<dynamic>? documents;
-  String? status;
-  List<LicenseDocument>? pictures;
-  dynamic assignedTo;
-  int? capacity;
-  bool? assigned;
-  bool? isInsured;
-  bool? isDeleted;
-  bool? archived;
-  DateTime? createdAt;
-  DateTime? updatedAt;
-  int? v;
-
-  Vehicle({
-    this.id,
-    this.transportOwnerId,
-    this.registrationNumber,
-    this.vehicleType,
-    this.make,
-    this.model,
-    this.manufacturingYear,
-    this.registrationExpiry,
-    this.documents,
-    this.status,
-    this.pictures,
-    this.assignedTo,
-    this.capacity,
-    this.assigned,
-    this.isInsured,
-    this.isDeleted,
-    this.archived,
-    this.createdAt,
-    this.updatedAt,
-    this.v,
-  });
-
-  Vehicle copyWith({
-    String? id,
-    String? transportOwnerId,
-    String? registrationNumber,
-    String? vehicleType,
-    String? make,
-    String? model,
-    String? manufacturingYear,
-    DateTime? registrationExpiry,
-    List<dynamic>? documents,
-    String? status,
-    List<LicenseDocument>? pictures,
-    dynamic assignedTo,
-    int? capacity,
-    bool? assigned,
-    bool? isInsured,
-    bool? isDeleted,
-    bool? archived,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    int? v,
-  }) => Vehicle(
-    id: id ?? this.id,
-    transportOwnerId: transportOwnerId ?? this.transportOwnerId,
-    registrationNumber: registrationNumber ?? this.registrationNumber,
-    vehicleType: vehicleType ?? this.vehicleType,
-    make: make ?? this.make,
-    model: model ?? this.model,
-    manufacturingYear: manufacturingYear ?? this.manufacturingYear,
-    registrationExpiry: registrationExpiry ?? this.registrationExpiry,
-    documents: documents ?? this.documents,
-    status: status ?? this.status,
-    pictures: pictures ?? this.pictures,
-    assignedTo: assignedTo ?? this.assignedTo,
-    capacity: capacity ?? this.capacity,
-    assigned: assigned ?? this.assigned,
-    isInsured: isInsured ?? this.isInsured,
-    isDeleted: isDeleted ?? this.isDeleted,
-    archived: archived ?? this.archived,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    v: v ?? this.v,
-  );
-
-  factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
-    id: json["_id"],
-    transportOwnerId: json["transportOwnerId"],
-    registrationNumber: json["registrationNumber"],
-    vehicleType: json["vehicleType"],
-    make: json["make"],
-    model: json["model"],
-    manufacturingYear: json["manufacturingYear"],
-    registrationExpiry: json["registrationExpiry"] == null
-        ? null
-        : DateTime.parse(json["registrationExpiry"]),
-    documents: json["documents"] == null
-        ? []
-        : List<dynamic>.from(json["documents"]!.map((x) => x)),
-    status: json["status"],
-    pictures: json["pictures"] == null
-        ? []
-        : List<LicenseDocument>.from(
-            json["pictures"]!.map((x) => LicenseDocument.fromJson(x)),
-          ),
-    assignedTo: json["assigned_to"],
-    capacity: json["capacity"],
-    assigned: json["assigned"],
-    isInsured: json["isInsured"],
-    isDeleted: json["isDeleted"],
-    archived: json["archived"],
-    createdAt: json["createdAt"] == null
-        ? null
-        : DateTime.parse(json["createdAt"]),
-    updatedAt: json["updatedAt"] == null
-        ? null
-        : DateTime.parse(json["updatedAt"]),
-    v: json["__v"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "_id": id,
-    "transportOwnerId": transportOwnerId,
-    "registrationNumber": registrationNumber,
-    "vehicleType": vehicleType,
-    "make": make,
-    "model": model,
-    "manufacturingYear": manufacturingYear,
-    "registrationExpiry": registrationExpiry?.toIso8601String(),
-    "documents": documents == null
-        ? []
-        : List<dynamic>.from(documents!.map((x) => x)),
-    "status": status,
-    "pictures": pictures == null
-        ? []
-        : List<dynamic>.from(pictures!.map((x) => x.toJson())),
-    "assigned_to": assignedTo,
-    "capacity": capacity,
-    "assigned": assigned,
-    "isInsured": isInsured,
-    "isDeleted": isDeleted,
-    "archived": archived,
-    "createdAt": createdAt?.toIso8601String(),
-    "updatedAt": updatedAt?.toIso8601String(),
-    "__v": v,
+    "averageRating": averageRating?.toString(),
+    "totalRatings": totalRatings?.toString(),
   };
 }

@@ -35,6 +35,7 @@ class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
 
   void _loadTrips() {
     final filterType = buttonList[selectedIndex].toLowerCase();
+    mainController.scheduleRideFilter.value = buttonList[selectedIndex];
     mainController.getTrips(filterType: filterType, status: status);
   }
 
@@ -54,6 +55,7 @@ class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();
@@ -61,11 +63,62 @@ class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
         ),
         title: Text(
           _getScreenTitle(),
-          style: poppinFonts(fontSize: xl, fontWeight: FontWeight.w500),
+          style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
         ),
       ),
       body: Column(
         children: [
+          // Filter Buttons
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: List.generate(
+                buttonList.length,
+                (index) => Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 4.w),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                      _loadTrips();
+                    },
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 6.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: selectedIndex == index
+                            ? AppColor.primary
+                            : AppColor.white,
+                        borderRadius: BorderRadius.circular(6.r),
+                        border: Border.all(
+                          color: selectedIndex == index
+                              ? AppColor.primary
+                              : AppColor.bgGrayD9D8D8,
+                          width: 1,
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          buttonList[index],
+                          style: poppinFonts(
+                            fontSize: sm,
+                            fontWeight: FontWeight.w500,
+                            color: selectedIndex == index
+                                ? AppColor.white
+                                : AppColor.black,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
           // Trips List
           Expanded(
             child: Obx(() {

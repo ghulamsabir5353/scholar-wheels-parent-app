@@ -1,7 +1,7 @@
 import 'dart:convert';
-import 'package:scholarwheels/models/child_model.dart';
+import 'package:scholarwheels/models/license_doc_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
-import 'package:scholarwheels/models/route_model.dart';
+import 'package:scholarwheels/models/vehicle_model.dart';
 
 BookingModel bookingModelFromJson(String str) =>
     BookingModel.fromJson(json.decode(str));
@@ -638,7 +638,8 @@ class Route {
   DateTime? updatedAt;
   int? v;
   Vehicle? vehicle;
-
+  String? suburbName;
+  String? dropOffPointName;
   Route({
     this.id,
     this.routeId,
@@ -655,6 +656,8 @@ class Route {
     this.updatedAt,
     this.v,
     this.vehicle,
+    this.suburbName,
+    this.dropOffPointName,
   });
 
   Route copyWith({
@@ -673,6 +676,8 @@ class Route {
     DateTime? updatedAt,
     int? v,
     Vehicle? vehicle,
+    String? suburbName,
+    String? dropOffPointName,
   }) => Route(
     id: id ?? this.id,
     routeId: routeId ?? this.routeId,
@@ -689,6 +694,8 @@ class Route {
     updatedAt: updatedAt ?? this.updatedAt,
     v: v ?? this.v,
     vehicle: vehicle ?? this.vehicle,
+    suburbName: suburbName ?? this.suburbName,
+    dropOffPointName: dropOffPointName ?? this.dropOffPointName,
   );
 
   factory Route.fromJson(Map<String, dynamic> json) => Route(
@@ -715,6 +722,8 @@ class Route {
         : DateTime.parse(json["updatedAt"]),
     v: json["__v"],
     vehicle: json["vehicle"] == null ? null : Vehicle.fromJson(json["vehicle"]),
+    suburbName: json["suburbName"],
+    dropOffPointName: json["dropOffPointName"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -733,216 +742,8 @@ class Route {
     "updatedAt": updatedAt?.toIso8601String(),
     "__v": v,
     "vehicle": vehicle?.toJson(),
-  };
-}
-
-class Vehicle {
-  String? id;
-  String? transportOwnerId;
-  String? registrationNumber;
-  String? vehicleType;
-  String? make;
-  String? model;
-  String? manufacturingYear;
-  DateTime? registrationExpiry;
-  List<BusinessDocument>? documents;
-  String? status;
-  List<BusinessDocument>? pictures;
-  String? assignedTo;
-  int? capacity;
-  bool? assigned;
-  bool? isInsured;
-  String? insurer;
-  String? insurenceNumber;
-  bool? isDeleted;
-  bool? archived;
-  DateTime? createdAt;
-  DateTime? updatedAt;
-  int? v;
-  String? color;
-
-  Vehicle({
-    this.id,
-    this.transportOwnerId,
-    this.registrationNumber,
-    this.vehicleType,
-    this.make,
-    this.model,
-    this.manufacturingYear,
-    this.registrationExpiry,
-    this.documents,
-    this.status,
-    this.pictures,
-    this.assignedTo,
-    this.capacity,
-    this.assigned,
-    this.isInsured,
-    this.insurer,
-    this.insurenceNumber,
-    this.isDeleted,
-    this.archived,
-    this.createdAt,
-    this.updatedAt,
-    this.v,
-    this.color,
-  });
-
-  Vehicle copyWith({
-    String? id,
-    String? transportOwnerId,
-    String? registrationNumber,
-    String? vehicleType,
-    String? make,
-    String? model,
-    String? manufacturingYear,
-    DateTime? registrationExpiry,
-    List<BusinessDocument>? documents,
-    String? status,
-    List<BusinessDocument>? pictures,
-    String? assignedTo,
-    int? capacity,
-    bool? assigned,
-    bool? isInsured,
-    String? insurer,
-    String? insurenceNumber,
-    bool? isDeleted,
-    bool? archived,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-    int? v,
-    String? color,
-  }) => Vehicle(
-    id: id ?? this.id,
-    transportOwnerId: transportOwnerId ?? this.transportOwnerId,
-    registrationNumber: registrationNumber ?? this.registrationNumber,
-    vehicleType: vehicleType ?? this.vehicleType,
-    make: make ?? this.make,
-    model: model ?? this.model,
-    manufacturingYear: manufacturingYear ?? this.manufacturingYear,
-    registrationExpiry: registrationExpiry ?? this.registrationExpiry,
-    documents: documents ?? this.documents,
-    status: status ?? this.status,
-    pictures: pictures ?? this.pictures,
-    assignedTo: assignedTo ?? this.assignedTo,
-    capacity: capacity ?? this.capacity,
-    assigned: assigned ?? this.assigned,
-    isInsured: isInsured ?? this.isInsured,
-    insurer: insurer ?? this.insurer,
-    insurenceNumber: insurenceNumber ?? this.insurenceNumber,
-    isDeleted: isDeleted ?? this.isDeleted,
-    archived: archived ?? this.archived,
-    createdAt: createdAt ?? this.createdAt,
-    updatedAt: updatedAt ?? this.updatedAt,
-    v: v ?? this.v,
-    color: color ?? this.color,
-  );
-
-  factory Vehicle.fromJson(Map<String, dynamic> json) => Vehicle(
-    id: json["_id"],
-    transportOwnerId: json["transportOwnerId"],
-    registrationNumber: json["registrationNumber"],
-    vehicleType: json["vehicleType"],
-    make: json["make"],
-    model: json["model"],
-    manufacturingYear: json["manufacturingYear"],
-    registrationExpiry: json["registrationExpiry"] == null
-        ? null
-        : DateTime.parse(json["registrationExpiry"]),
-    documents: json["documents"] == null
-        ? []
-        : List<BusinessDocument>.from(
-            json["documents"]!.map((x) => BusinessDocument.fromJson(x)),
-          ),
-    status: json["status"],
-    pictures: json["pictures"] == null
-        ? []
-        : List<BusinessDocument>.from(
-            json["pictures"]!.map((x) => BusinessDocument.fromJson(x)),
-          ),
-    assignedTo: json["assigned_to"],
-    capacity: json["capacity"],
-    assigned: json["assigned"],
-    isInsured: json["isInsured"],
-    insurer: json["insurer"],
-    insurenceNumber: json["insurenceNumber"],
-    isDeleted: json["isDeleted"],
-    archived: json["archived"],
-    createdAt: json["createdAt"] == null
-        ? null
-        : DateTime.parse(json["createdAt"]),
-    updatedAt: json["updatedAt"] == null
-        ? null
-        : DateTime.parse(json["updatedAt"]),
-    v: json["__v"],
-    color: json["color"],
-  );
-
-  Map<String, dynamic> toJson() => {
-    "_id": id,
-    "transportOwnerId": transportOwnerId,
-    "registrationNumber": registrationNumber,
-    "vehicleType": vehicleType,
-    "make": make,
-    "model": model,
-    "manufacturingYear": manufacturingYear,
-    "registrationExpiry": registrationExpiry?.toIso8601String(),
-    "documents": documents == null
-        ? []
-        : List<dynamic>.from(documents!.map((x) => x.toJson())),
-    "status": status,
-    "pictures": pictures == null
-        ? []
-        : List<dynamic>.from(pictures!.map((x) => x.toJson())),
-    "assigned_to": assignedTo,
-    "capacity": capacity,
-    "assigned": assigned,
-    "isInsured": isInsured,
-    "insurer": insurer,
-    "insurenceNumber": insurenceNumber,
-    "isDeleted": isDeleted,
-    "archived": archived,
-    "createdAt": createdAt?.toIso8601String(),
-    "updatedAt": updatedAt?.toIso8601String(),
-    "__v": v,
-    "color": color,
-  };
-}
-
-class BusinessDocument {
-  String? url;
-  String? fileName;
-  DateTime? uploadedAt;
-  String? id;
-
-  BusinessDocument({this.url, this.fileName, this.uploadedAt, this.id});
-
-  BusinessDocument copyWith({
-    String? url,
-    String? fileName,
-    DateTime? uploadedAt,
-    String? id,
-  }) => BusinessDocument(
-    url: url ?? this.url,
-    fileName: fileName ?? this.fileName,
-    uploadedAt: uploadedAt ?? this.uploadedAt,
-    id: id ?? this.id,
-  );
-
-  factory BusinessDocument.fromJson(Map<String, dynamic> json) =>
-      BusinessDocument(
-        url: json["url"],
-        fileName: json["fileName"],
-        uploadedAt: json["uploadedAt"] == null
-            ? null
-            : DateTime.parse(json["uploadedAt"]),
-        id: json["_id"],
-      );
-
-  Map<String, dynamic> toJson() => {
-    "url": url,
-    "fileName": fileName,
-    "uploadedAt": uploadedAt?.toIso8601String(),
-    "_id": id,
+    "suburbName": suburbName,
+    "dropOffPointName": dropOffPointName,
   };
 }
 
@@ -956,7 +757,7 @@ class TransportOwner {
   String? businessAddress;
   String? postalCode;
   String? city;
-  List<BusinessDocument>? businessDocuments;
+  List<LicenseDocument>? businessDocuments;
   DateTime? createdAt;
   DateTime? updatedAt;
   int? v;
@@ -966,8 +767,8 @@ class TransportOwner {
   bool? isIndependent;
   bool? isVerified;
   ChildUser? user;
-  int? averageRating;
-  int? totalRatings;
+  double? averageRating;
+  double? totalRatings;
 
   TransportOwner({
     this.id,
@@ -1003,7 +804,7 @@ class TransportOwner {
     String? businessAddress,
     String? postalCode,
     String? city,
-    List<BusinessDocument>? businessDocuments,
+    List<LicenseDocument>? businessDocuments,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? v,
@@ -1013,8 +814,8 @@ class TransportOwner {
     bool? isIndependent,
     bool? isVerified,
     ChildUser? user,
-    int? averageRating,
-    int? totalRatings,
+    double? averageRating,
+    double? totalRatings,
   }) => TransportOwner(
     id: id ?? this.id,
     userId: userId ?? this.userId,
@@ -1051,8 +852,8 @@ class TransportOwner {
     city: json["city"],
     businessDocuments: json["businessDocuments"] == null
         ? []
-        : List<BusinessDocument>.from(
-            json["businessDocuments"]!.map((x) => BusinessDocument.fromJson(x)),
+        : List<LicenseDocument>.from(
+            json["businessDocuments"]!.map((x) => LicenseDocument.fromJson(x)),
           ),
     createdAt: json["createdAt"] == null
         ? null
@@ -1067,8 +868,8 @@ class TransportOwner {
     isIndependent: json["isIndependent"],
     isVerified: json["isVerified"],
     user: json["user"] == null ? null : ChildUser.fromJson(json["user"]),
-    averageRating: json["averageRating"],
-    totalRatings: json["totalRatings"],
+    averageRating: json["averageRating"]?.toDouble() ?? 0,
+    totalRatings: json["totalRatings"]?.toDouble() ?? 0,
   );
 
   Map<String, dynamic> toJson() => {
@@ -1093,7 +894,7 @@ class TransportOwner {
     "isIndependent": isIndependent,
     "isVerified": isVerified,
     "user": user?.toJson(),
-    "averageRating": averageRating,
-    "totalRatings": totalRatings,
+    "averageRating": averageRating?.toDouble(),
+    "totalRatings": totalRatings?.toDouble(),
   };
 }

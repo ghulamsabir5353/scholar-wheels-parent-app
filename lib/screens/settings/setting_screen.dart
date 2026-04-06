@@ -12,6 +12,7 @@ import 'package:scholarwheels/screens/settings/logbook/logbook_screen.dart';
 import 'package:scholarwheels/screens/settings/billings/billing_screen.dart';
 import 'package:scholarwheels/screens/settings/rating_review_screen.dart';
 import 'package:scholarwheels/screens/settings/support_screen.dart';
+import 'package:scholarwheels/screens/settings/delete_account_screen.dart';
 
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/font_sized.dart';
@@ -26,15 +27,16 @@ class SettingScreen extends StatelessWidget {
     'Change Password',
     "Logbook",
     "Billing & Subscription",
-    "Rating and Reviews",
+    // "Rating and Reviews",
     "Support",
+    "Delete Account",
     "Logout",
   ];
 
   void _showLogoutDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return Dialog(
           shape: RoundedRectangleBorder(
@@ -42,7 +44,12 @@ class SettingScreen extends StatelessWidget {
           ),
           backgroundColor: AppColor.white,
           child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.w),
+            padding: EdgeInsets.only(
+              left: 14.w,
+              right: 12.w,
+              top: 10.w,
+              bottom: 10.w,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -59,11 +66,11 @@ class SettingScreen extends StatelessWidget {
                         color: AppColor.black,
                       ),
                     ),
-                    IconButton(
-                      icon: Icon(Icons.close, size: 24.w),
-                      onPressed: () {
+                    InkWell(
+                      onTap: () {
                         Navigator.of(context).pop();
                       },
+                      child: Icon(Icons.close, size: 24.w),
                     ),
                   ],
                 ),
@@ -77,7 +84,7 @@ class SettingScreen extends StatelessWidget {
                     color: AppColor.black,
                   ),
                 ),
-                SpaceHelper(h: 20.w),
+                SpaceHelper(h: 16.w),
                 // Action Buttons
                 Row(
                   children: [
@@ -92,7 +99,7 @@ class SettingScreen extends StatelessWidget {
                             color: AppColor.white,
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(
-                              color: AppColor.bgGrayD9D8D8,
+                              color: AppColor.cardBorderColorGrey,
                               width: 1,
                             ),
                           ),
@@ -122,6 +129,7 @@ class SettingScreen extends StatelessWidget {
                     ),
                   ],
                 ),
+                SpaceHelper(h: 12.w),
               ],
             ),
           ),
@@ -163,6 +171,9 @@ class SettingScreen extends StatelessWidget {
       case "Logout":
         _showLogoutDialog(context);
         break;
+      case "Delete Account":
+        Get.toNamed(DeleteAccountScreen.route);
+        break;
       case "Personal Profile":
         Get.toNamed(PersonalProfileScreen.route);
         break;
@@ -195,6 +206,7 @@ class SettingScreen extends StatelessWidget {
         elevation: 1,
         shadowColor: Colors.grey,
         centerTitle: false,
+        titleSpacing: 0,
         leading: backButton(onTap: () => Get.back()),
         title: Text(
           'Profile',
@@ -219,7 +231,8 @@ class SettingScreen extends StatelessWidget {
               children: [
                 Card(
                   color: Colors.white,
-                  elevation: 1,
+                  elevation: 2,
+                  shadowColor: AppColor.cardShadowColor,
                   child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Row(
@@ -334,6 +347,15 @@ class SettingScreen extends StatelessWidget {
                           color: AppColor.lightSecondary,
                           borderRadius: BorderRadius.circular(6),
                           border: Border.all(color: AppColor.borderGreen),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColor.cardShadowColorGreen.withOpacity(
+                                0.4,
+                              ),
+                              blurRadius: 6,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
                         ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,

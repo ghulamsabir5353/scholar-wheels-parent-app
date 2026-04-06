@@ -25,8 +25,10 @@ class SupportScreen extends StatelessWidget {
         surfaceTintColor: AppColor.white,
         elevation: 1,
         shadowColor: Colors.grey,
-        centerTitle: false,
         leading: backButton(onTap: () => Get.back()),
+
+        centerTitle: false,
+        titleSpacing: 0,
         title: Text(
           'Support',
           style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
@@ -73,68 +75,69 @@ class SupportScreen extends StatelessWidget {
                   );
                 }),
               ),
-              SpaceHelper(h: 16.h),
-              Text(
-                'Contact Support',
-                style: poppinFonts(
-                  fontSize: base,
-                  color: AppColor.black,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              SpaceHelper(h: 6.h),
-              CustomTextField(label: "Subject", hintText: "Enter Subject"),
 
-              CustomTextField(
-                label: "Message",
-                hintText: "Describe your issue in detail",
-              ),
+              // SpaceHelper(h: 16.h),
+              // Text(
+              //   'Contact Support',
+              //   style: poppinFonts(
+              //     fontSize: base,
+              //     color: AppColor.black,
+              //     fontWeight: FontWeight.w500,
+              //   ),
+              // ),
+              // SpaceHelper(h: 6.h),
+              // CustomTextField(label: "Subject", hintText: "Enter Subject"),
 
-              CustomButton(
-                height: 36.h,
-                title: "Send to Support",
-                onPressed: () {},
-              ),
+              // CustomTextField(
+              //   label: "Message",
+              //   hintText: "Describe your issue in detail",
+              // ),
 
-              SpaceHelper(h: 16.h),
-              // add here other way to reach us like supor email phone hours as
-              SizedBox(
-                width: double.infinity,
+              // CustomButton(
+              //   height: 36.h,
+              //   title: "Send to Support",
+              //   onPressed: () {},
+              // ),
 
-                child: Card(
-                  color: AppColor.white,
-                  elevation: 1,
-                  child: Padding(
-                    padding: EdgeInsets.all(12.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // title
-                        Text(
-                          "Other ways to reach us",
-                          style: poppinFonts(
-                            fontSize: base,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        SpaceHelper(h: 4.h),
-                        Text(
-                          "support@scholarwheels.com",
-                          style: poppinFonts(fontSize: sm),
-                        ),
-                        Text(
-                          "Phone: +1 (555) 123-4567",
-                          style: poppinFonts(fontSize: sm),
-                        ),
-                        Text(
-                          "Hours: 9:00 AM - 5:00 PM",
-                          style: poppinFonts(fontSize: sm),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              // SpaceHelper(h: 16.h),
+              // // add here other way to reach us like supor email phone hours as
+              // SizedBox(
+              //   width: double.infinity,
+
+              //   child: Card(
+              //     color: AppColor.white,
+              //     elevation: 1,
+              //     child: Padding(
+              //       padding: EdgeInsets.all(12.w),
+              //       child: Column(
+              //         crossAxisAlignment: CrossAxisAlignment.start,
+              //         children: [
+              //           // title
+              //           Text(
+              //             "Other ways to reach us",
+              //             style: poppinFonts(
+              //               fontSize: base,
+              //               fontWeight: FontWeight.w500,
+              //             ),
+              //           ),
+              //           SpaceHelper(h: 4.h),
+              //           Text(
+              //             "support@scholarwheels.com",
+              //             style: poppinFonts(fontSize: sm),
+              //           ),
+              //           Text(
+              //             "Phone: +1 (555) 123-4567",
+              //             style: poppinFonts(fontSize: sm),
+              //           ),
+              //           Text(
+              //             "Hours: 9:00 AM - 5:00 PM",
+              //             style: poppinFonts(fontSize: sm),
+              //           ),
+              //         ],
+              //       ),
+              //     ),
+              //   ),
+              // ),
             ],
           ),
         ),

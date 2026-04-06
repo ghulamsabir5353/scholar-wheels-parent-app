@@ -27,6 +27,7 @@ class RatingReviewScreen extends StatelessWidget {
             Get.back();
           },
         ),
+        titleSpacing: 0,
         centerTitle: false,
         title: Text(
           'Rating and Reviews',
@@ -78,7 +79,7 @@ class RatingReviewScreen extends StatelessWidget {
   void _showRatingDialog(BuildContext context) {
     showDialog(
       context: context,
-      barrierDismissible: false,
+      barrierDismissible: true,
       builder: (BuildContext context) {
         return _RatingDialog();
       },
@@ -104,7 +105,14 @@ class RatingReviewScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColor.white,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColor.bgGrayD9D8D8, width: 1),
+        border: Border.all(color: AppColor.cardBorderColorGrey, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: AppColor.cardShadowColor.withOpacity(0.5),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -258,7 +266,7 @@ class RatingReviewScreen extends StatelessWidget {
               onPressed: () {
                 _showRatingDialog(context);
               },
-              height: 36.h,
+
               title: 'Rate Now',
             ),
           ],
@@ -398,7 +406,7 @@ class _RatingDialogState extends State<_RatingDialog> {
                     decoration: BoxDecoration(
                       color: AppColor.white,
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColor.secondary, width: 1),
+                      border: Border.all(color: AppColor.borderGreen, width: 1),
                     ),
                     child: Center(
                       child: Text(

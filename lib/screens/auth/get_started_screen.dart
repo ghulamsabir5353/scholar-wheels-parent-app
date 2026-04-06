@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
 
 import 'package:permission_handler/permission_handler.dart';
@@ -50,65 +49,87 @@ class _GetStartedScreenState extends State<GetStartedScreen> {
         onTap: () {
           focusNode.unfocus();
         },
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Expanded(child: BaseHelper.getLogo()),
-                    Expanded(
-                      child: SvgPicture.asset(
-                        'assets/images/svg/get_started.svg',
-                      ),
-                    ),
-                  ],
+        child: Stack(
+          children: [
+            // Background image
+            Positioned.fill(
+              child: Image.asset(
+                'assets/images/png/get_started_screen_bg.png',
+                fit: BoxFit.cover,
+                alignment: Alignment.center,
+              ),
+            ),
+
+            // Gradient overlay for better text readability (optional)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withOpacity(0),
+                      Colors.black.withOpacity(0),
+                      Colors.black.withOpacity(1),
+                    ],
+                    stops: const [0.0, 0.5, 1.0],
+                  ),
                 ),
               ),
-              Expanded(
+            ),
+
+            // Content on top
+            SafeArea(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20.w, vertical: 20.h),
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
+                    const Spacer(),
+                    // Logo at top
+
+                    // Spacer to push content down
+
+                    // Text and button section at bottom
                     Column(
+                      mainAxisSize: MainAxisSize.min,
                       children: [
+                        BaseHelper.getWhiteLogo(width: 160.w, height: 100.h),
                         Text(
                           'Easy Child Management',
                           style: poppinFonts(
-                            fontWeight: FontWeight.w500,
-                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 22.sp,
+                            color: AppColor.white,
                           ),
                         ),
+                        SizedBox(height: 16.h),
                         Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 16.w,
-                            vertical: 6.w,
-                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 8.w),
                           child: Text(
                             'Add your children and manage their school rides with just a few taps',
                             textAlign: TextAlign.center,
                             style: poppinFonts(
-                              fontWeight: FontWeight.normal,
-                              fontSize: 14,
-                              color: AppColor.lightGreenColorText,
+                              fontWeight: FontWeight.w400,
+                              fontSize: 15.sp,
+                              color: AppColor.white,
                             ),
                           ),
                         ),
+                        SizedBox(height: 40.h),
+                        CustomButton(
+                          onPressed: () {
+                            Get.to(() => LoginScreen());
+                          },
+                          title: "Next",
+                        ),
+                        SizedBox(height: 20.h),
                       ],
-                    ),
-                    CustomButton(
-                      onPressed: () {
-                        Get.to(() => LoginScreen());
-                      },
-                      title: "Next",
                     ),
                   ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

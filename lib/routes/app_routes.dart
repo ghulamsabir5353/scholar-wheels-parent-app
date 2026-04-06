@@ -8,6 +8,8 @@ import 'package:scholarwheels/screens/auth/signup_screen.dart';
 import 'package:scholarwheels/screens/auth/splash_screen.dart';
 import 'package:scholarwheels/screens/auth/forgot_password_screen.dart';
 import 'package:scholarwheels/screens/auth/verify_otp_screen.dart';
+import 'package:scholarwheels/screens/auth/verify_registration_otp_screen.dart';
+import 'package:scholarwheels/screens/auth/verify_login_otp_screen.dart';
 import 'package:scholarwheels/screens/auth/reset_password_screen.dart';
 import 'package:scholarwheels/screens/chat/chat_room_screen.dart';
 import 'package:scholarwheels/screens/childrens/add_children_screen.dart';
@@ -37,8 +39,10 @@ import '../screens/contracts/contract_detail_screen.dart';
 import '../screens/bookings/booking_detail_screen.dart';
 import '../screens/bookings/request_history_screen.dart';
 import '../screens/settings/setting_screen.dart';
+import '../screens/settings/delete_account_screen.dart';
 import '../screens/home/tracking/live_tracking_screen.dart';
 import '../bindings/live_tracking_binding.dart';
+import '../bindings/subscription_binding.dart';
 
 class AppRoutes {
   static final List<GetPage> pages = [
@@ -79,6 +83,18 @@ class AppRoutes {
     GetPage(
       name: VerifyOTPScreen.route,
       page: () => const VerifyOTPScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: VerifyRegistrationOTPScreen.route,
+      page: () => const VerifyRegistrationOTPScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [GuestMiddleware()],
+    ),
+    GetPage(
+      name: VerifyLoginOTPScreen.route,
+      page: () => const VerifyLoginOTPScreen(),
       transition: Transition.rightToLeft,
       middlewares: [GuestMiddleware()],
     ),
@@ -137,6 +153,11 @@ class AppRoutes {
     GetPage(name: ChatRoomScreen.route, page: () => ChatRoomScreen()),
     GetPage(name: SettingScreen.route, page: () => SettingScreen()),
     GetPage(
+      name: DeleteAccountScreen.route,
+      page: () => const DeleteAccountScreen(),
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
       name: ChangePasswordScreen.route,
       page: () => ChangePasswordScreen(),
     ),
@@ -146,7 +167,7 @@ class AppRoutes {
       middlewares: [AuthMiddleware()],
     ),
     GetPage(name: LogbookScreen.route, page: () => LogbookScreen()),
-    GetPage(name: LogbookDetailScreen.route, page: () => LogbookDetailScreen()),
+
     GetPage(name: BillingScreen.route, page: () => BillingScreen()),
     GetPage(
       name: BillingHistoryScreen.route,
@@ -155,6 +176,7 @@ class AppRoutes {
     GetPage(
       name: SubscriptionPlansScreen.route,
       page: () => const SubscriptionPlansScreen(),
+      binding: SubscriptionBinding(),
     ),
     GetPage(name: RatingReviewScreen.route, page: () => RatingReviewScreen()),
     GetPage(name: SupportScreen.route, page: () => SupportScreen()),
@@ -181,6 +203,12 @@ class AppRoutes {
       name: LiveTrackingScreen.route,
       page: () => const LiveTrackingScreen(),
       binding: LiveTrackingBinding(),
+    ),
+    GetPage(
+      name: LogBookDetailScreen.route,
+      page: () => const LogBookDetailScreen(),
+      transition: Transition.rightToLeft,
+      middlewares: [AuthMiddleware()],
     ),
   ];
 }

@@ -64,6 +64,7 @@ class _SetAccountForChildScreenState extends State<SetAccountForChildScreen> {
         surfaceTintColor: AppColor.white,
         elevation: 1,
         shadowColor: Colors.grey,
+        titleSpacing: 0,
         leading: backButton(
           onTap: () {
             Get.back();

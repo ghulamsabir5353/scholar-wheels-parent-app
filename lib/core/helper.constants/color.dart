@@ -7,8 +7,13 @@ abstract class AppColor {
   static const secondary = Color(0xffADFFC1);
   static const darkSecondary = Color(0xff00EA34);
 
-  static const borderGreen = Color(0xffBDF39A);
   static const recieverBubbleColor = Color(0xffE7E7E7);
+
+  /// Shadow color for cards (matches border tint). Use with Card shadowColor or BoxDecoration boxShadow.
+  static const cardShadowColor = Color(0xffC7CCD4);
+  static const cardShadowColorGreen = Color(0xffBDF39A);
+  static const cardBorderColorGrey = Color(0xffE7E7E7);
+  static const borderGreen = Color(0xffBDF39A);
 
   // static const backgroundColor = Color(0xfffafafa);
   static const lightGreenColorText = Color(0xff223A28);
@@ -28,6 +33,7 @@ abstract class AppColor {
   static const bgGrayD9D8D8 = Color(0xffD9D8D8);
   static const redColor = Color(0xffFF0000);
   static const redColor2 = Color(0xffC01F15);
+  static const redColor3 = Color(0xff9F1D15);
   static LinearGradient cardLinearGradient = const LinearGradient(
     colors: [Color(0xff537959), Color(0xff00C327)],
     begin: Alignment.centerLeft,
@@ -41,6 +47,7 @@ abstract class AppColor {
 
   static const lightPurple = Color(0xffEAEFFF);
   static var bgColor = Colors.grey.shade50;
+
   static var cardBgColor = Color(0xffECF4E9);
   static const LinearGradient linearGradient = LinearGradient(
     colors: [blueText, Color(0xffBAD4FF)],
@@ -62,4 +69,14 @@ abstract class AppColor {
   );
 
   static const Color textGrayColor = Color(0xff464545);
+
+  /// Shared shadow for cards (use with BoxDecoration.boxShadow). Uses [cardShadowColor] at 0.2 opacity.
+  static List<BoxShadow> get cardShadow => [
+    BoxShadow(
+      color: cardShadowColor.withOpacity(0.4),
+      blurRadius: 8,
+      offset: const Offset(0, 2),
+      spreadRadius: 0,
+    ),
+  ];
 }
