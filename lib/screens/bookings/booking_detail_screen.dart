@@ -639,21 +639,29 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         borderRadius: BorderRadius.circular(12.r),
                         side: BorderSide(color: AppColor.cardBorderColorGrey),
                       ),
-                      color: Colors.white,
+                      color: AppColor.lightSecondary,
                       child: Padding(
                         padding: EdgeInsets.all(16.w),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            _buildDetailRow(
-                              'Pickup Time :',
-                              _getPickupTime(booking),
-                            ),
-                            SpaceHelper(h: 12.h),
-                            _buildDetailRow(
-                              'Drop Off Time :',
-                              _getDropOffTime(booking),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Flexible(
+                                  child: _buildDetailRow(
+                                    'Pickup Time :',
+                                    _getPickupTime(booking),
+                                  ),
+                                ),
+                                Flexible(
+                                  child: _buildDetailRow(
+                                    'Drop Off Time :',
+                                    _getDropOffTime(booking),
+                                  ),
+                                ),
+                              ],
                             ),
                             SpaceHelper(h: 12.h),
                             // Pickup and School Info
@@ -661,101 +669,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                               pickupAddress: _getPickupAddress(booking),
                               schoolName: _getSchoolName(booking),
                               isLast: false,
-                              backgroundColor: AppColor.lightSecondary,
                             ),
-
-                            // Container(
-                            //   width: double.infinity,
-                            //   padding: EdgeInsets.all(12.w),
-                            //   decoration: BoxDecoration(
-                            //     color: Color(0xffECF4E9),
-                            //     borderRadius: BorderRadius.circular(8.r),
-                            //   ),
-                            //   child: Row(
-                            //     crossAxisAlignment: CrossAxisAlignment.start,
-                            //     children: [
-                            //       // Icons Column with Dotted Line
-                            //       Column(
-                            //         children: [
-                            //           SvgPicture.asset(
-                            //             'assets/images/svg/pickup.svg',
-                            //             width: 20.w,
-                            //             height: 20.w,
-                            //             colorFilter: ColorFilter.mode(
-                            //               AppColor.textLightBlackColor4A4A4A,
-                            //               BlendMode.srcIn,
-                            //             ),
-                            //           ),
-                            //           SizedBox(
-                            //             height: 24.h,
-                            //             child: CustomPaint(
-                            //               painter: DottedLinePainter(),
-                            //             ),
-                            //           ),
-                            //           SvgPicture.asset(
-                            //             'assets/images/svg/school.svg',
-                            //             width: 20.w,
-                            //             height: 20.w,
-                            //             colorFilter: ColorFilter.mode(
-                            //               AppColor.textLightBlackColor4A4A4A,
-                            //               BlendMode.srcIn,
-                            //             ),
-                            //           ),
-                            //         ],
-                            //       ),
-                            //       SpaceHelper(w: 12.w),
-                            //       // Text Details Column
-                            //       Expanded(
-                            //         child: Column(
-                            //           crossAxisAlignment:
-                            //               CrossAxisAlignment.start,
-                            //           mainAxisSize: MainAxisSize.min,
-                            //           children: [
-                            //             Text(
-                            //               'Pickup point',
-                            //               style: poppinFonts(
-                            //                 color: AppColor
-                            //                     .textLightBlackColor4A4A4A,
-                            //                 fontSize: xs,
-                            //               ),
-                            //             ),
-                            //             SpaceHelper(h: 2.h),
-                            //             Text(
-                            //               _getPickupAddress(booking),
-                            //               style: poppinFonts(
-                            //                 color: AppColor.black,
-                            //                 fontSize: sm,
-                            //                 fontWeight: FontWeight.w600,
-                            //               ),
-                            //             ),
-                            //             SpaceHelper(h: 12.h),
-                            //             Text(
-                            //               'School',
-                            //               style: poppinFonts(
-                            //                 color: AppColor
-                            //                     .textLightBlackColor4A4A4A,
-                            //                 fontSize: xs,
-                            //               ),
-                            //             ),
-                            //             SpaceHelper(h: 2.h),
-                            //             Text(
-                            //               _getSchoolName(booking),
-                            //               style: poppinFonts(
-                            //                 color: AppColor.black,
-                            //                 fontSize: sm,
-                            //                 fontWeight: FontWeight.w600,
-                            //               ),
-                            //             ),
-                            //           ],
-                            //         ),
-                            //       ),
-                            //     ],
-                            //   ),
-                            // ),
-                            SpaceHelper(h: 12.h),
-                            _buildDetailRow(
-                              'Distance :',
-                              _getDistance(booking),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  "Distance",
+                                  style: poppinFonts(
+                                    fontSize: sm,
+                                    color: AppColor.black,
+                                  ),
+                                ),
+                                SpaceHelper(w: 8.w),
+                                Text(
+                                  _getDistance(booking),
+                                  style: poppinFonts(
+                                    fontSize: sm,
+                                    color: AppColor.black,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),

@@ -304,6 +304,9 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                     },
                     onLocationSelected: (locationData) {
                       childController.pickUpAddressLocationData = locationData;
+                      childController.pickUpAddressController.text =
+                          locationData.description;
+                      setState(() {});
                     },
                   ),
 
@@ -319,6 +322,9 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                     },
                     onLocationSelected: (locationData) {
                       childController.dropOffAddressLocationData = locationData;
+                      childController.dropOffAddressController.text =
+                          locationData.description;
+                      setState(() {});
                     },
                   ),
 

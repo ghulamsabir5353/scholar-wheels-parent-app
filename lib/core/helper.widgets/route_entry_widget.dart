@@ -28,15 +28,22 @@ class RouteEntryWidget extends StatelessWidget {
     this.border,
   });
 
-  int _calculateLineCount(String text, double maxWidth) {
-    final textStyle = poppinFonts(fontSize: sm, fontWeight: FontWeight.w500);
+  /// Matches [Text] layout (maxLines + ellipsis) for accurate height.
+  double _measureTextHeight(
+    String text,
+    TextStyle style,
+    double maxWidth, {
+    int maxLines = 3,
+  }) {
+    if (text.isEmpty) return 0;
     final textPainter = TextPainter(
-      text: TextSpan(text: text, style: textStyle),
-      maxLines: 3,
+      text: TextSpan(text: text, style: style),
+      maxLines: maxLines,
+      ellipsis: '...',
       textDirection: TextDirection.ltr,
     );
     textPainter.layout(maxWidth: maxWidth);
-    return textPainter.computeLineMetrics().length;
+    return textPainter.height;
   }
 
   @override
@@ -52,24 +59,40 @@ class RouteEntryWidget extends StatelessWidget {
           padding ?? EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
       child: LayoutBuilder(
         builder: (context, constraints) {
-          // Calculate available width for text
-          // Container width - container padding (both sides) - icon width - spacing
-          final containerWidth = constraints.maxWidth;
-          final containerPadding = 12.w * 2; // left + right padding
+          // [constraints] are already inside horizontal padding — only subtract icon + gap.
           final iconWidth = 30.w;
           final spacing = 6.w;
-          final availableWidth =
-              containerWidth - containerPadding - iconWidth - spacing;
+          final availableWidth = constraints.maxWidth - iconWidth - spacing;
 
-          final pickupLineCount = _calculateLineCount(
-            pickupAddress,
-            availableWidth,
+          // Vertical dashed line spans from bottom of pickup icon to top of school icon.
+          // That matches: Pickup label + pickup text + horizontal divider row — minus pickup icon height.
+          final pickupLabelStyle = poppinFonts(
+            color: AppColor.textLightBlackColor4A4A4A,
+            fontSize: xs,
           );
-          // Calculate line height: 24.h for first line, then 20.h for each additional line
-          final lineCount = pickupLineCount > 0 ? pickupLineCount : 1;
-          final lineHeight = lineCount == 1
-              ? 24.h
-              : 24.h + (20.h * (lineCount - 1));
+          final pickupBodyStyle = poppinFonts(
+            color: AppColor.black,
+            fontSize: sm,
+            fontWeight: FontWeight.w500,
+          );
+          final pickupLabelH = _measureTextHeight(
+            'Pickup:',
+            pickupLabelStyle,
+            availableWidth,
+            maxLines: 1,
+          );
+          final pickupBodyH = _measureTextHeight(
+            pickupAddress,
+            pickupBodyStyle,
+            availableWidth,
+            maxLines: 3,
+          );
+          final dividerHeight = 24.h;
+          final pickupIconHeight = 32.w;
+          final topOfSchoolIcon =
+              pickupLabelH + 2.h + pickupBodyH + dividerHeight;
+          final lineHeight =
+              (topOfSchoolIcon - pickupIconHeight).clamp(8.h, 400.h);
 
           return Row(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -78,7 +101,6 @@ class RouteEntryWidget extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Pickup icon
                   Container(
@@ -171,7 +193,7 @@ class RouteEntryWidget extends StatelessWidget {
                     ),
                     SizedBox(
                       width: double.infinity,
-                      height: 24.h,
+                      height: dividerHeight,
                       child: CustomPaint(
                         painter: HorizontalDottedLinePainter(),
                       ),
@@ -184,7 +206,7 @@ class RouteEntryWidget extends StatelessWidget {
                         fontSize: xs,
                       ),
                     ),
-                    SpaceHelper(h: 3.h),
+                    SpaceHelper(h: 2.h),
                     Text(
                       schoolName,
                       maxLines: 2,

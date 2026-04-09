@@ -195,11 +195,17 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen>
                   child: Column(
                     children: subscriptions.map((plan) {
                       final isSelected = selected?.id == plan.id;
+                      final mySub = BaseHelper.mySubscription.value;
+                      final isUsersActivePlan =
+                          mySub?.hasActiveSubscription == true &&
+                              plan.id != null &&
+                              plan.id == mySub?.subscription?.planId?.id;
                       return Padding(
                         padding: EdgeInsets.only(bottom: 12.h),
                         child: _PlanCard(
                           plan: plan,
                           isSelected: isSelected,
+                          isUsersActivePlan: isUsersActivePlan,
                           onTap: () {
                             if (plan.isActive == true &&
                                 plan.isPublic == true) {
@@ -363,11 +369,14 @@ class _SubscriptionPlansScreenState extends State<SubscriptionPlansScreen>
 class _PlanCard extends StatelessWidget {
   final Subscriptions plan;
   final bool isSelected;
+  /// Current subscription plan for this user — feature bullets are green; others black.
+  final bool isUsersActivePlan;
   final VoidCallback onTap;
 
   const _PlanCard({
     required this.plan,
     required this.isSelected,
+    required this.isUsersActivePlan,
     required this.onTap,
   });
 
@@ -376,7 +385,7 @@ class _PlanCard extends StatelessWidget {
     final currency = plan.currency ?? 'ZAR';
     final price = plan.price ?? 0;
     final billingType = (plan.billingType ?? 'monthly').toLowerCase();
-    final symbol = currency.toUpperCase() == 'ZAR' ? 'R' : '\$';
+    final symbol = currency.toUpperCase() == 'ZAR' ? 'R ' : '\$';
     String priceLabel = '$symbol$price';
     if (billingType == 'monthly') {
       priceLabel += '/month';
@@ -386,12 +395,14 @@ class _PlanCard extends StatelessWidget {
       priceLabel += '/$billingType';
     }
 
-    // Description: first feature or duration + type
     final features = plan.features ?? [];
-    final description = features.isNotEmpty
-        ? (features.first.text ??
-              '${plan.durationInDays ?? 30} days • $billingType')
-        : '${plan.durationInDays ?? 30} days • $billingType';
+    final featureLines = features
+        .map((f) => f.text?.trim())
+        .where((t) => t != null && t.isNotEmpty)
+        .cast<String>()
+        .toList();
+    final fallbackSummary =
+        '${plan.durationInDays ?? 30} days • $billingType';
 
     return GestureDetector(
       onTap: (plan.isActive == true && plan.isPublic == true) ? onTap : null,
@@ -460,16 +471,54 @@ class _PlanCard extends StatelessWidget {
                         ),
                       ),
                       SpaceHelper(h: 4.h),
-                      Text(
-                        description,
-                        style: poppinFonts(
-                          fontSize: sm,
-                          fontWeight: FontWeight.w400,
-                          color: AppColor.textLightBlackColor4A4A4A,
+                      if (featureLines.isEmpty)
+                        Text(
+                          fallbackSummary,
+                          style: poppinFonts(
+                            fontSize: sm,
+                            fontWeight: FontWeight.w400,
+                            color: AppColor.textLightBlackColor4A4A4A,
+                          ),
+                        )
+                      else
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            for (var i = 0; i < featureLines.length; i++) ...[
+                              if (i > 0) SpaceHelper(h: 6.h),
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Padding(
+                                    padding: EdgeInsets.only(top: 6.h),
+                                    child: Container(
+                                      width: 5.w,
+                                      height: 5.w,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: isUsersActivePlan
+                                            ? AppColor.primary
+                                            : AppColor.black,
+                                      ),
+                                    ),
+                                  ),
+                                  SpaceHelper(w: 10.w),
+                                  Expanded(
+                                    child: Text(
+                                      featureLines[i],
+                                      style: poppinFonts(
+                                        fontSize: sm,
+                                        fontWeight: FontWeight.w400,
+                                        color:
+                                            AppColor.textLightBlackColor4A4A4A,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ],
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
                       SpaceHelper(h: 8.h),
                       Text(
                         priceLabel,

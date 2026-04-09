@@ -506,7 +506,7 @@ class _BillingScreenState extends State<BillingScreen>
   String _formatInvoiceAmount(SubscriptionInvoice inv) {
     final amount = inv.amountGross ?? inv.amountNet ?? 0;
     final currency = inv.currency ?? 'ZAR';
-    return currency.toUpperCase() == 'ZAR' ? 'R$amount' : '$currency $amount';
+    return currency.toUpperCase() == 'ZAR' ? 'R $amount' : '$currency $amount';
   }
 
   Widget _buildBillingCard({
@@ -558,7 +558,7 @@ class _BillingScreenState extends State<BillingScreen>
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        status,
+                        status.capitalizeFirst.toString(),
                         style: poppinFonts(
                           fontSize: xs,
                           fontWeight: FontWeight.w400,

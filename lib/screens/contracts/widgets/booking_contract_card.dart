@@ -133,13 +133,15 @@ class BookingContractCard extends StatelessWidget {
   String _getMonthlyPay() {
     if (contract.monthlyPayment != null) {
       final amount = contract.monthlyPayment.toString();
-      return 'R$amount';
+      return 'R $amount';
     }
-    return 'R0.00';
+    return 'R 0.00';
   }
 
   @override
   Widget build(BuildContext context) {
+    final isCancelled = contract.status?.toLowerCase().trim() == 'cancelled';
+
     return Container(
       child: Container(
         margin: EdgeInsets.only(bottom: 12.w),
@@ -355,7 +357,9 @@ class BookingContractCard extends StatelessWidget {
                           vertical: 6.h,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColor.primary,
+                          color: isCancelled
+                              ? AppColor.notCompletedStatusColor
+                              : AppColor.primary,
                           borderRadius: BorderRadius.circular(20.r),
                         ),
                         child: Text(

@@ -769,6 +769,48 @@ class _HomeScreenState extends State<HomeScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Child Info and Status
+          // Row(
+          //   children: [
+          //     CircleAvatar(
+          //       radius: 20.r,
+          //       backgroundColor: AppColor.darkPrimary,
+          //       child: Text(
+          //         _getInitials(childName),
+          //         style: poppinFonts(
+          //           color: AppColor.white,
+          //           fontSize: 14,
+          //           fontWeight: FontWeight.bold,
+          //         ),
+          //       ),
+          //     ),
+          //     SpaceHelper(w: 12.w),
+          //     Expanded(
+          //       child: Text(
+          //         childName,
+          //         style: poppinFonts(
+          //           color: AppColor.black,
+          //           fontSize: base,
+          //           fontWeight: FontWeight.w500,
+          //         ),
+          //       ),
+          //     ),
+          //     Container(
+          //       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+          //       decoration: BoxDecoration(
+          //         color: getStatusColor(trip.status),
+          //         borderRadius: BorderRadius.circular(16.r),
+          //       ),
+          //       child: Text(
+          //         trip.status?.capitalizeFirst ?? 'Active',
+          //         style: poppinFonts(
+          //           color: AppColor.white,
+          //           fontSize: sm,
+          //           fontWeight: FontWeight.w500,
+          //         ),
+          //       ),
+          //     ),
+          //   ],
+          // ),
           Row(
             children: [
               CircleAvatar(
@@ -783,7 +825,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ),
               ),
-              SpaceHelper(w: 12.w),
+              SpaceHelper(w: 8.w),
               Expanded(
                 child: Text(
                   childName,
@@ -795,13 +837,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
               Container(
-                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 6.h),
+                padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
                 decoration: BoxDecoration(
                   color: getStatusColor(trip.status),
                   borderRadius: BorderRadius.circular(16.r),
                 ),
                 child: Text(
-                  trip.status?.capitalizeFirst ?? 'Active',
+                  trip.status?.capitalizeFirst ?? 'Scheduled',
                   style: poppinFonts(
                     color: AppColor.white,
                     fontSize: sm,
@@ -811,6 +853,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+
           SpaceHelper(h: 12.h),
 
           // Vehicle & Driver
@@ -1023,7 +1066,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: poppinFonts(
                     color: AppColor.black,
                     fontSize: base,
-                    fontWeight: FontWeight.bold,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ),

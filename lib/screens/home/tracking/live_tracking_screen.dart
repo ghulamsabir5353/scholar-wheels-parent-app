@@ -537,8 +537,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                   decoration: BoxDecoration(
                     color: AppColor.cardBgColor,
                     borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(20.r),
-                      topRight: Radius.circular(20.r),
+                      topLeft: Radius.circular(30.r),
+                      topRight: Radius.circular(30.r),
+                    ),
+                    border: Border(
+                      top: BorderSide(color: AppColor.primary, width: 1),
                     ),
                   ),
                   child: Column(
@@ -546,11 +549,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                     children: [
                       // Drag Handle
                       Container(
-                        margin: EdgeInsets.only(top: 12.h),
+                        margin: EdgeInsets.only(top: 8.h),
                         width: 40.w,
                         height: 4.h,
                         decoration: BoxDecoration(
-                          color: AppColor.darkPrimary,
+                          color: AppColor.primary,
                           borderRadius: BorderRadius.circular(2.r),
                         ),
                       ),
@@ -595,139 +598,188 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                     ],
                                   ),
                                   SpaceHelper(h: 16.h),
-                                  // Driver and Child Info - Two Columns
-                                  Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                  // Driver and Child Info - Paired rows (prevents misalignment on wrapping text)
+                                  Column(
                                     children: [
-                                      // Left Column
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Driver',
-                                              style: poppinFonts(
-                                                fontSize: sm,
-                                                color: AppColor
-                                                    .textLightBlackColor4A4A4A,
-                                              ),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Driver',
+                                                  style: poppinFonts(
+                                                    fontSize: sm,
+                                                    color: AppColor
+                                                        .textLightBlackColor4A4A4A,
+                                                  ),
+                                                ),
+                                                SpaceHelper(h: 4.h),
+                                                Text(
+                                                  _getDriverName(trip),
+                                                  style: poppinFonts(
+                                                    fontSize: base,
+                                                    color: AppColor.black,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SpaceHelper(h: 4.h),
-                                            Text(
-                                              _getDriverName(trip),
-                                              style: poppinFonts(
-                                                fontSize: base,
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                          ),
+                                          SpaceHelper(w: 24.w),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Child',
+                                                  style: poppinFonts(
+                                                    fontSize: sm,
+                                                    color: AppColor
+                                                        .textLightBlackColor4A4A4A,
+                                                  ),
+                                                ),
+                                                SpaceHelper(h: 4.h),
+                                                Text(
+                                                  _getChildName(trip),
+                                                  style: poppinFonts(
+                                                    fontSize: base,
+                                                    color: AppColor.black,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SpaceHelper(h: 12.h),
-                                            Text(
-                                              'Pickup Order',
-                                              style: poppinFonts(
-                                                fontSize: sm,
-                                                color: AppColor
-                                                    .textLightBlackColor4A4A4A,
-                                              ),
-                                            ),
-                                            SpaceHelper(h: 4.h),
-                                            Text(
-                                              _getPickupOrder(trip),
-                                              style: poppinFonts(
-                                                fontSize: base,
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                            SpaceHelper(h: 12.h),
-                                            Text(
-                                              'Pickup Time',
-                                              style: poppinFonts(
-                                                fontSize: sm,
-                                                color: AppColor
-                                                    .textLightBlackColor4A4A4A,
-                                              ),
-                                            ),
-                                            SpaceHelper(h: 4.h),
-                                            Text(
-                                              _formatTime(_getPickupTime(trip)),
-                                              style: poppinFonts(
-                                                fontSize: base,
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
-                                      SpaceHelper(w: 24.w),
-                                      // Right Column
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              'Child',
-                                              style: poppinFonts(
-                                                fontSize: sm,
-                                                color: AppColor
-                                                    .textLightBlackColor4A4A4A,
-                                              ),
+                                      SpaceHelper(h: 12.h),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Pickup Order',
+                                                  style: poppinFonts(
+                                                    fontSize: sm,
+                                                    color: AppColor
+                                                        .textLightBlackColor4A4A4A,
+                                                  ),
+                                                ),
+                                                SpaceHelper(h: 4.h),
+                                                Text(
+                                                  _getPickupOrder(trip),
+                                                  style: poppinFonts(
+                                                    fontSize: base,
+                                                    color: AppColor.black,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SpaceHelper(h: 4.h),
-                                            Text(
-                                              _getChildName(trip),
-                                              style: poppinFonts(
-                                                fontSize: base,
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                          ),
+                                          SpaceHelper(w: 24.w),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Pickup Area',
+                                                  style: poppinFonts(
+                                                    fontSize: sm,
+                                                    color: AppColor
+                                                        .textLightBlackColor4A4A4A,
+                                                  ),
+                                                ),
+                                                SpaceHelper(h: 4.h),
+                                                Text(
+                                                  _getPickupAddress(trip),
+                                                  maxLines: 2,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: poppinFonts(
+                                                    fontSize: base,
+                                                    color: AppColor.black,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SpaceHelper(h: 12.h),
-                                            Text(
-                                              'Pickup Area',
-                                              style: poppinFonts(
-                                                fontSize: sm,
-                                                color: AppColor
-                                                    .textLightBlackColor4A4A4A,
-                                              ),
+                                          ),
+                                        ],
+                                      ),
+                                      SpaceHelper(h: 12.h),
+                                      Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Pickup Time',
+                                                  style: poppinFonts(
+                                                    fontSize: sm,
+                                                    color: AppColor
+                                                        .textLightBlackColor4A4A4A,
+                                                  ),
+                                                ),
+                                                SpaceHelper(h: 4.h),
+                                                Text(
+                                                  _formatTime(
+                                                    _getPickupTime(trip),
+                                                  ),
+                                                  style: poppinFonts(
+                                                    fontSize: base,
+                                                    color: AppColor.black,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SpaceHelper(h: 4.h),
-                                            Text(
-                                              _getPickupAddress(trip),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: poppinFonts(
-                                                fontSize: base,
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.w500,
-                                              ),
+                                          ),
+                                          SpaceHelper(w: 24.w),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Drop-off Time',
+                                                  style: poppinFonts(
+                                                    fontSize: sm,
+                                                    color: AppColor
+                                                        .textLightBlackColor4A4A4A,
+                                                  ),
+                                                ),
+                                                SpaceHelper(h: 4.h),
+                                                Text(
+                                                  _formatTime(
+                                                    _getDropOffTime(trip),
+                                                  ),
+                                                  style: poppinFonts(
+                                                    fontSize: base,
+                                                    color: AppColor.black,
+                                                    fontWeight: FontWeight.w500,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
-                                            SpaceHelper(h: 12.h),
-                                            Text(
-                                              'Drop-off Time',
-                                              style: poppinFonts(
-                                                fontSize: sm,
-                                                color: AppColor
-                                                    .textLightBlackColor4A4A4A,
-                                              ),
-                                            ),
-                                            SpaceHelper(h: 4.h),
-                                            Text(
-                                              _formatTime(
-                                                _getDropOffTime(trip),
-                                              ),
-                                              style: poppinFonts(
-                                                fontSize: base,
-                                                color: AppColor.black,
-                                                fontWeight: FontWeight.w500,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
+                                          ),
+                                        ],
                                       ),
                                     ],
                                   ),
