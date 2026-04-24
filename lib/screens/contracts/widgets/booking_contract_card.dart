@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
@@ -56,7 +56,10 @@ class BookingContractCard extends StatelessWidget {
 
   String _getContractStartDate() {
     if (contract.startDate != null) {
-      return DateFormat('d MMM, yyyy').format(contract.startDate!);
+      return AppDateTimeFormatter.format(
+        contract.startDate,
+        pattern: 'd MMM, yyyy',
+      );
     }
     return 'N/A';
   }

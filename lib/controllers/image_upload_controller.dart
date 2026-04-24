@@ -124,48 +124,67 @@ class ImageUploadController extends GetxController {
     return urls?.isNotEmpty == true ? urls!.first : null;
   }
 
-  /// Delete image(s) by URL(s)
-  /// Returns true on success, false on failure
-  Future<bool> deleteImages(List<String> imageUrls) async {
-    if (imageUrls.isEmpty) {
-      customToaster('No image URLs provided', color: Colors.orange);
-      return false;
-    }
+  /// Deletes one stored file by server key ([fileKey] from user `profileImage`, etc.).
+  Future<bool> deleteFileByKey(
+    String fileKey, {
+    bool showSuccessToast = true,
+  }) async {
+    final key = fileKey.trim();
+    if (key.isEmpty) return true;
 
     try {
       isDeleting.value = true;
 
       final response = await apiService.deleteData(
         AppConstants.deleteFile,
-        data: {
-          'files': imageUrls, // Send list of URLs to delete
-        },
+        data: {'fileKey': key},
       );
 
       if (response.statusCode == 200 || response.statusCode == 204) {
-        customToaster(
-          'Image${imageUrls.length > 1 ? 's' : ''} deleted successfully',
-          color: Colors.green,
-        );
+        if (showSuccessToast) {
+          customToaster('Image deleted successfully', color: Colors.green);
+        }
         return true;
-      } else {
-        customToaster(
-          'Failed to delete image${imageUrls.length > 1 ? 's' : ''}',
-          color: Colors.red,
-        );
-        return false;
       }
+      customToaster('Failed to delete image', color: Colors.red);
+      return false;
     } catch (e) {
-      showApiError(e, logLabel: 'deleteImages');
+      showApiError(e, logLabel: 'deleteFileByKey');
       return false;
     } finally {
       isDeleting.value = false;
     }
   }
 
-  /// Delete a single image by URL
-  /// Returns true on success, false on failure
-  Future<bool> deleteImage(String imageUrl) async {
-    return await deleteImages([imageUrl]);
+  /// Delete image(s) by storage key(s)
+  Future<bool> deleteImages(List<String> fileKeys) async {
+    if (fileKeys.isEmpty) {
+      customToaster('No image keys provided', color: Colors.orange);
+      return false;
+    }
+
+    var allOk = true;
+    for (final k in fileKeys) {
+      if (k.trim().isEmpty) continue;
+      final ok = await deleteFileByKey(k, showSuccessToast: false);
+      allOk = allOk && ok;
+    }
+    if (allOk) {
+      customToaster(
+        'Image${fileKeys.length > 1 ? 's' : ''} deleted successfully',
+        color: Colors.green,
+      );
+    } else {
+      customToaster(
+        'Failed to delete one or more images',
+        color: Colors.red,
+      );
+    }
+    return allOk;
+  }
+
+  /// Delete a single image by storage key
+  Future<bool> deleteImage(String fileKey) async {
+    return deleteFileByKey(fileKey, showSuccessToast: true);
   }
 }

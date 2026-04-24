@@ -7,7 +7,7 @@ abstract class AppConstants {
 
   /// Alternate / legacy API host (also used as default App Links origin below).
   static const String devURL = "https://api.scholarwheels.co.za";
-  static const selectedUrl = productURL;
+  static const selectedUrl = devURL;
   static const String liveBaseUrl = '$selectedUrl/';
   static const String liveBaseUrlIp = selectedUrl;
 
@@ -79,6 +79,7 @@ abstract class AppConstants {
   static const String subscriptionInvoice = "subscription-invoice";
   static const String userSubscriptionCancel = "usersubscription/cancel";
   static const String userSubscriptionMe = "usersubscription/me";
+  static const String userSubscriptionLimits = "usersubscription/limits";
   // Fonts
   static const String POPPIN = 'Poppins';
   static const String IS_TARGET_SCREEN_PENDING = 'isTargetScreenPending';

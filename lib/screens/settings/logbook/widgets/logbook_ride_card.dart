@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_outline_button.dart';
@@ -14,7 +14,7 @@ import 'package:scholarwheels/models/vehicle_model.dart';
 
 class LogbookRideCard extends StatelessWidget {
   final TripModel trip;
-  final VoidCallback? onViewDetailsTap;
+  final Function(String)? onViewDetailsTap;
 
   const LogbookRideCard({super.key, required this.trip, this.onViewDetailsTap});
 
@@ -77,55 +77,44 @@ class LogbookRideCard extends StatelessWidget {
 
   String get status => trip.status ?? 'N/A';
 
-  String get startTime {
-    // Find all children that were actually picked up
-    final pickedChildren =
-        trip.assignedChildren?.where((child) {
-          final status = child.pickupStatus?.toLowerCase() ?? '';
-          return (status == 'picked' || status == 'picked_up') &&
-              child.pickupTime != null &&
-              child.pickupTime!.isNotEmpty;
-        }).toList() ??
-        [];
+  String get startTime => _formatTime(
+    _firstChild?.pickupStatusUpdatedAt ??
+        _firstChild?.pickupTime ??
+        trip.pickupTime ??
+        trip.scheduledPickupTime,
+  );
 
-    // If we have picked children, find the earliest pickup time
-    if (pickedChildren.isNotEmpty) {
-      // Sort by pickupTime to get the earliest one
-      pickedChildren.sort((a, b) {
-        final timeA = a.pickupTime ?? '';
-        final timeB = b.pickupTime ?? '';
-        return timeA.compareTo(timeB);
-      });
-      return _formatTime(pickedChildren.first.pickupTime);
+  String endTime() {
+    if (trip.endTime != null) {
+      return AppDateTimeFormatter.format(trip.endTime, pattern: 'h:mm a');
     }
-
-    // Fall back to trip.pickupTime or scheduledPickupTime if no children were picked
-    return _formatTime(trip.pickupTime ?? trip.scheduledPickupTime);
+    if (trip.dropOffStatusUpdatedAt != null) {
+      return AppDateTimeFormatter.format(
+        DateTime.parse(trip.dropOffStatusUpdatedAt ?? ''),
+        pattern: 'h:mm a',
+      );
+    }
+    if (trip.dropOffTime != null) {
+      return AppDateTimeFormatter.formatStringTime(trip.dropOffTime ?? '');
+    }
+    return 'N/A';
   }
-
-  String get endTime =>
-      _formatTime(_firstChild?.dropOffTime ?? trip.dropOffTime);
 
   String get distanceText => trip.route?.estimatedDistance.toString() ?? 'N/A';
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return DateFormat('d MMM, yyyy').format(date);
+    return AppDateTimeFormatter.format(date, pattern: 'd MMM, yyyy');
   }
 
   String _formatTime(String? time) {
-    if (time == null || time.isEmpty) return 'N/A';
-    try {
-      final parts = time.split(':');
-      if (parts.length >= 2) {
-        final hour = int.parse(parts[0]);
-        final minute = parts[1].split(' ').first;
-        final period = hour >= 12 ? 'PM' : 'AM';
-        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-        return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
-      }
-    } catch (_) {}
-    return time;
+    final trimmed = time?.trim();
+    if (trimmed == null || trimmed.isEmpty) {
+      return AppDateTimeFormatter.format(trip.startTime, pattern: 'h:mm a');
+    }
+    return AppDateTimeFormatter.formatStringTime(
+      time,
+      referenceDate: trip.serviceDate ?? trip.createdAt,
+    );
   }
 
   Color _statusColor(String status) {
@@ -166,7 +155,9 @@ class LogbookRideCard extends StatelessWidget {
           SpaceHelper(h: 12.h),
           CustomOutlineButton(
             title: 'View Details',
-            onPressed: onViewDetailsTap ?? () {},
+            onPressed: onViewDetailsTap != null
+                ? () => onViewDetailsTap!(_firstChild?.child?.id ?? '')
+                : null,
           ),
         ],
       ),
@@ -377,7 +368,7 @@ class LogbookRideCard extends StatelessWidget {
                     style: poppinFonts(
                       fontSize: sm,
                       fontWeight: FontWeight.w600,
-                      color: AppColor.primary,
+                      color: AppColor.black,
                     ),
                   ),
                 ],
@@ -394,11 +385,11 @@ class LogbookRideCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    endTime,
+                    endTime(),
                     style: poppinFonts(
                       fontSize: sm,
                       fontWeight: FontWeight.w600,
-                      color: AppColor.primary,
+                      color: AppColor.black,
                     ),
                   ),
                 ],

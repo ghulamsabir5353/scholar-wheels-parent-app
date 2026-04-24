@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/models/room_model.dart';
 import 'package:scholarwheels/screens/chat/chat_room_screen.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
@@ -114,10 +115,12 @@ class RoomCard extends StatelessWidget {
       return 'N/A';
     }
     try {
-      messageTime = DateTime.parse(time);
+      messageTime = AppDateTimeFormatter.toLocal(DateTime.parse(time));
     } catch (e) {
       return 'N/A';
     }
+
+    if (messageTime == null) return 'N/A';
 
     final now = DateTime.now();
     final difference = now.difference(messageTime);

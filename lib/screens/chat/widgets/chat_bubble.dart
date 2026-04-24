@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
@@ -92,19 +92,29 @@ class ChatBubble extends StatelessWidget {
   String _formatDateTime(DateTime? dateTime) {
     if (dateTime == null) return '';
 
+    final localDateTime = AppDateTimeFormatter.toLocal(dateTime);
+    if (localDateTime == null) return '';
+
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final messageDate = DateTime(dateTime.year, dateTime.month, dateTime.day);
+    final messageDate = DateTime(
+      localDateTime.year,
+      localDateTime.month,
+      localDateTime.day,
+    );
 
     if (messageDate == today) {
       // Show time if it's today
-      return DateFormat('h:mm a').format(dateTime);
+      return AppDateTimeFormatter.format(localDateTime, pattern: 'h:mm a');
     } else if (messageDate == today.subtract(const Duration(days: 1))) {
       // Show "Yesterday" if it's yesterday
-      return 'Yesterday ${DateFormat('h:mm a').format(dateTime)}';
+      return "Yesterday ${AppDateTimeFormatter.format(localDateTime, pattern: 'h:mm a')}";
     } else {
       // Show date and time for older messages
-      return DateFormat('MMM d, yyyy h:mm a').format(dateTime);
+      return AppDateTimeFormatter.format(
+        localDateTime,
+        pattern: 'MMM d, yyyy h:mm a',
+      );
     }
   }
 }

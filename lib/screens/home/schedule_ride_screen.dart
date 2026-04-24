@@ -68,48 +68,49 @@ class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
       ),
       body: Column(
         children: [
-          // Filter Buttons
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: List.generate(
-                buttonList.length,
-                (index) => Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        selectedIndex = index;
-                      });
-                      _loadTrips();
-                    },
-                    child: Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 6.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: selectedIndex == index
-                            ? AppColor.primary
-                            : AppColor.white,
-                        borderRadius: BorderRadius.circular(6.r),
-                        border: Border.all(
+          if (status.toLowerCase() != 'active')
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: List.generate(
+                  buttonList.length,
+                  (index) => Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 4.w),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedIndex = index;
+                        });
+                        _loadTrips();
+                      },
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 8.w,
+                          vertical: 6.h,
+                        ),
+                        decoration: BoxDecoration(
                           color: selectedIndex == index
                               ? AppColor.primary
-                              : AppColor.bgGrayD9D8D8,
-                          width: 1,
-                        ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          buttonList[index],
-                          style: poppinFonts(
-                            fontSize: sm,
-                            fontWeight: FontWeight.w500,
+                              : AppColor.white,
+                          borderRadius: BorderRadius.circular(6.r),
+                          border: Border.all(
                             color: selectedIndex == index
-                                ? AppColor.white
-                                : AppColor.black,
+                                ? AppColor.primary
+                                : AppColor.bgGrayD9D8D8,
+                            width: 1,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            buttonList[index],
+                            style: poppinFonts(
+                              fontSize: sm,
+                              fontWeight: FontWeight.w500,
+                              color: selectedIndex == index
+                                  ? AppColor.white
+                                  : AppColor.black,
+                            ),
                           ),
                         ),
                       ),
@@ -118,7 +119,6 @@ class _ScheduleRideScreenState extends State<ScheduleRideScreen> {
                 ),
               ),
             ),
-          ),
           // Trips List
           Expanded(
             child: Obx(() {

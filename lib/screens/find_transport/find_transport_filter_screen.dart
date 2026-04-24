@@ -213,10 +213,9 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                           ),
                           hint: Text(
                             'Select',
-                            style: TextStyle(
+                            style: poppinFonts(
                               fontSize: md,
                               color: AppColor.gray,
-                              fontFamily: 'Poppins',
                             ),
                           ),
                           items: vehicleTypeOptions
@@ -319,10 +318,9 @@ class _FindTransportFilterScreenState extends State<FindTransportFilterScreen> {
                           ),
                           hint: Text(
                             'Select',
-                            style: TextStyle(
+                            style: poppinFonts(
                               fontSize: md,
                               color: AppColor.gray,
-                              fontFamily: 'Poppins',
                             ),
                           ),
                           items: capacityOptions

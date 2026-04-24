@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/models/child_model.dart';
+import 'package:scholarwheels/models/user_subscription_limits_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
 import 'package:scholarwheels/services/api_exception.dart';
@@ -17,10 +18,45 @@ class ChildController extends GetxController {
   final Rx<ViewState<List<ChildModel>>> childrenState =
       Rx<ViewState<List<ChildModel>>>(LoadingState());
 
+  /// Latest GET /usersubscription/limits payload; null until first successful fetch.
+  final Rxn<UserSubscriptionLimitsResponse> subscriptionLimits =
+      Rxn<UserSubscriptionLimitsResponse>();
+
   @override
   void onInit() {
     super.onInit();
     getChildrenList();
+  }
+
+  /// GET /usersubscription/limits — does not affect [childrenState].
+  Future<void> fetchSubscriptionLimits() async {
+    try {
+      final response = await apiService.fetchData(
+        AppConstants.userSubscriptionLimits,
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final data = response.data;
+        if (data is Map) {
+          subscriptionLimits.value = UserSubscriptionLimitsResponse.fromJson(
+            Map<String, dynamic>.from(data),
+          );
+          log('Subscription limits loaded');
+        }
+      }
+    } catch (e) {
+      log('fetchSubscriptionLimits: $e');
+      showApiError(e, logLabel: 'fetchSubscriptionLimits');
+    }
+  }
+
+  /// `remaining.children == null` means no cap; otherwise there must be slots left.
+  bool get canAddMoreChildren {
+    final limits = subscriptionLimits.value;
+    if (limits == null) return false;
+    final remaining = limits.remaining.children;
+    if (remaining == null) return true;
+    return remaining > 0;
   }
 
   // Form controllers
@@ -87,6 +123,7 @@ class ChildController extends GetxController {
 
         // Fetch fresh data from API
         await getChildrenList();
+        await fetchSubscriptionLimits();
 
         customToaster('Child added successfully!', color: Colors.green);
         resetForm(); // Clear all form fields
@@ -191,6 +228,7 @@ class ChildController extends GetxController {
         }
 
         customToaster('Child deleted successfully!', color: Colors.green);
+        await fetchSubscriptionLimits();
       } else {
         customToaster('Failed to delete child', color: Colors.red);
       }

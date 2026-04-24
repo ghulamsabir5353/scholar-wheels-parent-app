@@ -13,8 +13,22 @@ import 'package:scholarwheels/services/api_state.dart';
 import '../../core/helper.constants/color.dart';
 import '../../core/helper.constants/textStyle.dart';
 
-class RoomListScreen extends StatelessWidget {
+class RoomListScreen extends StatefulWidget {
   const RoomListScreen({super.key});
+
+  @override
+  State<RoomListScreen> createState() => _RoomListScreenState();
+}
+
+class _RoomListScreenState extends State<RoomListScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Get.find<ChatController>().getChatRooms(silentIfHasRooms: true);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +63,7 @@ class RoomListScreen extends StatelessWidget {
         if (state is LoadingState) {
           return RefreshIndicator(
             onRefresh: () async {
-              await chatController.getChatRooms();
+              await chatController.getChatRooms(silentIfHasRooms: true);
             },
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
@@ -65,7 +79,7 @@ class RoomListScreen extends StatelessWidget {
           final errorState = state as ErrorState;
           return RefreshIndicator(
             onRefresh: () async {
-              await chatController.getChatRooms();
+              await chatController.getChatRooms(silentIfHasRooms: true);
             },
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
@@ -99,7 +113,7 @@ class RoomListScreen extends StatelessWidget {
           final exceptionState = state as ExceptionState;
           return RefreshIndicator(
             onRefresh: () async {
-              await chatController.getChatRooms();
+              await chatController.getChatRooms(silentIfHasRooms: true);
             },
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
@@ -121,7 +135,7 @@ class RoomListScreen extends StatelessWidget {
           final emptyState = state as EmptyState;
           return RefreshIndicator(
             onRefresh: () async {
-              await chatController.getChatRooms();
+              await chatController.getChatRooms(silentIfHasRooms: true);
             },
             child: SingleChildScrollView(
               physics: AlwaysScrollableScrollPhysics(),
@@ -157,7 +171,7 @@ class RoomListScreen extends StatelessWidget {
           final dataState = state;
           return RefreshIndicator(
             onRefresh: () async {
-              await chatController.getChatRooms();
+              await chatController.getChatRooms(silentIfHasRooms: true);
             },
             child: dataState.data.isEmpty
                 ? SingleChildScrollView(

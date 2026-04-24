@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/controllers/main.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
@@ -36,6 +36,7 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
     _controller = Get.put(MainController());
     final arguments = Get.arguments as Map<String, dynamic>?;
     final id = arguments?['_id']?.toString();
+
     if (id != null && id.isNotEmpty) {
       _controller.getTripDetail(id);
     }
@@ -45,6 +46,8 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
   Widget build(BuildContext context) {
     final arguments = Get.arguments as Map<String, dynamic>?;
     final tripId = arguments?['tripId']?.toString() ?? '';
+    late final String? status = arguments?['status']?.toString();
+    late final String? childId = arguments?['childId']?.toString();
 
     return Scaffold(
       backgroundColor: AppColor.white,
@@ -130,55 +133,44 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
         final vehicle = trip.vehicle;
         final driver = trip.driver;
         final assignedChildren = trip.assignedChildren ?? [];
+        final pickupTime = trip.pickupStatusUpdatedAt ?? trip.pickupTime;
+        final dropOffTime =
+            trip.dropOffStatusUpdatedAt ?? trip.dropOffTime?.toString();
 
-        String _formatDate(DateTime? date) {
-          if (date == null) return 'N/A';
-          return DateFormat('MMMM d, yyyy').format(date);
+        String formatDate(DateTime? date) {
+          return AppDateTimeFormatter.format(date, pattern: 'MMMM d, yyyy');
         }
 
-        String _formatTime(String? time) {
-          if (time == null || time.isEmpty) return 'N/A';
-          try {
-            final parts = time.split(':');
-            if (parts.length >= 2) {
-              final hour = int.tryParse(parts[0]) ?? 0;
-              final minute = parts[1].split(' ').first;
-              final period = hour >= 12 ? 'PM' : 'AM';
-              final displayHour = hour > 12
-                  ? hour - 12
-                  : (hour == 0 ? 12 : hour);
-              return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
-            }
-          } catch (_) {}
-          return time;
+        String formatTime(String? time) {
+          return AppDateTimeFormatter.formatStringTime(
+            time,
+            referenceDate: trip.serviceDate ?? trip.createdAt,
+          );
         }
 
-        String _formatDuration(String? start, String? end) {
-          if (start == null || end == null || start.isEmpty || end.isEmpty) {
+        // make sure it returns the duration in hours and minutes ans seconds 2 h 3min 5 sec
+        String formatDurationInHoursMinutesSeconds(
+          DateTime? start,
+          DateTime? end,
+        ) {
+          if (status?.toLowerCase() == 'cancelled') {
             return 'N/A';
           }
-          try {
-            final startParts = start.split(':');
-            final endParts = end.split(':');
-            if (startParts.length >= 2 && endParts.length >= 2) {
-              final startMins =
-                  (int.tryParse(startParts[0]) ?? 0) * 60 +
-                  (int.tryParse(startParts[1].split(' ').first) ?? 0);
-              final endMins =
-                  (int.tryParse(endParts[0]) ?? 0) * 60 +
-                  (int.tryParse(endParts[1].split(' ').first) ?? 0);
-              final mins = (endMins - startMins).abs();
-              return '${mins ~/ 60}:${(mins % 60).toString().padLeft(2, '0')}';
-            }
-          } catch (_) {}
-          return 'N/A';
-        }
+          if (start == null || end == null) {
+            return 'N/A';
+          }
 
-        final pickupTime =
-            assignedChildren.firstOrNull?.pickupTime ??
-            trip.scheduledPickupTime;
-        final dropoffTime =
-            assignedChildren.firstOrNull?.dropOffTime ?? trip.dropOffTime;
+          try {
+            final diff = end.difference(start);
+            final hours = diff.inHours;
+            final minutes = diff.inMinutes % 60;
+            final seconds = diff.inSeconds % 60;
+
+            return '${hours}h ${minutes > 0 ? '${minutes}min ' : ''} ${seconds > 0 ? '${seconds}sec' : ''}';
+          } catch (e) {
+            return 'N/A';
+          }
+        }
 
         final vehicleName = vehicle != null
             ? '${vehicle.make ?? ''} ${vehicle.model ?? ''}'.trim()
@@ -195,8 +187,22 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
         final driverDisplay = driverName.isEmpty ? 'N/A' : driverName;
 
         final firstChild = assignedChildren.isNotEmpty
-            ? assignedChildren.first
+            ? assignedChildren.firstWhere((child) => child.child?.id == childId)
             : null;
+        final childPickupDisplayTime = () {
+          final raw =
+              firstChild?.pickupStatusUpdatedAt ??
+              firstChild?.pickupTime ??
+              trip.pickupTime ??
+              trip.scheduledPickupTime;
+          if (raw == null || raw.trim().isEmpty) {
+            return AppDateTimeFormatter.format(
+              trip.startTime,
+              pattern: 'h:mm a',
+            );
+          }
+          return formatTime(raw);
+        }();
         final pickupAddress =
             firstChild?.pickupAddress?.description ??
             firstChild?.child?.pickUpAddress?.description ??
@@ -206,11 +212,10 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
             firstChild?.child?.dropOffAddress?.description ??
             'N/A';
 
-        final status = trip.status ?? 'N/A';
-        final dateText = _formatDate(trip.serviceDate ?? trip.createdAt);
+        // final status = trip.status ?? 'N/A';
+        final dateText = formatDate(trip.serviceDate ?? trip.createdAt);
         final distanceKm = trip.route?.estimatedDistance;
         final distanceText = distanceKm != null ? '$distanceKm Kms' : 'N/A';
-        final durationText = _formatDuration(pickupTime, dropoffTime);
 
         final transportOwner = trip.transportOwner;
         final ownerName = transportOwner?.businessName?.isNotEmpty == true
@@ -227,13 +232,19 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
         final rating = transportOwner?.averageRating;
         final totalRatings = transportOwner?.totalRatings ?? 0;
         final ratingText = rating != null
-            ? '$rating (${totalRatings.toString()} reviews)'
+            ? '${rating.toStringAsFixed(0)} (${totalRatings.toStringAsFixed(0)} reviews)'
             : 'N/A';
         final isVerified = transportOwner?.isVerified ?? false;
 
         final pickupLoc =
             firstChild?.pickupAddress ?? firstChild?.child?.pickUpAddress;
         final dropOffLoc = firstChild?.child?.dropOffAddress;
+
+        // Match list + header: absent child is shown as Cancelled; use N/A for ride/pickup times.
+        final showRideTimesAsNa =
+            status?.toLowerCase() == 'cancelled' ||
+            trip.status?.toLowerCase() == 'cancelled' ||
+            firstChild?.pickupStatus?.toLowerCase() == 'absent';
 
         return SingleChildScrollView(
           physics: _isInteractingWithMap
@@ -247,10 +258,26 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
               SpaceHelper(h: 12.h),
               _buildRideOverviewCard(
                 dateText: dateText,
-                startTime: _formatTime(pickupTime),
-                endTime: _formatTime(dropoffTime),
+                startTime: showRideTimesAsNa
+                    ? 'N/A'
+                    : AppDateTimeFormatter.format(
+                        trip.startTime,
+                        pattern: 'h:mm a',
+                      ),
+                childPickupTime: showRideTimesAsNa
+                    ? 'N/A'
+                    : childPickupDisplayTime,
+                endTime: showRideTimesAsNa
+                    ? 'N/A'
+                    : AppDateTimeFormatter.format(
+                        trip.endTime,
+                        pattern: 'h:mm a',
+                      ),
                 distance: distanceText,
-                duration: durationText,
+                duration: formatDurationInHoursMinutesSeconds(
+                  trip.startTime,
+                  trip.endTime,
+                ),
               ),
               SpaceHelper(h: 20.h),
 
@@ -277,8 +304,8 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
               _buildSectionHeading('Route Details'),
               SpaceHelper(h: 12.h),
               _buildRouteDetailsCard(
-                pickupTime: _formatTime(pickupTime),
-                dropOffTime: _formatTime(dropoffTime),
+                pickupTime: formatTime(pickupTime),
+                dropOffTime: formatTime(dropOffTime),
                 pickupAddress: pickupAddress,
                 schoolName: school,
               ),
@@ -408,6 +435,7 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
   Widget _buildRideOverviewCard({
     required String dateText,
     required String startTime,
+    required String childPickupTime,
     required String endTime,
     required String distance,
     required String duration,
@@ -418,6 +446,8 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
           _buildLabelValueRow('Date:', dateText),
           SpaceHelper(h: 12.h),
           _buildLabelValueRow('Ride Start Time:', startTime),
+          SpaceHelper(h: 12.h),
+          _buildLabelValueRow('Child Picked At:', childPickupTime),
           SpaceHelper(h: 12.h),
           _buildLabelValueRow('Ride End Time:', endTime),
           SpaceHelper(h: 12.h),
@@ -538,73 +568,75 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
     required String pickupAddress,
     required String schoolName,
   }) {
-    return Container(
-      padding: EdgeInsets.all(16.w),
-      decoration: BoxDecoration(
-        color: AppColor.lightSecondary,
+    return Card(
+      elevation: 2,
+      shadowColor: AppColor.cardShadowColor,
+
+      shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12.r),
-        border: Border.all(color: AppColor.borderGreen.withOpacity(0.5)),
-        boxShadow: AppColor.cardShadow,
+        side: BorderSide(color: AppColor.secondary),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Pickup Time :',
-                    style: poppinFonts(
-                      fontSize: sm,
-                      color: AppColor.textLightBlackColor4A4A4A,
-                    ),
-                  ),
-                  SpaceHelper(h: 4.h),
-                  Text(
-                    pickupTime,
-                    style: poppinFonts(
-                      fontSize: base,
-                      fontWeight: FontWeight.w600,
-                      color: AppColor.black,
-                    ),
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'Drop Off Time :',
-                    style: poppinFonts(
-                      fontSize: sm,
-                      color: AppColor.textLightBlackColor4A4A4A,
-                    ),
-                  ),
-                  SpaceHelper(h: 4.h),
-                  Text(
-                    dropOffTime,
-                    style: poppinFonts(
-                      fontSize: base,
-                      fontWeight: FontWeight.w600,
-                      color: AppColor.black,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SpaceHelper(h: 16.h),
-          RouteEntryWidget(
-            pickupAddress: pickupAddress,
-            schoolName: schoolName,
-            isLast: true,
-            backgroundColor: Colors.white,
-          ),
-        ],
+      color: AppColor.cardBgColor,
+      child: Padding(
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Flexible(child: _buildDetailRow('Pickup Time :', pickupTime)),
+                Flexible(
+                  child: _buildDetailRow('Drop Off Time :', dropOffTime),
+                ),
+              ],
+            ),
+            SpaceHelper(h: 12.h),
+            // Pickup and School Info
+            RouteEntryWidget(
+              pickupAddress: pickupAddress,
+              schoolName: schoolName,
+              isLast: true,
+              backgroundColor: Colors.white,
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _buildDetailRow(
+    String label,
+    String value, {
+    double? fontSize,
+    MainAxisAlignment? mainAxisAlignment,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: mainAxisAlignment ?? MainAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: poppinFonts(
+            fontSize: fontSize ?? sm,
+            color: AppColor.black,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
+
+        Expanded(
+          child: Text(
+            value,
+            style: poppinFonts(
+              fontSize: fontSize ?? sm,
+              color: AppColor.black,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -665,8 +697,8 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
                               vertical: 4.h,
                             ),
                             decoration: BoxDecoration(
-                              color: AppColor.primary,
-                              borderRadius: BorderRadius.circular(6.r),
+                              color: AppColor.lightSecondary,
+                              borderRadius: BorderRadius.circular(12.w),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -674,7 +706,7 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
                                 Icon(
                                   Icons.check_circle_rounded,
                                   size: 14.w,
-                                  color: AppColor.white,
+                                  color: AppColor.black,
                                 ),
                                 SpaceHelper(w: 4.w),
                                 Text(
@@ -682,7 +714,7 @@ class _LogBookDetailScreenState extends State<LogBookDetailScreen> {
                                   style: poppinFonts(
                                     fontSize: xs,
                                     fontWeight: FontWeight.w600,
-                                    color: AppColor.white,
+                                    color: AppColor.black,
                                   ),
                                 ),
                               ],

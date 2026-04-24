@@ -1,3 +1,5 @@
+import 'package:scholarwheels/models/business_address_model.dart';
+
 class MessageModel {
   String? id;
   String? chatId;
@@ -124,7 +126,7 @@ class SenderDetails {
   String? lastName;
   String? profileImage;
   String? role;
-  String? businessAddress;
+  BusinessAddress? businessAddress;
   String? businessName;
   String? surName;
   String? registrationNumber;
@@ -147,7 +149,7 @@ class SenderDetails {
     String? lastName,
     String? profileImage,
     String? role,
-    String? businessAddress,
+    BusinessAddress? businessAddress,
     String? businessName,
     String? surName,
     String? registrationNumber,
@@ -169,7 +171,9 @@ class SenderDetails {
     lastName: json["lastName"],
     profileImage: json["profileImage"],
     role: json["role"],
-    businessAddress: json["businessAddress"],
+    businessAddress: json["businessAddress"] == null
+        ? null
+        : BusinessAddress.fromJson(json["businessAddress"]),
     businessName: json["businessName"],
     surName: json["surName"],
     registrationNumber: json["registrationNumber"],
@@ -181,7 +185,7 @@ class SenderDetails {
     "lastName": lastName,
     "profileImage": profileImage,
     "role": role,
-    "businessAddress": businessAddress,
+    "businessAddress": businessAddress?.toJson(),
     "businessName": businessName,
     "surName": surName,
     "registrationNumber": registrationNumber,

@@ -3,10 +3,10 @@ import 'package:badges/badges.dart' as badges;
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/controllers/main.controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
@@ -83,26 +83,15 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  String _formatTime(String? time) {
-    if (time == null || time.isEmpty) return 'N/A';
-    try {
-      final parts = time.split(':');
-      if (parts.length >= 2) {
-        final hour = int.parse(parts[0]);
-        final minute = parts[1].split(' ').first; // Remove any AM/PM if present
-        final period = hour >= 12 ? 'PM' : 'AM';
-        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-        return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
-      }
-    } catch (e) {
-      // If parsing fails, return as is
-    }
-    return time;
+  String _formatTime(String? time, {DateTime? referenceDate}) {
+    return AppDateTimeFormatter.formatStringTime(
+      time,
+      referenceDate: referenceDate,
+    );
   }
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return DateFormat('dd MMM, yyyy').format(date);
+    return AppDateTimeFormatter.format(date, pattern: 'dd MMM, yyyy');
   }
 
   String _getInitials(String? name) {
@@ -728,9 +717,12 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildActiveRideCard(NextTrip trip) {
-    final firstChild = trip.assignedChildren?.isNotEmpty == true
-        ? trip.assignedChildren!.first
-        : null;
+    // get parent child from parent id
+    final parentID = BaseHelper.currentUser.value.roleData?.id;
+    final firstChild = trip.assignedChildren?.firstWhere(
+      (child) => child.child?.parentId == parentID,
+    );
+    if (firstChild == null) return SizedBox.shrink();
     final childName = firstChild?.child?.name ?? 'Child';
     final vehicle = trip.vehicle;
     final driver = trip.driver;
@@ -748,8 +740,9 @@ class _HomeScreenState extends State<HomeScreen> {
         firstChild?.child?.dropOffAddress?.description ??
         'N/A';
     final pickupTime =
-        firstChild?.pickupTime ?? trip.scheduledPickupTime?.toString() ?? 'N/A';
-    final dropoffTime = firstChild?.dropOffTime ?? trip.dropOffTime ?? 'N/A';
+        firstChild?.pickupStatusUpdatedAt ?? firstChild?.pickupTime ?? 'N/A';
+    final dropoffTime =
+        firstChild?.dropOffStatusUpdatedAt ?? trip?.dropOffTime ?? 'N/A';
 
     return Container(
       padding: EdgeInsets.all(12.w),
@@ -943,7 +936,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          _formatTime(pickupTime.toString()),
+                          _formatTime(
+                            pickupTime.toString(),
+                            referenceDate: trip.serviceDate,
+                          ),
                           style: poppinFonts(
                             color: AppColor.black,
                             fontSize: sm,
@@ -962,7 +958,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          _formatTime(dropoffTime.toString()),
+                          _formatTime(
+                            dropoffTime.toString(),
+                            referenceDate: trip.serviceDate,
+                          ),
                           style: poppinFonts(
                             color: AppColor.black,
                             fontSize: sm,
@@ -1194,7 +1193,10 @@ class _HomeScreenState extends State<HomeScreen> {
                           ),
                         ),
                         Text(
-                          _formatTime(pickupTime.toString()),
+                          _formatTime(
+                            pickupTime.toString(),
+                            referenceDate: trip.serviceDate,
+                          ),
                           style: poppinFonts(
                             color: AppColor.black,
                             fontSize: sm,
@@ -1214,7 +1216,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
 
                         Text(
-                          _formatTime(dropoffTime.toString()),
+                          _formatTime(
+                            dropoffTime.toString(),
+                            referenceDate: trip.serviceDate,
+                          ),
                           style: poppinFonts(
                             color: AppColor.black,
                             fontSize: sm,
@@ -1362,7 +1367,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Text(
-                        'R${monthlyFee ?? '0'}',
+                        'R ${monthlyFee ?? '0'}',
                         style: poppinFonts(
                           color: AppColor.black,
                           fontSize: sm,

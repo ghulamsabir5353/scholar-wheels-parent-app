@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
 import 'package:scholarwheels/screens/auth/get_started_screen.dart';
 import 'package:scholarwheels/screens/auth/profile_picture_screen.dart';
 import 'package:scholarwheels/screens/settings/billings/subscription_plans_screen.dart';
@@ -28,6 +29,10 @@ class AuthMiddleware extends GetMiddleware {
 
     if (routesRequiringProfileAndSubscription.contains(route)) {
       if (BaseHelper.currentUser.value.roleData == null) {
+        customToaster(
+          'Please complete your profile to continue and add a profile picture',
+          color: Colors.red,
+        );
         return RouteSettings(name: ProfilePictureScreen.route);
       }
       if (!_hasActiveSubscription) {
@@ -46,6 +51,10 @@ class GuestMiddleware extends GetMiddleware {
   RouteSettings? redirect(String? route) {
     if (BaseHelper.isLogin.value) {
       if (BaseHelper.currentUser.value.roleData == null) {
+        customToaster(
+          'Please complete your profile to continue',
+          color: Colors.red,
+        );
         return RouteSettings(name: ProfilePictureScreen.route);
       }
       if (!_hasActiveSubscription) {

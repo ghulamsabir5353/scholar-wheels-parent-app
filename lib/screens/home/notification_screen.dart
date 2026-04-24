@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/notification_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
@@ -259,8 +259,11 @@ class _NotificationItem extends StatelessWidget {
   String _formatTime(DateTime? dateTime) {
     if (dateTime == null) return '';
 
+    final localDateTime = AppDateTimeFormatter.toLocal(dateTime);
+    if (localDateTime == null) return '';
+
     final now = DateTime.now();
-    final difference = now.difference(dateTime);
+    final difference = now.difference(localDateTime);
 
     if (difference.inMinutes < 1) {
       return 'Just now';
@@ -274,7 +277,7 @@ class _NotificationItem extends StatelessWidget {
       final days = difference.inDays;
       return '$days ${days == 1 ? 'day' : 'days'} ago';
     } else {
-      return DateFormat('MMM d, yyyy').format(dateTime);
+      return AppDateTimeFormatter.format(localDateTime, pattern: 'MMM d, yyyy');
     }
   }
 

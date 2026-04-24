@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:get/get.dart';
@@ -18,26 +18,15 @@ class SchduleCard extends StatelessWidget {
   final String status;
   const SchduleCard({super.key, required this.trip, required this.status});
 
-  String _formatTime(String? time) {
-    if (time == null || time.isEmpty) return 'N/A';
-    try {
-      final parts = time.split(':');
-      if (parts.length >= 2) {
-        final hour = int.parse(parts[0]);
-        final minute = parts[1].split(' ').first;
-        final period = hour >= 12 ? 'PM' : 'AM';
-        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-        return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
-      }
-    } catch (e) {
-      // If parsing fails, return as is
-    }
-    return time;
+  String _formatTime(String? time, {DateTime? referenceDate}) {
+    return AppDateTimeFormatter.formatStringTime(
+      time,
+      referenceDate: referenceDate,
+    );
   }
 
   String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return DateFormat('dd MMM, yyyy').format(date);
+    return AppDateTimeFormatter.format(date, pattern: 'dd MMM, yyyy');
   }
 
   void _showManageRideModal(BuildContext context) {
@@ -280,7 +269,10 @@ class SchduleCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            _formatTime(pickupTime.toString()),
+                            _formatTime(
+                              pickupTime.toString(),
+                              referenceDate: scheduleDate,
+                            ),
                             style: poppinFonts(
                               color: AppColor.black,
                               fontSize: sm,
@@ -299,7 +291,10 @@ class SchduleCard extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            _formatTime(dropoffTime.toString()),
+                            _formatTime(
+                              dropoffTime.toString(),
+                              referenceDate: scheduleDate,
+                            ),
                             style: poppinFonts(
                               color: AppColor.black,
                               fontSize: sm,

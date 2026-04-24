@@ -52,7 +52,8 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
     authController.emailController.text = user.email ?? '';
     authController.phoneController.text = user.phone ?? '';
 
-    // Load profile image URL for display
+    authController.profileImagePath = null;
+
     _existingProfileImageUrl =
         user.profileImagePresignedUrl ?? user.profileImage;
     _originalProfileImagePath = user.profileImage;
@@ -96,34 +97,45 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
     setState(() {
       _selectedImageFile = null;
       _existingProfileImageUrl = null;
-      _isImageDeleted = true; // Mark that user wants to delete image
+      _isImageDeleted = true;
     });
-    // Clear in controller - empty string will be sent to API to delete image
-    authController.profileImagePath = '';
   }
 
   void _handleSaveChanges() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      // Determine profileImage value:
-      // - If image deleted: send empty string
-      // - If new image uploaded: send new image path (already set in _pickImage)
-      // - If no change: send original path (or empty string if no original)
-      if (_isImageDeleted) {
-        // User wants to delete image - send empty string
-        authController.profileImagePath = '';
-      } else if (authController.profileImagePath == null ||
-          authController.profileImagePath!.isEmpty) {
-        // No new image uploaded and not deleted - keep original if exists
-        authController.profileImagePath = _originalProfileImagePath ?? '';
-      }
-      // If profileImagePath already has a value (new image), use it as-is
+    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-      await authController.updateUser();
+    final oldStoredKey = _originalProfileImagePath;
 
-      // Reload user data to sync local state after successful update
-      if (mounted) {
-        _loadUserData();
+    if (_isImageDeleted) {
+      authController.profileImagePath = '';
+    } else if (authController.profileImagePath == null ||
+        authController.profileImagePath!.isEmpty) {
+      authController.profileImagePath = oldStoredKey ?? '';
+    }
+
+    final newKey = authController.profileImagePath ?? '';
+    final success = await authController.updateUser();
+    if (!success || !mounted) return;
+
+    if (_isImageDeleted) {
+      if (oldStoredKey != null && oldStoredKey.isNotEmpty) {
+        await imageUploadController.deleteFileByKey(
+          oldStoredKey,
+          showSuccessToast: false,
+        );
       }
+    } else if (newKey.isNotEmpty &&
+        oldStoredKey != null &&
+        oldStoredKey.isNotEmpty &&
+        newKey != oldStoredKey) {
+      await imageUploadController.deleteFileByKey(
+        oldStoredKey,
+        showSuccessToast: false,
+      );
+    }
+
+    if (mounted) {
+      Get.back();
     }
   }
 
@@ -169,9 +181,10 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 12.w),
             child: Obx(() {
               final user = BaseHelper.currentUser.value;
-              // Use selected image file if available, otherwise use existing URL, otherwise use user's current image
               final displayImageUrl = _selectedImageFile != null
-                  ? null // Will show file image
+                  ? null
+                  : _isImageDeleted
+                  ? null
                   : (_existingProfileImageUrl ??
                         user.profileImagePresignedUrl ??
                         user.profileImage);
@@ -387,15 +400,7 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                       controller: authController.emailController,
                       label: "Email",
                       hintText: "Enter Email",
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Email is required';
-                        }
-                        if (!value.contains('@')) {
-                          return 'Please enter a valid email';
-                        }
-                        return null;
-                      },
+                      isReadOnly: true,
                     ),
                     SpaceHelper(h: 12.h),
                     // Phone
@@ -444,7 +449,8 @@ class _PersonalProfileScreenState extends State<PersonalProfileScreen> {
                               title: "Save Changes",
                               isDisabled:
                                   authController.isLoading.value ||
-                                  imageUploadController.isUploading.value,
+                                  imageUploadController.isUploading.value ||
+                                  imageUploadController.isDeleting.value,
                               isLoading: authController.isLoading.value,
                               onPressed: _handleSaveChanges,
                             ),

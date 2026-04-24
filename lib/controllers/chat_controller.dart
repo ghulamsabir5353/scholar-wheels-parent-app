@@ -19,6 +19,13 @@ class ChatController extends GetxController {
     LoadingState(),
   );
 
+  /// Monotonically increased so overlapping room fetches only apply the latest result.
+  int _chatRoomsRequestId = 0;
+
+  bool _hasNonEmptyRoomsList(ViewState<List<Chat>> state) {
+    return state is DataState<List<Chat>> && state.data.isNotEmpty;
+  }
+
   // Messages state for a specific chat
   final RxBool isLoadingMessages = false.obs;
   final Rx<ViewState<List<MessageModel>>> messagesState =
@@ -51,12 +58,23 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Get list of chat rooms
-  Future<void> getChatRooms() async {
-    try {
-      roomsState.value = LoadingState();
+  /// Fetches chat rooms. When [silentIfHasRooms] is true and the list already has
+  /// rooms, the UI stays on the current state (no full-screen loading); errors keep
+  /// the previous list.
+  Future<void> getChatRooms({bool silentIfHasRooms = false}) async {
+    final requestId = ++_chatRoomsRequestId;
+    final previousState = roomsState.value;
+    final hasNonEmptyRooms = _hasNonEmptyRoomsList(previousState);
+    final silent = silentIfHasRooms && hasNonEmptyRooms;
 
+    if (!silent) {
+      roomsState.value = LoadingState();
+    }
+
+    try {
       final response = await apiService.fetchData(AppConstants.chat);
+
+      if (requestId != _chatRoomsRequestId) return;
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         log('Chat rooms response: ${response.data}');
@@ -75,8 +93,14 @@ class ChatController extends GetxController {
         log('Loaded ${rooms.length} chat rooms');
       }
     } catch (e) {
-      roomsState.value = ExceptionState(Exception(e.toString()));
-      showApiError(e, logLabel: 'getChatRooms');
+      if (requestId != _chatRoomsRequestId) return;
+
+      if (silent) {
+        showApiError(e, logLabel: 'getChatRooms');
+      } else {
+        roomsState.value = ExceptionState(Exception(e.toString()));
+        showApiError(e, logLabel: 'getChatRooms');
+      }
     }
   }
 
@@ -128,9 +152,9 @@ class ChatController extends GetxController {
     }
   }
 
-  /// Refresh chat rooms
+  /// Refresh chat rooms (keeps existing list visible when non-empty).
   void refreshRooms() {
-    getChatRooms();
+    getChatRooms(silentIfHasRooms: true);
   }
 
   /// Refresh messages for current chat

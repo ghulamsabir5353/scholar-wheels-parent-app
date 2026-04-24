@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
@@ -37,7 +37,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   String _getRequestDate(BookingModel? booking) {
     if (booking?.createdAt != null) {
-      return DateFormat('d MMM, yyyy').format(booking!.createdAt!);
+      return AppDateTimeFormatter.format(
+        booking!.createdAt,
+        pattern: 'd MMM, yyyy',
+      );
     }
     return 'N/A';
   }
@@ -56,11 +59,24 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
 
   String _getRequestDurationDates(BookingModel? booking) {
     if (booking?.startDate != null && booking?.endDate != null) {
-      final startDate = DateFormat('d MMM, yyyy').format(booking!.startDate!);
-      final endDate = DateFormat('d MMM, yyyy').format(booking.endDate!);
+      final startDate = AppDateTimeFormatter.format(
+        booking!.startDate,
+        pattern: 'd MMM, yyyy',
+      );
+      final endDate = AppDateTimeFormatter.format(
+        booking.endDate,
+        pattern: 'd MMM, yyyy',
+      );
       return '$startDate - $endDate';
     }
     return 'N/A';
+  }
+
+  String formatTime(String? time, {DateTime? referenceDate}) {
+    return AppDateTimeFormatter.formatStringTime(
+      time,
+      referenceDate: referenceDate,
+    );
   }
 
   String _getStatus(BookingModel? booking) {
@@ -101,7 +117,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     final firstName = booking!.transportOwner!.businessName ?? '';
 
     if (firstName.isNotEmpty) {
-      return '$firstName';
+      return firstName;
     }
     return 'N/A';
   }
@@ -219,18 +235,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
     return name[0].toUpperCase();
   }
 
-  double _getAverageRating(BookingModel? booking) {
+  String _getAverageRating(BookingModel? booking) {
     if (booking?.transportOwner?.averageRating != null) {
-      return booking!.transportOwner!.averageRating!;
+      return booking?.transportOwner?.averageRating?.toStringAsFixed(1) ??
+          '0.0';
     }
-    return 4.9; // Default
+    return '0.0'; // Default ?? '0.0';
   }
 
-  double _getTotalRatings(BookingModel? booking) {
+  String _getTotalRatings(BookingModel? booking) {
     if (booking?.transportOwner?.totalRatings != null) {
-      return booking!.transportOwner!.totalRatings!;
+      return booking?.transportOwner?.totalRatings?.toStringAsFixed(0) ?? '0';
     }
-    return 5353; // Default
+    return '0'; // Default
   }
 
   bool _isVerified(BookingModel? booking) {
@@ -459,8 +476,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                       SpaceHelper(h: 4.h),
                                       Row(
                                         children: [
+                                          Icon(
+                                            Icons.star,
+                                            size: 14.w,
+                                            color: AppColor.primary,
+                                          ),
+                                          SpaceHelper(w: 4.w),
                                           Text(
-                                            '${_getAverageRating(booking)}',
+                                            _getAverageRating(booking),
                                             style: poppinFonts(
                                               color: AppColor.black,
                                               fontSize: sm,
@@ -468,12 +491,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                             ),
                                           ),
                                           SpaceHelper(w: 4.w),
-                                          Icon(
-                                            Icons.star,
-                                            size: 14.w,
-                                            color: AppColor.primary,
-                                          ),
-                                          SpaceHelper(w: 4.w),
+
                                           Text(
                                             '(${_getTotalRatings(booking)} reviews)',
                                             style: poppinFonts(
@@ -633,18 +651,16 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     ),
                     SpaceHelper(h: 8.h),
                     Card(
-                      elevation: 2,
+                      elevation: 1,
                       shadowColor: AppColor.cardShadowColor,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12.r),
-                        side: BorderSide(color: AppColor.cardBorderColorGrey),
+                        side: BorderSide(color: AppColor.secondary),
                       ),
-                      color: AppColor.lightSecondary,
+                      color: AppColor.cardBgColor,
                       child: Padding(
                         padding: EdgeInsets.all(16.w),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
                           children: [
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -652,45 +668,66 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                                 Flexible(
                                   child: _buildDetailRow(
                                     'Pickup Time :',
-                                    _getPickupTime(booking),
+                                    formatTime(
+                                      _getPickupTime(booking),
+                                      referenceDate:
+                                          booking?.startDate ??
+                                          booking?.createdAt,
+                                    ),
                                   ),
                                 ),
                                 Flexible(
                                   child: _buildDetailRow(
                                     'Drop Off Time :',
-                                    _getDropOffTime(booking),
+                                    formatTime(
+                                      _getDropOffTime(booking),
+                                      referenceDate:
+                                          booking?.startDate ??
+                                          booking?.createdAt,
+                                    ),
                                   ),
                                 ),
                               ],
                             ),
-                            SpaceHelper(h: 12.h),
-                            // Pickup and School Info
-                            RouteEntryWidget(
-                              pickupAddress: _getPickupAddress(booking),
-                              schoolName: _getSchoolName(booking),
-                              isLast: false,
-                            ),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Distance",
-                                  style: poppinFonts(
-                                    fontSize: sm,
-                                    color: AppColor.black,
+                            SpaceHelper(h: 8.h),
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 4),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Pickup and School Info
+                                  RouteEntryWidget(
+                                    pickupAddress: _getPickupAddress(booking),
+                                    schoolName: _getSchoolName(booking),
+                                    isLast: false,
+                                    backgroundColor: AppColor.white,
                                   ),
-                                ),
-                                SpaceHelper(w: 8.w),
-                                Text(
-                                  _getDistance(booking),
-                                  style: poppinFonts(
-                                    fontSize: sm,
-                                    color: AppColor.black,
-                                    fontWeight: FontWeight.w500,
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        "Distance:",
+                                        style: poppinFonts(
+                                          fontSize: sm,
+                                          color: AppColor.black,
+                                        ),
+                                      ),
+                                      SpaceHelper(w: 8.w),
+                                      Text(
+                                        _getDistance(booking),
+                                        style: poppinFonts(
+                                          fontSize: sm,
+                                          color: AppColor.black,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ],
                         ),

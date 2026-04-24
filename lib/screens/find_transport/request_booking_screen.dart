@@ -299,42 +299,40 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                           ),
                         ),
                         // Verified Badge
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 4.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColor.primary,
-                            borderRadius: BorderRadius.circular(12.r),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              SvgPicture.asset(
-                                'assets/images/svg/verified.svg',
-                                width: 14.w,
-                                height: 14.w,
-                                colorFilter: ColorFilter.mode(
-                                  (routeModel?.transportOwner?.isVerified ??
-                                          false)
-                                      ? AppColor.textFieldBorderColor
-                                      : AppColor.white,
-                                  BlendMode.srcIn,
+                        if (routeModel?.transportOwner?.isVerified ?? false)
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 4.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColor.primary,
+                              borderRadius: BorderRadius.circular(12.r),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SvgPicture.asset(
+                                  'assets/images/svg/verified.svg',
+                                  width: 14.w,
+                                  height: 14.w,
+                                  colorFilter: ColorFilter.mode(
+                                    AppColor.white,
+                                    BlendMode.srcIn,
+                                  ),
                                 ),
-                              ),
-                              SpaceHelper(w: 4.w),
-                              Text(
-                                'Verified',
-                                style: poppinFonts(
-                                  color: AppColor.white,
-                                  fontSize: xs,
-                                  fontWeight: FontWeight.w500,
+                                SpaceHelper(w: 4.w),
+                                Text(
+                                  'Verified',
+                                  style: poppinFonts(
+                                    color: AppColor.white,
+                                    fontSize: xs,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     SpaceHelper(h: 12.w),
@@ -436,8 +434,8 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                     child: Text(
                       'Select Child',
                       style: poppinFonts(
-                        color: const Color(0xff212529),
-                        fontSize: base,
+                        color: AppColor.black,
+                        fontSize: md,
                         fontWeight: FontWeight.w400,
                       ),
                     ),
@@ -454,8 +452,8 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                       fillColor: AppColor.appColorWhite,
                       filled: true,
                       contentPadding: EdgeInsets.symmetric(
-                        vertical: 16.h,
-                        horizontal: 12.w,
+                        vertical: 14.h,
+                        horizontal: 10.w,
                       ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12.r),
@@ -481,10 +479,10 @@ class _RequestBookingScreenState extends State<RequestBookingScreen> {
                     ),
                     hint: Text(
                       'Select Child',
-                      style: TextStyle(
+                      style: poppinFonts(
+                        color: AppColor.gray,
                         fontSize: sm,
-                        color: const Color(0xffADA4A5),
-                        fontFamily: 'Poppins',
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                     items: childrenList

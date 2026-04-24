@@ -338,13 +338,13 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                         "Upload Photo",
                         style: poppinFonts(
                           color: Color(0xff212529),
-                          fontSize: 16,
+                          fontSize: md,
                           fontWeight: FontWeight.w400,
                         ),
                       ),
                       SpaceHelper(h: 6.h),
                       Container(
-                        height: 70.h,
+                        height: 46.h,
                         decoration: BoxDecoration(
                           border: Border.all(
                             color: AppColor.cardBorderColorGrey,
@@ -370,7 +370,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                               child: Container(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: 12.w,
-                                  vertical: 8.h,
+                                  vertical: 4.h,
                                 ),
                                 decoration: BoxDecoration(
                                   color: AppColor.backgroundColor,
@@ -388,7 +388,7 @@ class _AddChildrenScreenState extends State<AddChildrenScreen> {
                                       : Text(
                                           "Upload Image",
                                           style: poppinFonts(
-                                            fontSize: base,
+                                            fontSize: sm,
                                             fontWeight: FontWeight.w500,
                                             color: AppColor
                                                 .textLightBlackColor4A4A4A,

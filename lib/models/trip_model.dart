@@ -6,6 +6,7 @@ import 'dart:convert';
 import 'package:scholarwheels/models/child_model.dart';
 import 'package:scholarwheels/models/ride_model.dart';
 import 'package:scholarwheels/models/route_model.dart';
+import 'package:scholarwheels/models/transport_owner_model.dart';
 
 import 'license_doc_model.dart';
 import 'package:scholarwheels/models/location_data_model.dart';
@@ -49,9 +50,14 @@ class TripModel {
   List<Child>? children;
   String? pickupTime;
   String? dropOffTime;
+  String? pickupStatusUpdatedAt;
+  String? dropOffStatusUpdatedAt;
   int? totalChildren;
-  // "start_time": "2025-12-25T10:37:18.326Z",
+  //   "start_time" -> "2026-04-08T10:04:49.155Z"
+  // 14 =
+  // "end_time" -> "2026-04-08T12:08:06.575Z"
   DateTime? startTime;
+  DateTime? endTime;
 
   TripModel({
     this.id,
@@ -87,6 +93,9 @@ class TripModel {
     this.pickupTime,
     this.totalChildren,
     this.startTime,
+    this.endTime,
+    this.pickupStatusUpdatedAt,
+    this.dropOffStatusUpdatedAt,
   });
 
   TripModel copyWith({
@@ -123,6 +132,9 @@ class TripModel {
     String? pickupTime,
     int? totalChildren,
     DateTime? startTime,
+    DateTime? endTime,
+    String? pickupStatusUpdatedAt,
+    String? dropOffStatusUpdatedAt,
   }) => TripModel(
     id: id ?? this.id,
     rideId: rideId ?? this.rideId,
@@ -157,6 +169,10 @@ class TripModel {
     pickupTime: pickupTime ?? this.pickupTime,
     totalChildren: totalChildren ?? this.totalChildren,
     startTime: startTime ?? this.startTime,
+    endTime: endTime ?? this.endTime,
+    pickupStatusUpdatedAt: pickupStatusUpdatedAt ?? this.pickupStatusUpdatedAt,
+    dropOffStatusUpdatedAt:
+        dropOffStatusUpdatedAt ?? this.dropOffStatusUpdatedAt,
   );
 
   factory TripModel.fromJson(Map<String, dynamic> json) => TripModel(
@@ -218,9 +234,12 @@ class TripModel {
         : List<Child>.from(json["children"]!.map((x) => Child.fromJson(x))),
     pickupTime: json["pickupTime"],
     totalChildren: json["totalChildren"],
-    startTime: json["startTime"] == null
+    startTime: json["start_time"] == null
         ? null
-        : DateTime.parse(json["startTime"]),
+        : DateTime.parse(json["start_time"]),
+    endTime: json["end_time"] == null ? null : DateTime.parse(json["end_time"]),
+    pickupStatusUpdatedAt: json["pickupStatusUpdatedAt"],
+    dropOffStatusUpdatedAt: json["dropOffStatusUpdatedAt"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -269,6 +288,9 @@ class TripModel {
     "pickupTime": pickupTime,
     "totalChildren": totalChildren,
     "startTime": startTime?.toIso8601String(),
+    "endTime": endTime?.toIso8601String(),
+    "pickupStatusUpdatedAt": pickupStatusUpdatedAt,
+    "dropOffStatusUpdatedAt": dropOffStatusUpdatedAt,
   };
 }
 
@@ -278,6 +300,8 @@ class AssignedChild {
   String? pickupStatus;
   String? dropOffStatus;
   String? pickupTime;
+  String? pickupStatusUpdatedAt;
+  String? dropOffStatusUpdatedAt;
   String? dropOffTime;
   dynamic reason;
   String? id;
@@ -289,6 +313,8 @@ class AssignedChild {
     this.pickupStatus,
     this.dropOffStatus,
     this.pickupTime,
+    this.pickupStatusUpdatedAt,
+    this.dropOffStatusUpdatedAt,
     this.dropOffTime,
     this.reason,
     this.id,
@@ -301,6 +327,8 @@ class AssignedChild {
     String? pickupStatus,
     String? dropOffStatus,
     String? pickupTime,
+    String? pickupStatusUpdatedAt,
+    String? dropOffStatusUpdatedAt,
     String? dropOffTime,
     dynamic reason,
     String? id,
@@ -315,6 +343,9 @@ class AssignedChild {
     reason: reason ?? this.reason,
     id: id ?? this.id,
     child: child ?? this.child,
+    pickupStatusUpdatedAt: pickupStatusUpdatedAt ?? this.pickupStatusUpdatedAt,
+    dropOffStatusUpdatedAt:
+        dropOffStatusUpdatedAt ?? this.dropOffStatusUpdatedAt,
   );
 
   factory AssignedChild.fromJson(Map<String, dynamic> json) => AssignedChild(
@@ -329,6 +360,8 @@ class AssignedChild {
     reason: json["reason"],
     id: json["_id"],
     child: json["child"] == null ? null : Child.fromJson(json["child"]),
+    pickupStatusUpdatedAt: json["pickupStatusUpdatedAt"],
+    dropOffStatusUpdatedAt: json["dropOffStatusUpdatedAt"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -341,6 +374,8 @@ class AssignedChild {
     "reason": reason,
     "_id": id,
     "child": child?.toJson(),
+    "pickupStatusUpdatedAt": pickupStatusUpdatedAt,
+    "dropOffStatusUpdatedAt": dropOffStatusUpdatedAt,
   };
 }
 

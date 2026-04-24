@@ -5,6 +5,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:maps_toolkit/maps_toolkit.dart' as mtk;
 import 'package:scholarwheels/controllers/live_tracking_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
@@ -46,21 +47,11 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
     super.dispose();
   }
 
-  String _formatTime(String? time) {
-    if (time == null || time.isEmpty) return 'N/A';
-    try {
-      final parts = time.split(':');
-      if (parts.length >= 2) {
-        final hour = int.parse(parts[0]);
-        final minute = parts[1];
-        final period = hour >= 12 ? 'PM' : 'AM';
-        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-        return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
-      }
-    } catch (e) {
-      // If parsing fails, return as is
-    }
-    return time;
+  String _formatTime(String? time, {DateTime? referenceDate}) {
+    return AppDateTimeFormatter.formatStringTime(
+      time,
+      referenceDate: referenceDate,
+    );
   }
 
   location_model.LocationData? _convertPickupAddressToLocationData(
@@ -344,6 +335,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
             backgroundColor: AppColor.white,
             surfaceTintColor: AppColor.white,
             elevation: 1,
+
             shadowColor: Colors.grey,
             centerTitle: false,
             titleSpacing: 0,
@@ -380,6 +372,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
             backgroundColor: AppColor.white,
             surfaceTintColor: AppColor.white,
             elevation: 1,
+            titleSpacing: 0,
             shadowColor: Colors.grey,
             centerTitle: false,
             leading: backButton(
@@ -468,6 +461,7 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
           elevation: 1,
           shadowColor: Colors.grey,
           centerTitle: false,
+          titleSpacing: 0,
           leading: backButton(
             onTap: () {
               Get.back();
@@ -741,6 +735,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                                 Text(
                                                   _formatTime(
                                                     _getPickupTime(trip),
+                                                    referenceDate:
+                                                        trip.serviceDate,
                                                   ),
                                                   style: poppinFonts(
                                                     fontSize: base,
@@ -769,6 +765,8 @@ class _LiveTrackingScreenState extends State<LiveTrackingScreen> {
                                                 Text(
                                                   _formatTime(
                                                     _getDropOffTime(trip),
+                                                    referenceDate:
+                                                        trip.serviceDate,
                                                   ),
                                                   style: poppinFonts(
                                                     fontSize: base,

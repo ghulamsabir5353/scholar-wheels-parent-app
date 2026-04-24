@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
+import 'package:scholarwheels/controllers/main.controller.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/models/dashboard_model.dart';
 import 'package:scholarwheels/services/api_services.dart';
@@ -26,6 +27,8 @@ enum SocketAuthStatus {
 /// Parents receive real-time updates from the driver app via socket events
 class LiveTrackingController extends GetxController
     with WidgetsBindingObserver {
+  /// Must stay in sync with [LiveTrackingScreen.route] (avoid importing the screen here).
+  static const String _liveTrackingRouteName = '/live-tracking-screen';
   final ApiService apiService = Get.find<ApiService>();
 
   // Current trip being tracked
@@ -500,6 +503,7 @@ class LiveTrackingController extends GetxController
 
         // Update trip status if data contains trip info
         _updateTripFromEvent(data);
+        _closeLiveTrackingIfOpenAndRefreshDashboard();
       }
     });
 
@@ -645,6 +649,17 @@ class LiveTrackingController extends GetxController
     } catch (e) {
       log('Error handling child status update: $e');
     }
+  }
+
+  void _closeLiveTrackingIfOpenAndRefreshDashboard() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (Get.currentRoute == _liveTrackingRouteName) {
+        Get.back();
+      }
+      if (Get.isRegistered<MainController>()) {
+        Get.find<MainController>().getDashboardData();
+      }
+    });
   }
 
   /// Update trip from event data

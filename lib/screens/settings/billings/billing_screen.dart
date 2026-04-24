@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/billing_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
@@ -199,23 +199,27 @@ class _BillingScreenState extends State<BillingScreen>
     final price = plan.price ?? 0;
     final currency = plan.currency ?? 'ZAR';
     final displayPrice = currency.toUpperCase() == 'ZAR'
-        ? 'R$price'
+        ? 'R $price'
         : '$currency $price';
     final billingType = (plan.billingType ?? 'monthly').toLowerCase();
     final perPeriod = billingType == 'monthly' ? 'per month' : 'per year';
     final features = plan.features ?? [];
-    final periodStart = detail.currentPeriodStart;
-    final periodEnd = detail.currentPeriodEnd;
+    final periodStart = AppDateTimeFormatter.toLocal(detail.currentPeriodStart);
+    final periodEnd = AppDateTimeFormatter.toLocal(detail.currentPeriodEnd);
     String periodText = '';
     if (periodEnd != null) {
-      final endStr = DateFormat('MMMM d, yyyy').format(periodEnd);
+      final endStr = AppDateTimeFormatter.format(
+        periodEnd,
+        pattern: 'MMMM d, yyyy',
+      );
       final now = DateTime.now();
       final daysLeft = periodEnd.difference(now).inDays;
       periodText = daysLeft >= 0
           ? 'Current period ends $endStr ($daysLeft days left)'
           : 'Ended on $endStr';
     } else if (periodStart != null) {
-      periodText = 'Started ${DateFormat('MMMM d, yyyy').format(periodStart)}';
+      periodText =
+          "Started ${AppDateTimeFormatter.format(periodStart, pattern: 'MMMM d, yyyy')}";
     } else {
       periodText = 'Active';
     }
@@ -492,7 +496,10 @@ class _BillingScreenState extends State<BillingScreen>
               (inv) => _buildBillingCard(
                 invoiceNumber: inv.invoiceNumber ?? '—',
                 date: inv.issuedAt != null
-                    ? DateFormat('MMM d, yyyy').format(inv.issuedAt!)
+                    ? AppDateTimeFormatter.format(
+                        inv.issuedAt,
+                        pattern: 'MMM d, yyyy',
+                      )
                     : '—',
                 amount: _formatInvoiceAmount(inv),
                 status: inv.status ?? '—',
