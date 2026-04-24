@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/bottom_tab_controller.dart';
 import 'package:scholarwheels/controllers/contract_controller.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
@@ -13,6 +14,7 @@ import 'package:scholarwheels/core/helper.widgets/location_permission_map_gate.d
 import 'package:scholarwheels/core/helper.widgets/route_map_widget.dart';
 import 'package:scholarwheels/models/contract_model.dart';
 import 'package:scholarwheels/screens/contracts/widgets/booking_contract_rating_review_section.dart';
+import 'package:scholarwheels/screens/home/home_screen.dart';
 import 'package:scholarwheels/services/api_state.dart';
 
 import '../../core/helper.constants/color.dart';
@@ -91,14 +93,16 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
 
   String _getAverageRating(ContractModel? contract) {
     if (contract?.transportOwner?.averageRating != null) {
-      return contract!.transportOwner!.averageRating.toString();
+      return contract!.transportOwner?.averageRating?.toStringAsFixed(1) ??
+          '0.0';
     }
+
     return '0.0';
   }
 
   String _getTotalRatings(ContractModel? contract) {
     if (contract?.transportOwner?.totalRatings != null) {
-      return contract!.transportOwner!.totalRatings.toString();
+      return contract!.transportOwner?.totalRatings?.toStringAsFixed(0) ?? '0';
     }
     return '0';
   }
@@ -156,26 +160,14 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
   }
 
   String _formatContractDate(DateTime? date) {
-    if (date == null) return 'N/A';
-    return DateFormat('d MMM, yyyy').format(date);
+    return AppDateTimeFormatter.format(date, pattern: 'd MMM, yyyy');
   }
 
-  String _formatTime(String? time) {
-    if (time == null || time.isEmpty) return 'N/A';
-    // Format time if it's in 24h format
-    try {
-      final parts = time.split(':');
-      if (parts.length >= 2) {
-        final hour = int.parse(parts[0]);
-        final minute = parts[1];
-        final period = hour >= 12 ? 'PM' : 'AM';
-        final displayHour = hour > 12 ? hour - 12 : (hour == 0 ? 12 : hour);
-        return '${displayHour.toString().padLeft(2, '0')}:$minute $period';
-      }
-    } catch (e) {
-      // If parsing fails, return as is
-    }
-    return time;
+  String _formatTime(String? time, {DateTime? referenceDate}) {
+    return AppDateTimeFormatter.formatStringTime(
+      time,
+      referenceDate: referenceDate,
+    );
   }
 
   String _getContractDuration(ContractModel? contract) {
@@ -462,13 +454,14 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                           ),
                         ),
                         SpaceHelper(w: 12.w),
+
                         Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: 14.w,
                             vertical: 6.h,
                           ),
                           decoration: BoxDecoration(
-                            color: const Color(0xff0A7A2A),
+                            color: getStatusColor(contract?.status),
                             borderRadius: BorderRadius.circular(20.r),
                           ),
                           child: Text(
@@ -907,7 +900,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                             ),
                             Flexible(
                               child: Text(
-                                _formatTime(contract?.pickUpTime),
+                                _formatTime(
+                                  contract.pickUpTime,
+                                  referenceDate:
+                                      contract.startDate ?? contract.createdAt,
+                                ),
                                 style: poppinFonts(
                                   fontSize: sm,
                                   color: AppColor.black,
@@ -930,7 +927,11 @@ class _ContractDetailScreenState extends State<ContractDetailScreen> {
                             ),
                             Flexible(
                               child: Text(
-                                _formatTime(contract?.knockOffTime),
+                                _formatTime(
+                                  contract.knockOffTime,
+                                  referenceDate:
+                                      contract.startDate ?? contract.createdAt,
+                                ),
                                 style: poppinFonts(
                                   fontSize: sm,
                                   color: AppColor.black,

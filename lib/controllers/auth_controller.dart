@@ -248,8 +248,8 @@ class AuthController extends GetxController {
     }
   }
 
-  /// Update user profile (for settings screen)
-  Future<void> updateUser() async {
+  /// Update user profile (for settings screen). Returns true if PATCH succeeded.
+  Future<bool> updateUser() async {
     try {
       isLoading.value = true;
 
@@ -257,7 +257,7 @@ class AuthController extends GetxController {
       final userId = BaseHelper.currentUser.value.id;
       if (userId == null) {
         customToaster('User ID not found', color: Colors.red);
-        return;
+        return false;
       }
 
       final requestBody = {
@@ -281,14 +281,7 @@ class AuthController extends GetxController {
         if (response.data != null && response.data['data'] != null) {
           final userData = response.data['data'];
           UserDetail user = UserDetail.fromJson(userData);
-          BaseHelper.currentUser.value = BaseHelper.currentUser.value.copyWith(
-            firstName: user.firstName,
-            surName: user.surName,
-            email: user.email,
-            phone: user.phone,
-            profileImage: user.profileImage,
-            profileImagePresignedUrl: user.profileImagePresignedUrl,
-          );
+          BaseHelper.currentUser.value = user;
           box.write(
             AppConstants.USER_DETAIL,
             BaseHelper.currentUser.value.toJson(),
@@ -299,12 +292,14 @@ class AuthController extends GetxController {
           response.data['message'] ?? 'Profile updated successfully!',
           color: Colors.green,
         );
-        Get.back(); // Go back to settings screen
+        return true;
       } else {
         customToaster('Profile update failed', color: Colors.red);
+        return false;
       }
     } catch (e) {
       showApiError(e, logLabel: 'updateUser');
+      return false;
     } finally {
       isLoading.value = false;
     }
@@ -690,6 +685,10 @@ class AuthController extends GetxController {
           // Priority: roleData (complete profile) → subscription → home
           final user = BaseHelper.currentUser.value;
           if (user.roleData == null) {
+            customToaster(
+              'Please complete your profile to continue',
+              color: Colors.red,
+            );
             Get.offAllNamed(ProfilePictureScreen.route);
             return true;
           }

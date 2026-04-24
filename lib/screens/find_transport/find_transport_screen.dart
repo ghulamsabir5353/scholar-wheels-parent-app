@@ -413,12 +413,12 @@ class _FindTransportScreenState extends State<FindTransportScreen> {
                                     },
                                     child: Padding(
                                       padding: EdgeInsets.symmetric(
-                                        vertical: 4.h,
+                                        vertical: 0.h,
                                       ),
                                       child: Text(
                                         'Search routes',
                                         style: poppinFonts(
-                                          fontSize: sm,
+                                          fontSize: base,
                                           color: AppColor.bgGray979797,
                                           fontWeight: FontWeight.w500,
                                         ),

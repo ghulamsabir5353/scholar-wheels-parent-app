@@ -203,7 +203,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                         hintText: widget.hintText,
                         hintStyle:
                             widget.hintStyle ??
-                            TextStyle(color: AppColor.gray, fontSize: 14.sp),
+                            poppinFonts(color: AppColor.gray, fontSize: md),
                         filled: true,
                         fillColor: widget.fillColor ?? AppColor.appColorWhite,
                         // Hide the built-in error text, we render it manually below
@@ -212,7 +212,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
                         border: OutlineInputBorder(
                           borderSide: BorderSide(
                             color:
-                                widget.borderColor ?? AppColor.textFieldBorderColor,
+                                widget.borderColor ??
+                                AppColor.textFieldBorderColor,
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(12.r),
@@ -220,7 +221,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
                         enabledBorder: OutlineInputBorder(
                           borderSide: BorderSide(
                             color:
-                                widget.borderColor ?? AppColor.textFieldBorderColor,
+                                widget.borderColor ??
+                                AppColor.textFieldBorderColor,
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(12.r),
@@ -228,7 +230,8 @@ class _CustomTextFieldState extends State<CustomTextField> {
                         focusedBorder: OutlineInputBorder(
                           borderSide: BorderSide(
                             color:
-                                widget.borderColor ?? AppColor.textFieldBorderColor,
+                                widget.borderColor ??
+                                AppColor.textFieldBorderColor,
                             width: 1,
                           ),
                           borderRadius: BorderRadius.circular(12.r),

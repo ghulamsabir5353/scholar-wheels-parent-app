@@ -28,7 +28,7 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
   @override
   void initState() {
     super.initState();
-    // Children list is automatically loaded in controller's onInit
+    childController.fetchSubscriptionLimits();
   }
 
   @override
@@ -52,20 +52,31 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
           style: poppinFonts(fontSize: lg, fontWeight: FontWeight.w500),
         ),
         actions: [
-          InkWell(
-            onTap: () {
-              Get.toNamed(AddChildrenScreen.route);
-            },
-            child: Container(
-              padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.w),
-              margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
-              decoration: BoxDecoration(
-                color: AppColor.primary,
-                borderRadius: BorderRadius.circular(6),
+          Obx(() {
+            final limits = childController.subscriptionLimits.value;
+            final remaining = limits?.remaining.children;
+            final enabled = limits != null &&
+                (remaining == null || remaining > 0);
+            return InkWell(
+              onTap: enabled
+                  ? () => Get.toNamed(AddChildrenScreen.route)
+                  : null,
+              child: Opacity(
+                opacity: enabled ? 1 : 0.45,
+                child: Container(
+                  padding: EdgeInsets.symmetric(horizontal: 1.w, vertical: 0.w),
+                  margin: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+                  decoration: BoxDecoration(
+                    color: enabled
+                        ? AppColor.primary
+                        : AppColor.textLightBlackColor4A4A4A,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Icon(Icons.add, color: AppColor.white, size: 26.sp),
+                ),
               ),
-              child: Icon(Icons.add, color: AppColor.white, size: 26.sp),
-            ),
-          ),
+            );
+          }),
         ],
       ),
       body: Obx(() {
@@ -90,7 +101,12 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
                 ),
                 SpaceHelper(h: 16.h),
                 ElevatedButton(
-                  onPressed: () => childController.getChildrenList(),
+                  onPressed: () async {
+                    await Future.wait([
+                      childController.getChildrenList(),
+                      childController.fetchSubscriptionLimits(),
+                    ]);
+                  },
                   child: Text('Retry'),
                 ),
               ],
@@ -141,7 +157,10 @@ class _ChildrenScreenState extends State<ChildrenScreen> {
           final dataState = state;
           return RefreshIndicator(
             onRefresh: () async {
-              await childController.getChildrenList();
+              await Future.wait([
+                childController.getChildrenList(),
+                childController.fetchSubscriptionLimits(),
+              ]);
             },
             child: SingleChildScrollView(
               child: Padding(

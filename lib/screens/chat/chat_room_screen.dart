@@ -215,6 +215,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (_chatId != null) {
       _chatController.leaveChatRoom();
     }
+    // Refresh room list when returning (silent if rooms were already shown).
+    _chatController.getChatRooms(silentIfHasRooms: true);
     _messageController.dispose();
     _scrollController.dispose();
     super.dispose();

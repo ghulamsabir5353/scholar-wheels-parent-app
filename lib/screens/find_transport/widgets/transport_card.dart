@@ -10,6 +10,7 @@ import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.constants/strings.dart';
 import 'package:scholarwheels/core/helper.widgets/space_helper.dart';
+import 'package:scholarwheels/models/transport_owner_model.dart';
 import 'package:scholarwheels/screens/find_transport/request_booking_screen.dart';
 import 'package:scholarwheels/screens/common/full_screen_image_screen.dart';
 
@@ -201,7 +202,7 @@ class TransportCard extends StatelessWidget {
                               ),
                             ),
                           ),
-                          if (route?.transportOwner?.transportLicense != null)
+                          if (route?.transportOwner?.isVerified ?? false)
                             Container(
                               padding: EdgeInsets.symmetric(
                                 horizontal: 8.w,
@@ -209,28 +210,22 @@ class TransportCard extends StatelessWidget {
                               ),
                               decoration: BoxDecoration(
                                 color: AppColor.lightSecondary,
-                                borderRadius: BorderRadius.circular(12.r),
+                                borderRadius: BorderRadius.circular(20.r),
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   SvgPicture.asset(
                                     'assets/images/svg/verified.svg',
-                                    width: 16.w,
-                                    height: 16.w,
-                                    colorFilter: ColorFilter.mode(
-                                      route?.transportOwner?.isVerified ?? false
-                                          ? AppColor.primary
-                                          : AppColor.black,
-                                      BlendMode.srcIn,
-                                    ),
+                                    width: 14.w,
+                                    height: 14.h,
                                   ),
                                   SpaceHelper(w: 4.w),
                                   Text(
                                     'Verified',
                                     style: poppinFonts(
-                                      color: AppColor.black,
                                       fontSize: xs,
+                                      color: AppColor.black,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
@@ -247,14 +242,12 @@ class TransportCard extends StatelessWidget {
                             color: AppColor.darkSecondary,
                             size: 16.sp,
                           ),
-                          SpaceHelper(w: 4.w),
+                          SpaceHelper(w: 2.w),
                           Text(
-                            route?.transportOwner?.averageRating != null
-                                ? '${route!.transportOwner!.averageRating} (${route!.transportOwner!.totalRatings ?? 0} reviews)'
-                                : '0.0 (0 reviews)',
+                            '${_getAverageRating(route?.transportOwner)} (${_getTotalRatings(route?.transportOwner)} reviews)',
                             style: poppinFonts(
                               fontSize: sm,
-                              color: AppColor.textLightBlackColor4A4A4A,
+                              color: AppColor.black,
                             ),
                           ),
                         ],
@@ -436,5 +429,19 @@ class TransportCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _getAverageRating(TransportOwner? transportOwner) {
+    if (transportOwner?.averageRating != null) {
+      return transportOwner?.averageRating?.toStringAsFixed(1) ?? '0.0';
+    }
+    return '0.0';
+  }
+
+  String _getTotalRatings(TransportOwner? transportOwner) {
+    if (transportOwner?.totalRatings != null) {
+      return transportOwner?.totalRatings?.toStringAsFixed(0) ?? '0';
+    }
+    return '0';
   }
 }

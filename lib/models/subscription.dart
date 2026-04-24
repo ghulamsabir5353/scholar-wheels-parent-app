@@ -26,14 +26,15 @@ class SubscriptionsResponse {
         subscriptions: json["subscriptions"] == null
             ? []
             : List<Subscriptions>.from(
-                json["subscriptions"]!.map((x) => Subscriptions.fromJson(x))),
+                json["subscriptions"]!.map((x) => Subscriptions.fromJson(x)),
+              ),
       );
 
   Map<String, dynamic> toJson() => {
-        "subscriptions": subscriptions == null
-            ? []
-            : List<dynamic>.from(subscriptions!.map((x) => x.toJson())),
-      };
+    "subscriptions": subscriptions == null
+        ? []
+        : List<dynamic>.from(subscriptions!.map((x) => x.toJson())),
+  };
 }
 
 class Subscriptions {

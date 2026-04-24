@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/route_entry_widget.dart';
@@ -69,7 +69,10 @@ class BookingHistoryCard extends StatelessWidget {
 
   String _getRequestDate() {
     if (booking.createdAt != null) {
-      return DateFormat('d MMM, yyyy').format(booking.createdAt!);
+      return AppDateTimeFormatter.format(
+        booking.createdAt,
+        pattern: 'd MMM, yyyy',
+      );
     }
     return 'N/A';
   }

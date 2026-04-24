@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/contract_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/custom_button.dart';
@@ -387,7 +388,10 @@ class _BookingContractRatingReviewSectionState
                               ),
                             ],
                             Text(
-                              DateFormat('MMMM yyyy').format(r.periodMonth),
+                              AppDateTimeFormatter.format(
+                                r.periodMonth,
+                                pattern: 'MMMM yyyy',
+                              ),
                               style: poppinFonts(
                                 fontSize: sm,
                                 fontWeight: FontWeight.w600,
@@ -396,7 +400,7 @@ class _BookingContractRatingReviewSectionState
                             ),
                             SpaceHelper(h: 4.h),
                             Text(
-                              'Submitted on ${DateFormat('d MMMM yyyy').format(r.submittedAt)}',
+                              "Submitted on ${AppDateTimeFormatter.format(r.submittedAt, pattern: 'd MMMM yyyy')}",
                               style: poppinFonts(
                                 fontSize: xs,
                                 color: AppColor.textLightBlackColor4A4A4A,

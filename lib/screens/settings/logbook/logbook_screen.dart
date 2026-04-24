@@ -94,9 +94,12 @@ class _LogbookScreenState extends State<LogbookScreen> {
         }
 
         if (state is EmptyState<List<TripModel>>) {
-          return ListView(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
+          return Column(
+            // padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 16.h),
             children: [
+              SpaceHelper(h: 12.h),
+              _buildFilterSegment(controller),
+              SpaceHelper(h: 24.h),
               Center(
                 child: Text(
                   state.message,
@@ -131,10 +134,15 @@ class _LogbookScreenState extends State<LogbookScreen> {
                     padding: EdgeInsets.only(bottom: 16.h),
                     child: LogbookRideCard(
                       trip: trip,
-                      onViewDetailsTap: () {
+                      onViewDetailsTap: (childId) {
                         Get.toNamed(
                           LogBookDetailScreen.route,
-                          arguments: {'_id': trip.id, 'tripId': trip.tripId},
+                          arguments: {
+                            '_id': trip.id,
+                            'tripId': trip.tripId,
+                            'status': trip.status,
+                            'childId': childId,
+                          },
                         );
                       },
                     ),
@@ -190,7 +198,7 @@ class _LogbookScreenState extends State<LogbookScreen> {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: EdgeInsets.symmetric(vertical: 8.h, horizontal: 12.w),
+        padding: EdgeInsets.symmetric(vertical: 4.h, horizontal: 12.w),
         margin: EdgeInsets.only(left: 8.w),
         decoration: BoxDecoration(
           color: isSelected ? AppColor.primary : AppColor.white,

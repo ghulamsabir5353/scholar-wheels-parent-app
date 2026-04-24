@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:scholarwheels/controllers/base.helper.controller.dart';
 import 'package:scholarwheels/controllers/billing_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.widgets/custom_toaster.dart';
 import 'package:scholarwheels/screens/auth/get_started_screen.dart';
 import 'package:scholarwheels/screens/auth/profile_picture_screen.dart';
 import 'package:scholarwheels/screens/settings/billings/subscription_plans_screen.dart';
@@ -31,6 +32,10 @@ class _SplashScreenState extends State<SplashScreen> {
       return;
     }
     if (BaseHelper.currentUser.value.roleData == null) {
+      customToaster(
+        'Please complete your profile to continue',
+        color: Colors.red,
+      );
       Get.offAllNamed(ProfilePictureScreen.route);
       return;
     }

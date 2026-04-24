@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:scholarwheels/controllers/billing_controller.dart';
 import 'package:scholarwheels/core/helper.constants/color.dart';
+import 'package:scholarwheels/core/helper.constants/date_time_formatter.dart';
 import 'package:scholarwheels/core/helper.constants/font_sized.dart';
 import 'package:scholarwheels/core/helper.constants/textStyle.dart';
 import 'package:scholarwheels/core/helper.widgets/back_button.dart';
@@ -65,10 +65,13 @@ class BillingHistoryScreen extends StatelessWidget {
             return _buildBillingCard(
               invoiceNumber: inv.invoiceNumber ?? '—',
               date: inv.issuedAt != null
-                  ? DateFormat('MMM d, yyyy').format(inv.issuedAt!)
+                  ? AppDateTimeFormatter.format(
+                      inv.issuedAt,
+                      pattern: 'MMM d, yyyy',
+                    )
                   : '—',
               amount: _formatAmount(inv),
-              status: inv.status ?? '—',
+              status: inv.status?.capitalizeFirst ?? '—',
             );
           },
         );
@@ -79,7 +82,7 @@ class BillingHistoryScreen extends StatelessWidget {
   String _formatAmount(SubscriptionInvoice inv) {
     final amount = inv.amountGross ?? inv.amountNet ?? 0;
     final currency = inv.currency ?? 'ZAR';
-    return currency.toUpperCase() == 'ZAR' ? 'R$amount' : '$currency $amount';
+    return currency.toUpperCase() == 'ZAR' ? 'R $amount' : '$currency $amount';
   }
 
   Widget _buildBillingCard({
